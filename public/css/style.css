@@ -1,3 +1,25 @@
+/* Bỏ padding trái phải của phân trang dưới bảng */
+.card .d-flex.justify-content-end {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+/* Bỏ padding hai bên của card-header */
+.card-header {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+/* Luôn set bảng giáo dân min-width 1400px, scroll ngang nếu nhỏ hơn */
+.table-giaodan {
+    min-width: 1400px;
+}
+/* Bỏ border của card trong trang Giáo dân */
+.card {
+    border: none !important;
+}
+/* Padding cho nội dung chính */
+.web-body {
+    padding: 2rem;
+}
 /* style.css: Custom styles for QLGD web-section and menu */
 .web-section {
     border: 1px solid #81d4fa !important;
