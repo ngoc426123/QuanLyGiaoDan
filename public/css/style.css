@@ -219,6 +219,13 @@
     display: block !important;
 }
 
+/* Hiển thị dropdown phía trên cho dropup */
+.table td .dropup .dropdown-menu {
+    top: auto !important;
+    bottom: 100% !important;
+    transform: translateY(-4px);
+}
+
 /* Ensure no parent creates stacking context */
 .person-table-container,
 .person-table-container *,

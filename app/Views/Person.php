@@ -171,7 +171,8 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        <div class="dropdown">
+                        <?php $dropClass = ($i >= 13) ? 'dropup' : 'dropdown'; ?>
+                        <div class="<?= $dropClass ?>">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
