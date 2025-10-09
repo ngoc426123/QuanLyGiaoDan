@@ -1,0 +1,14 @@
+/* style.css: Custom styles for QLGD web-section and menu */
+.web-section {
+    border: 1px solid #ccc !important;
+    margin-bottom: 2rem;
+    margin-left: 2vw;
+    margin-right: 2vw;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+.menu-line {
+    border-bottom: 1px solid #ccc !important;
+}
