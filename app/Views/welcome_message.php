@@ -317,6 +317,9 @@
 
 </footer>
 
+<!-- Church name placed below footer; styled in /css/style.css -->
+<div class="church-name" aria-hidden="true">Nhà thờ Phú Hòa</div>
+
 <!-- SCRIPTS -->
 
 <script {csp-script-nonce}>
