@@ -11,8 +11,11 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <h1 class="fw-bold text-center mb-4">Hệ thống quản lý giáo dân</h1>
+<body style="background-color: #f6f8fa;">
+    <div class="text-center">
+    <span class="fw-light pt-5 d-block" style="font-size:1.25rem;">Nhà thờ Phú Hòa</span>
+    </div>
+    <h1 class="fw-bold text-center mb-5" style="font-size:2rem; text-transform:uppercase; color:#0074b7;">HỆ THỐNG QUẢN LÝ GIÁO DÂN</h1>
     <div class="container-fluid">
         <section class="web-section bg-white rounded shadow-sm border border-1 border-light" style="margin-bottom:2rem;">
             <ul class="nav nav-pills justify-content-center bg-white menu-line web-menu mb-0">
