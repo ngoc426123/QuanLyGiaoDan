@@ -18,7 +18,7 @@
 1. Sao chép hệ thống này về từ link github:
 
 ```bash
-git clone https://github.com/ngoc426123/QuanLyGiaoDan
+git clone https://github.com/ngoc426123/QuanLyGiaoDan.git
 ```
 
 2. Tải và cài đặt xampp phiên bản nào có **PHP 8.0** trở lên, link download xampp bên dưới
