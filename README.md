@@ -97,7 +97,7 @@ xampp/xampp_stop.exe
 ## 🚀 THÔNG TIN LIÊN HỆ
 HOÀNG MINH NGỌC
 
-Sđt: 037.399./6947
+Sđt: 037.399.6947
 
 Email: minhngoc.ith@gmail.com
 
