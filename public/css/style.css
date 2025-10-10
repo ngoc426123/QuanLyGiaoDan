@@ -66,11 +66,6 @@
     color: #0074b7;
     letter-spacing: 0.03em;
     font-weight: 700;
-    /* Add blue border similar to whole web-section */
-    display: inline-block;
-    padding: .25rem .75rem;
-    border: 1px solid #81d4fa;
-    border-radius: .375rem;
 }
 
 /* Window/dialog style for section header */
