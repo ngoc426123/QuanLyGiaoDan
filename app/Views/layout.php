@@ -34,9 +34,9 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link d-flex flex-column align-items-center" style="color:#222; font-weight:300;">
-                        <img src="<?= base_url('images/icons/icon_export.png') ?>" alt="Xuất bản" class="mb-1" style="height:60px;">
-                        <span class="fw-light">Xuất bản</span>
+                    <a href="<?= site_url('import-export') ?>" class="nav-link <?= ($activeTab === 'import-export') ? 'active' : '' ?> d-flex flex-column align-items-center" style="color:#222; font-weight:300; <?= ($activeTab === 'import-export') ? 'background:linear-gradient(180deg, #fff 0%, #e0f2ff 100%);' : '' ?>">
+                        <img src="<?= base_url('images/icons/icon_export.png') ?>" alt="Nhập/Xuất" class="mb-1" style="height:60px;">
+                        <span class="fw-light">Nhập/Xuất</span>
                     </a>
                 </li>
                 <li class="nav-item">
