@@ -6,6 +6,6 @@ class Home extends BaseController
 {
     public function index()
     {
-        return redirect()->to(site_url('person'));
+        return redirect()->to(site_url('overview'));
     }
 }

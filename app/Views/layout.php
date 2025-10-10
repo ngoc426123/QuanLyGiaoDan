@@ -9,6 +9,12 @@
             <section class="web-menu-section">
                 <ul class="nav nav-pills justify-content-center bg-white menu-line web-menu mb-0">
                 <li class="nav-item">
+                    <a href="<?= site_url('overview') ?>" class="nav-link <?= ($activeTab === 'overview') ? 'active' : '' ?> d-flex flex-column align-items-center" style="color:#222; font-weight:300; <?= ($activeTab === 'overview') ? 'background:linear-gradient(180deg, #fff 0%, #e0f2ff 100%);' : '' ?>">
+                        <img src="<?= base_url('images/icons/icon_church.png') ?>" alt="Tổng quan" class="mb-1" style="height:60px;">
+                        <span class="fw-light">Tổng quan</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <?php $activeTab = $activeTab ?? 'person'; ?>
                     <a href="<?= site_url('person') ?>" class="nav-link <?= ($activeTab === 'person') ? 'active' : '' ?> d-flex flex-column align-items-center" style="color:#222; font-weight:300; <?= ($activeTab === 'person') ? 'background:linear-gradient(180deg, #fff 0%, #e0f2ff 100%);' : '' ?>">
                         <img src="<?= base_url('images/icons/icon_person.png') ?>" alt="Giáo dân" class="mb-1" style="height:60px;">
