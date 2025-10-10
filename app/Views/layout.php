@@ -22,7 +22,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link d-flex flex-column align-items-center" style="color:#222; font-weight:300;">
+                    <a href="<?= site_url('zone') ?>" class="nav-link <?= ($activeTab === 'zone') ? 'active' : '' ?> d-flex flex-column align-items-center" style="color:#222; font-weight:300; <?= ($activeTab === 'zone') ? 'background:linear-gradient(180deg, #fff 0%, #e0f2ff 100%);' : '' ?>">
                         <img src="<?= base_url('images/icons/icon_church_zone.png') ?>" alt="Giáo khu" class="mb-1" style="height:60px;">
                         <span class="fw-light">Giáo khu</span>
                     </a>
