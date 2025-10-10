@@ -199,6 +199,95 @@
     z-index: 1000;
 }
 
+/* --------------------------------------------------
+   Button gradient enhancements
+   Apply a subtle light-to-current color vertical gradient
+   to provide depth while preserving Bootstrap colors
+--------------------------------------------------- */
+/* Base transition to include background-image */
+.btn {
+    transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, background-image .2s ease;
+}
+
+/* Solid variants */
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-light,
+.btn-dark {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .22), rgba(255,255,255, 0));
+    background-repeat: no-repeat;
+}
+
+/* Hover states - slightly stronger highlight */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-success:hover,
+.btn-danger:hover,
+.btn-warning:hover,
+.btn-info:hover,
+.btn-light:hover,
+.btn-dark:hover {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .28), rgba(255,255,255, 0));
+}
+
+/* Active/pressed states - subtler highlight to look pressed */
+.btn-primary:active, .btn-primary.active,
+.btn-secondary:active, .btn-secondary.active,
+.btn-success:active, .btn-success.active,
+.btn-danger:active, .btn-danger.active,
+.btn-warning:active, .btn-warning.active,
+.btn-info:active, .btn-info.active,
+.btn-light:active, .btn-light.active,
+.btn-dark:active, .btn-dark.active,
+.show > .btn-primary.dropdown-toggle,
+.show > .btn-secondary.dropdown-toggle,
+.show > .btn-success.dropdown-toggle,
+.show > .btn-danger.dropdown-toggle,
+.show > .btn-warning.dropdown-toggle,
+.show > .btn-info.dropdown-toggle,
+.show > 
+.btn-light.dropdown-toggle,
+.show > .btn-dark.dropdown-toggle {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .12), rgba(255,255,255, 0));
+}
+
+/* Outline variants: add gradient when they become filled on hover/active */
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover,
+.btn-outline-danger:hover,
+.btn-outline-warning:hover,
+.btn-outline-info:hover,
+.btn-outline-light:hover,
+.btn-outline-dark:hover,
+.btn-outline-primary:active, .btn-outline-primary.active,
+.btn-outline-secondary:active, .btn-outline-secondary.active,
+.btn-outline-success:active, .btn-outline-success.active,
+.btn-outline-danger:active, .btn-outline-danger.active,
+.btn-outline-warning:active, .btn-outline-warning.active,
+.btn-outline-info:active, .btn-outline-info.active,
+.btn-outline-light:active, .btn-outline-light.active,
+.btn-outline-dark:active, .btn-outline-dark.active {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .22), rgba(255,255,255, 0));
+}
+
+/* Fine-tune for very light variant to avoid over-brightening */
+.btn-light {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .15), rgba(255,255,255, 0));
+}
+.btn-light:hover {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .18), rgba(255,255,255, 0));
+}
+.btn-light:active, .btn-light.active,
+.btn-outline-light:hover,
+.btn-outline-light:active, .btn-outline-light.active {
+    background-image: linear-gradient(180deg, rgba(255,255,255, .10), rgba(255,255,255, 0));
+}
+
 .dropdown-menu {
     z-index: 9999 !important;
     position: absolute !important;
