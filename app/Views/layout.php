@@ -3,7 +3,7 @@
         <section class="web-section bg-white rounded shadow-sm border border-1 border-light" style="margin-bottom:2rem;">
             <div class="section-header py-0">
                 <div class="window-title d-flex align-items-center px-3">
-                        <h1 class="fw-bold section-title mb-0">QUẢN LÝ GIÁO DÂN</h1>
+                                <h1 class="fw-bold section-title mb-0">QUẢN LÝ GIÁO DÂN - GIÁO XỨ PHÚ HÒA</h1>
                 </div>
             </div>
             <section class="web-menu-section">
