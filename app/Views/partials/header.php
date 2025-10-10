@@ -19,6 +19,8 @@
     
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="<?= base_url('css/bootstrap.min.css') ?>">
+    <!-- Vanilla JS Datepicker (Bootstrap 5 theme) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker-bs5.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->

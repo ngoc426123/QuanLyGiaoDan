@@ -208,40 +208,9 @@
     </div>
 </div>
 
-<script src="<?= base_url('js/chart.min.js') ?>"></script>
-<script>
-// Gender Pie Chart
-const genderPie = document.getElementById('genderPie').getContext('2d');
-new Chart(genderPie, {
-    type: 'pie',
-    data: {
-        labels: ['Nam', 'Nữ'],
-        datasets: [{
-            data: [<?= (int)($male ?? 0) ?>, <?= (int)($female ?? 0) ?>],
-            backgroundColor: ['#36A2EB', '#FF6384']
-        }]
-    },
-    options: {
-        plugins: { legend: { position: 'bottom' } }
-    }
-});
-
-// Zone Bar Chart
-const zoneBar = document.getElementById('zoneBar').getContext('2d');
-new Chart(zoneBar, {
-    type: 'bar',
-    data: {
-        labels: ['Giáo khu 1', 'Giáo khu 2', 'Giáo khu 3', 'Giáo khu 4', 'Giáo khu 5'],
-        datasets: [{
-            label: 'Giáo dân',
-            data: [320, 250, 210, 180, 240],
-            backgroundColor: '#36A2EB'
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
-});
-</script>
+<div id="charts-data"
+     data-gender-male="<?= (int)($male ?? 0) ?>"
+     data-gender-female="<?= (int)($female ?? 0) ?>"
+     data-zone-labels='["Giáo khu 1","Giáo khu 2","Giáo khu 3","Giáo khu 4","Giáo khu 5"]'
+     data-zone-values='[320,250,210,180,240]'></div>
 <?= $this->endSection() ?>
