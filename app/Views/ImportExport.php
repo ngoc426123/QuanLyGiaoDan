@@ -14,7 +14,7 @@
                     <label for="importFile" class="form-label">Chọn file dữ liệu (Excel, CSV)</label>
                     <input type="file" class="form-control" id="importFile" accept=".csv,.xls,.xlsx">
                 </div>
-                <button type="submit" class="btn btn-success"><i class="fas fa-upload me-1"></i>Nhập dữ liệu</button>
+                <button type="submit" class="btn btn-brown"><i class="fas fa-upload me-1"></i>Nhập dữ liệu</button>
             </form>
         </div>
     </div>

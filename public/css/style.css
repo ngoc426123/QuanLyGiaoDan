@@ -288,6 +288,58 @@
     background-image: linear-gradient(180deg, rgba(255,255,255, .10), rgba(255,255,255, 0));
 }
 
+/* --------------------------------------------------
+   Custom Brown Button Variant
+   Usage: btn btn-brown | btn btn-outline-brown
+--------------------------------------------------- */
+.btn-brown {
+    color: #fff;
+    background-color: #795548; /* Brown 500 */
+    border-color: #6d4c41;     /* Brown 600 */
+    background-image: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+}
+.btn-brown:hover {
+    color: #fff;
+    background-color: #6d4c41; /* Brown 600 */
+    border-color: #5d4037;     /* Brown 700 */
+    background-image: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0));
+}
+.btn-brown:active,
+.btn-brown.active,
+.show > .btn-brown.dropdown-toggle {
+    color: #fff;
+    background-color: #5d4037; /* Brown 700 */
+    border-color: #4e342e;     /* Brown 800 */
+    background-image: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0));
+}
+.btn-brown:focus {
+    box-shadow: 0 0 0 .25rem rgba(121, 85, 72, .25);
+}
+.btn-brown:disabled, .btn-brown.disabled {
+    color: #fff;
+    background-color: #795548;
+    border-color: #6d4c41;
+}
+
+.btn-outline-brown {
+    color: #795548;
+    border-color: #795548;
+    background-image: none;
+}
+.btn-outline-brown:hover,
+.btn-outline-brown:active,
+.btn-outline-brown.active,
+.show > .btn-outline-brown.dropdown-toggle {
+    color: #fff;
+    background-color: #795548;
+    border-color: #6d4c41;
+    background-image: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+}
+.btn-outline-brown:disabled, .btn-outline-brown.disabled {
+    color: #795548;
+    background-color: transparent;
+}
+
 .dropdown-menu {
     z-index: 9999 !important;
     position: absolute !important;
