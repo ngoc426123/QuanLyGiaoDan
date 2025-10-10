@@ -1,3 +1,6 @@
+<?= $this->extend('layout') ?>
+
+<?= $this->section('content') ?>
 <div class="family-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="mb-1">Quản lý Gia đình</h2>
@@ -46,7 +49,7 @@
             <div class="family-card">
                 <div class="family-card-header">
                     <div class="family-icon">
-                        <img src="/images/icons/icon_home.png" alt="Gia đình" class="family-home-icon">
+                        <img src="<?= base_url('images/icons/icon_home.png') ?>" alt="Gia đình" class="family-home-icon">
                     </div>
                     <div class="family-info">
                         <h5 class="family-name"><?= esc($family['name']) ?></h5>
@@ -123,3 +126,5 @@
         </ul>
     </nav>
 </div>
+
+<?= $this->endSection() ?>

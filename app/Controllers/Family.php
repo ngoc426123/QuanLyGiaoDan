@@ -64,12 +64,14 @@ class Family extends BaseController
             ]
         ];
 
-        $data = [
+        $pageData = [
             'families' => $families,
             'total_families' => count($families),
             'page_title' => 'Quản lý Gia đình'
         ];
 
-        return view('layout', $data);
+        return view('Family', $pageData + [
+            'activeTab' => 'family',
+        ]);
     }
 }

@@ -1,8 +1,11 @@
+<?= $this->extend('layout') ?>
+
+<?= $this->section('content') ?>
 <!-- Person Management Header -->
 <div class="person-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="mb-1">Quản lý Giáo dân</h2>
-        <p class="text-muted mb-0">Tổng cộng: <strong>20</strong> giáo dân</p>
+    <p class="text-muted mb-0">Tổng cộng: <strong><?= esc($total_people ?? 0) ?></strong> giáo dân</p>
     </div>
     <div>
         <button class="btn btn-primary">
@@ -74,19 +77,8 @@
                 </tr>
             </thead>
             <tbody>
-                <?php 
-                $people = [
-                    ['name' => 'Nguyễn Văn An', 'gender' => 'Nam', 'birth' => '01/01/1990', 'age' => 34],
-                    ['name' => 'Trần Thị Bình', 'gender' => 'Nữ', 'birth' => '15/03/1985', 'age' => 39],
-                    ['name' => 'Lê Minh Cường', 'gender' => 'Nam', 'birth' => '22/08/1992', 'age' => 32],
-                    ['name' => 'Phạm Thị Dung', 'gender' => 'Nữ', 'birth' => '10/12/1988', 'age' => 36],
-                    ['name' => 'Hoàng Văn Em', 'gender' => 'Nam', 'birth' => '05/07/1995', 'age' => 29],
-                ];
-                
-                for ($i = 0; $i < 15; $i++): 
-                    $person = $people[$i % count($people)];
-                    $personId = $i + 1;
-                ?>
+                <?php if (!empty($peopleRows) && is_array($peopleRows)): ?>
+                <?php foreach ($peopleRows as $idx => $person): $personId = $person['id'] ?? ($idx + 1); ?>
                 <tr>
                     <td class="text-center">
                         <input type="checkbox" class="form-check-input">
@@ -94,21 +86,21 @@
                     <td>
                         <div class="person-info">
                             <div class="person-avatar">
-                                <img src="/images/icons/icon_<?= $person['gender'] === 'Nam' ? 'male' : 'female' ?>.png" alt="<?= $person['gender'] ?>" class="person-avatar-img">
+                                <img src="<?= base_url('images/icons/icon_' . (($person['gender'] ?? 'Nam') === 'Nam' ? 'male' : 'female') . '.png') ?>" alt="<?= esc($person['gender'] ?? '') ?>" class="person-avatar-img">
                             </div>
                             <div class="person-details">
-                                <div class="person-name"><?= $person['name'] ?></div>
+                                <div class="person-name"><?= esc($person['name'] ?? '') ?></div>
                                 <div class="person-meta">
-                                    <span class="badge badge-<?= $person['gender'] === 'Nam' ? 'primary' : 'pink' ?>"><?= $person['gender'] ?></span>
+                                    <span class="badge badge-<?= ($person['gender'] ?? 'Nam') === 'Nam' ? 'primary' : 'pink' ?>"><?= esc($person['gender'] ?? '') ?></span>
                                 </div>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div class="text-sm">
-                            <div><i class="fas fa-birthday-cake text-warning me-1"></i><?= $person['birth'] ?></div>
-                            <div><i class="fas fa-user-clock text-info me-1"></i><?= $person['age'] ?> tuổi</div>
-                            <div><i class="fas fa-phone text-success me-1"></i>090123456<?= $personId ?></div>
+                            <div><i class="fas fa-birthday-cake text-warning me-1"></i><?= esc($person['birth'] ?? '') ?></div>
+                            <div><i class="fas fa-user-clock text-info me-1"></i><?= esc($person['age'] ?? '') ?> tuổi</div>
+                            <div><i class="fas fa-phone text-success me-1"></i>090123456<?= (int) $personId ?></div>
                         </div>
                     </td>
                     <td>
@@ -121,16 +113,16 @@
                         <div class="text-sm">
                             <div class="baptism-date">
                                 <i class="fas fa-cross text-warning me-1"></i>
-                                <?= date('d/m/Y', strtotime($person['birth'] . ' +30 days')) ?>
+                                <?= esc($person['baptismDate'] ?? 'Chưa có') ?>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div class="text-sm">
-                                <?php if ($person['age'] >= 8): ?>
+                                <?php if (($person['age'] ?? 0) >= 8 && !empty($person['communionDate'])): ?>
                                 <div class="communion-date">
                                     <i class="fas fa-bread-slice text-primary me-1"></i>
-                                    <?= date('d/m/Y', strtotime($person['birth'] . ' +8 years')) ?>
+                                    <?= esc($person['communionDate']) ?>
                                 </div>
                                 <?php else: ?>
                                 <div class="text-muted">
@@ -142,10 +134,10 @@
                     </td>
                     <td>
                         <div class="text-sm">
-                                <?php if ($person['age'] >= 16): ?>
+                                <?php if (($person['age'] ?? 0) >= 16 && !empty($person['confirmationDate'])): ?>
                                 <div class="confirmation-date">
                                     <i class="fas fa-dove text-success me-1"></i>
-                                    <?= date('d/m/Y', strtotime($person['birth'] . ' +16 years')) ?>
+                                    <?= esc($person['confirmationDate']) ?>
                                 </div>
                                 <?php else: ?>
                                 <div class="text-muted">
@@ -157,10 +149,10 @@
                     </td>
                     <td>
                         <div class="text-sm">
-                                <?php if ($person['age'] >= 25 && $personId % 3 == 0): ?>
+                                <?php if (($person['age'] ?? 0) >= 25 && ($personId % 3 == 0) && !empty($person['marriageDate'])): ?>
                                 <div class="marriage-date">
                                     <i class="fas fa-ring text-danger me-1"></i>
-                                    <?= date('d/m/Y', strtotime($person['birth'] . ' +25 years')) ?>
+                                    <?= esc($person['marriageDate']) ?>
                                 </div>
                                 <?php else: ?>
                                 <div class="text-muted">
@@ -171,7 +163,7 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        <?php $dropClass = ($i >= 13) ? 'dropup' : 'dropdown'; ?>
+                        <?php $dropClass = ($idx >= 13) ? 'dropup' : 'dropdown'; ?>
                         <div class="<?= $dropClass ?>">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-ellipsis-v"></i>
@@ -186,7 +178,14 @@
                         </div>
                     </td>
                 </tr>
-                <?php endfor; ?>
+                <?php endforeach; ?>
+                <?php else: ?>
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-5">
+                        Không có dữ liệu hiển thị.
+                    </td>
+                </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -194,7 +193,7 @@
     <!-- Enhanced Pagination -->
     <div class="person-pagination d-flex justify-content-between align-items-center p-3 bg-light">
         <div class="pagination-info text-muted">
-            Hiển thị <strong>1-15</strong> trong tổng số <strong>20</strong> giáo dân
+            Hiển thị <strong><?= (int)($display_from ?? 0) ?>-<?= (int)($display_to ?? 0) ?></strong> trong tổng số <strong><?= (int)($total_people ?? 0) ?></strong> giáo dân
         </div>
         <nav>
             <ul class="pagination mb-0">
@@ -218,3 +217,4 @@
         </nav>
     </div>
 </div>
+<?= $this->endSection() ?>

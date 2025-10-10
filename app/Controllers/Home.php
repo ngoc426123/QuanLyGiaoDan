@@ -4,9 +4,8 @@ namespace App\Controllers;
 
 class Home extends BaseController
 {
-    public function index(): string
+    public function index()
     {
-        // Sử dụng layout làm bố cục chính
-        return view('layout');
+        return redirect()->to(site_url('person'));
     }
 }
