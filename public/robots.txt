@@ -1,2 +1,8 @@
 User-agent: *
-Disallow: 
+Disallow: /system/
+Disallow: /app/
+Disallow: /writable/
+Allow: /
+
+# Sitemap
+Sitemap: /sitemap.xml
