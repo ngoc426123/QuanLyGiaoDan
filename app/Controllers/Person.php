@@ -8,10 +8,16 @@ class Person extends BaseController
 {
     public function index(): string
     {
-        // Server-side pagination + DB integration
+        // Server-side pagination + DB integration + Filters
         $perPage = 20; // default page size
 
-        $model = new PersonModel();
+        // Read filters
+        $q       = trim((string) $this->request->getGet('q'));
+        $zoneId  = (int) ($this->request->getGet('zone') ?? 0);
+        $familyId= (int) ($this->request->getGet('family') ?? 0);
+        $sort    = (string) ($this->request->getGet('sort') ?? '');
+
+    $model = new PersonModel();
 
         // Select only used columns
         $model = $model->select([
@@ -28,9 +34,66 @@ class Person extends BaseController
             'date_Dead',
         ]);
 
+        // DB connection
+        $db = \Config\Database::connect();
+
+        // Apply search filter (match person fields OR family address/name)
+        if ($q !== '') {
+            $model = $model->groupStart()
+                ->like('first_name', $q)
+                ->orLike('last_name', $q)
+                ->orLike('holy_name', $q)
+                ->orLike('phone', $q)
+            ->groupEnd();
+
+            // Find PIDs by family address/name
+            $pidAddrRows = $db->table('person_family pf')
+                ->select('pf.PID')
+                ->join('family f', 'f.FID = pf.FID', 'inner')
+                ->groupStart()
+                    ->like('f.address', $q)
+                    ->orLike('f.name', $q)
+                ->groupEnd()
+                ->get()->getResultArray();
+            $pidAddr = array_map(fn($r) => (int) $r['PID'], $pidAddrRows);
+            if (!empty($pidAddr)) {
+                $model = $model->orWhereIn('PID', array_values(array_unique($pidAddr)));
+            }
+        }
+
+        // Filter by zone/family via PID lists to avoid duplicate rows with joins
+        if ($zoneId > 0) {
+            $pidRows = $db->table('person_zone')->select('PID')->where('ZID', $zoneId)->get()->getResultArray();
+            $pids = array_map(fn($r) => (int) $r['PID'], $pidRows);
+            if (empty($pids)) { $pids = [-1]; }
+            $model = $model->whereIn('PID', $pids);
+        }
+        if ($familyId > 0) {
+            $pidRows = $db->table('person_family')->select('PID')->where('FID', $familyId)->get()->getResultArray();
+            $pids = array_map(fn($r) => (int) $r['PID'], $pidRows);
+            if (empty($pids)) { $pids = [-1]; }
+            $model = $model->whereIn('PID', $pids);
+        }
+
+        // Sorting
+        switch ($sort) {
+            case 'age':
+                // Older first (earlier birthdate)
+                $model = $model->orderBy('date_of_birth', 'ASC');
+                break;
+            case 'baptism':
+                $model = $model->orderBy('date_RT', 'ASC');
+                break;
+            case 'name':
+            default:
+                $model = $model->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC');
+                break;
+        }
+
         // Paginate results
-        $rows = $model->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC')->paginate($perPage, 'people');
+        $rows = $model->paginate($perPage, 'people');
         $pager = $model->pager;
+        if ($pager) { $pager->only(['q','zone','family','sort']); }
 
         $dateFmt = function (?string $date) {
             $date = $date ? trim($date) : '';
@@ -145,6 +208,10 @@ class Person extends BaseController
         $from = $totalPeople > 0 ? (($currentPage - 1) * $perPage + 1) : 0;
         $to = min($currentPage * $perPage, $totalPeople);
 
+        // Dropdown data (basic lists)
+        $zonesList = $db->table('zone')->select('ZID, name')->orderBy('name', 'ASC')->get()->getResultArray();
+        $familiesList = $db->table('family')->select('FID, name')->orderBy('name', 'ASC')->limit(100)->get()->getResultArray();
+
         $pageData = [
             'page_title'   => 'Quản lý Giáo dân',
             'peopleRows'   => $peopleRows,
@@ -152,6 +219,14 @@ class Person extends BaseController
             'display_from' => $from,
             'display_to'   => $to,
             'pager'        => $pager,
+            'filters'      => [
+                'q' => $q,
+                'zone' => $zoneId,
+                'family' => $familyId,
+                'sort' => $sort,
+            ],
+            'zones'        => $zonesList,
+            'families'     => $familiesList,
         ];
 
         return view('Person', $pageData + [

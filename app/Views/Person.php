@@ -19,37 +19,44 @@
 </div>
 
 <!-- Filter and Search Bar -->
-<div class="person-filter-bar bg-light rounded p-3 mb-4">
+<form method="get" action="<?= current_url() ?>" class="person-filter-bar bg-light rounded p-3 mb-4" id="personFilterForm">
     <div class="row g-2 align-items-center">
         <div class="col-md-6">
-            <input type="text" class="form-control" placeholder="Tìm kiếm theo tên, SĐT...">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" name="q" value="<?= esc($filters['q'] ?? '') ?>" class="form-control" placeholder="Tìm kiếm theo tên hoặc theo địa chỉ..." aria-label="Tìm kiếm">
+            </div>
         </div>
         <div class="col-md-2">
-            <select class="form-select">
+            <select class="form-select" name="zone">
                 <option value="">Tất cả giáo khu</option>
-                <option value="1">Giáo khu 1</option>
-                <option value="2">Giáo khu 2</option>
-                <option value="3">Giáo khu 3</option>
+                <?php foreach (($zones ?? []) as $z): ?>
+                    <option value="<?= (int)$z['ZID'] ?>" <?= (isset($filters['zone']) && (int)$filters['zone'] === (int)$z['ZID']) ? 'selected' : '' ?>><?= esc($z['name'] ?: ('#'.$z['ZID'])) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-md-2">
-            <select class="form-select">
+            <select class="form-select" name="family">
                 <option value="">Tất cả gia đình</option>
-                <option value="1">Gia đình 1</option>
-                <option value="2">Gia đình 2</option>
-                <option value="3">Gia đình 3</option>
+                <?php foreach (($families ?? []) as $f): ?>
+                    <option value="<?= (int)$f['FID'] ?>" <?= (isset($filters['family']) && (int)$filters['family'] === (int)$f['FID']) ? 'selected' : '' ?>><?= esc($f['name'] ?: ('#'.$f['FID'])) ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
         <div class="col-md-2">
-            <select class="form-select">
+            <select class="form-select" name="sort">
                 <option value="">Sắp xếp theo</option>
-                <option value="name">Tên A-Z</option>
-                <option value="age">Tuổi</option>
-                <option value="baptism">Ngày rửa tội</option>
+                <option value="name" <?= (($filters['sort'] ?? '')==='name') ? 'selected' : '' ?>>Tên A-Z</option>
+                <option value="age" <?= (($filters['sort'] ?? '')==='age') ? 'selected' : '' ?>>Tuổi</option>
+                <option value="baptism" <?= (($filters['sort'] ?? '')==='baptism') ? 'selected' : '' ?>>Ngày rửa tội</option>
             </select>
+        </div>
+        <div class="col-md-12 col-lg-auto ms-auto">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter me-1"></i>Lọc</button>
+            <a href="<?= site_url('person') ?>" class="btn btn-outline-secondary">Xoá lọc</a>
         </div>
     </div>
-</div>
+</form>
 
 <!-- Enhanced Table -->
 <div class="person-table-container">
