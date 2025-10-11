@@ -1,6 +1,10 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('content') ?>
+<style>
+/* Elevate row when its dropdown/dropup is open to avoid clipping */
+.person-table tr.row-elevated { position: relative; z-index: 1100; }
+</style>
 <!-- Person Management Header -->
 <div class="person-header d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -66,7 +70,7 @@
             </thead>
             <tbody>
                 <?php if (!empty($peopleRows ?? [])): ?>
-                    <?php foreach (($peopleRows ?? []) as $p): ?>
+                    <?php foreach (($peopleRows ?? []) as $idx => $p): ?>
                         <tr>
                             <td class="text-center"><input type="checkbox" class="form-check-input"></td>
                             <td>
@@ -96,38 +100,42 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="text-sm text-muted">Gia đình: —<br>Giáo khu: —</div>
+                                <div class="text-sm text-muted">
+                                    Gia đình: <span class="text-dark"><?= esc($p['family'] ?? '—') ?></span><br>
+                                    Giáo khu: <span class="text-dark"><?= esc($p['zones'] ?? '—') ?></span>
+                                </div>
                             </td>
                             <td>
                                 <?php if (!empty($p['baptismDate'])): ?>
-                                    <span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i><?= esc($p['baptismDate']) ?></span>
+                                    <span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i><span class="text-primary"><?= esc($p['baptismDate']) ?></span></span>
                                 <?php else: ?>
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($p['communionDate'])): ?>
-                                    <span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i><?= esc($p['communionDate']) ?></span>
+                                    <span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i><span class="text-info"><?= esc($p['communionDate']) ?></span></span>
                                 <?php else: ?>
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($p['confirmationDate'])): ?>
-                                    <span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i><?= esc($p['confirmationDate']) ?></span>
+                                    <span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i><span class="text-purple"><?= esc($p['confirmationDate']) ?></span></span>
                                 <?php else: ?>
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($p['marriageDate'])): ?>
-                                    <span class="marriage-date"><i class="fa-solid fa-ring me-1 text-danger"></i><?= esc($p['marriageDate']) ?></span>
+                                    <span class="marriage-date"><i class="fa-solid fa-ring me-1 text-danger"></i><span class="text-danger"><?= esc($p['marriageDate']) ?></span></span>
                                 <?php else: ?>
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <div class="dropdown">
+                                <?php $isDropup = ($idx >= (count($peopleRows ?? []) - 2)); ?>
+                                <div class="<?= $isDropup ? 'dropup' : 'dropdown' ?>">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         Thao tác
                                     </button>
@@ -155,26 +163,7 @@
         <div class="pagination-info text-muted">
             Hiển thị <strong><?= (int)($display_from ?? 0) ?>-<?= (int)($display_to ?? 0) ?></strong> trong tổng số <strong><?= (int)($total_people ?? 0) ?></strong> giáo dân
         </div>
-        <nav>
-            <ul class="pagination mb-0">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-                <li class="page-item active">
-                    <a class="page-link" href="#">1</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">2</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="#">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+        <?= isset($pager) ? $pager->links('people', 'bootstrap_full') : '' ?>
     </div>
 </div>
 <?php /* Keep modal inside the same content section */ ?>
@@ -307,4 +296,26 @@
         </div>
     </div>
         </div>
+<script>
+    // Elevate table row z-index when any dropdown/dropup in that row is opened
+    (function() {
+        const container = document.querySelector('.person-table-container');
+        if (!container) return;
+        const targets = container.querySelectorAll('.dropdown, .dropup');
+        targets.forEach(function(el) {
+            el.addEventListener('show.bs.dropdown', function() {
+                const tr = el.closest('tr');
+                if (tr) tr.classList.add('row-elevated');
+            });
+            el.addEventListener('hide.bs.dropdown', function() {
+                const tr = el.closest('tr');
+                if (tr) tr.classList.remove('row-elevated');
+            });
+            el.addEventListener('hidden.bs.dropdown', function() {
+                const tr = el.closest('tr');
+                if (tr) tr.classList.remove('row-elevated');
+            });
+        });
+    })();
+</script>
 <?= $this->endSection() ?>

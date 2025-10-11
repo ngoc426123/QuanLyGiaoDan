@@ -2,52 +2,156 @@
 
 namespace App\Controllers;
 
+use App\Models\PersonModel;
+
 class Person extends BaseController
 {
     public function index(): string
     {
-        // Mock data cho trang Giáo dân (có thể thay bằng dữ liệu DB sau này)
-        $basePeople = [
-            ['name' => 'Nguyễn Văn An', 'gender' => 'Nam', 'birth' => '01/01/1990', 'age' => 34],
-            ['name' => 'Trần Thị Bình', 'gender' => 'Nữ', 'birth' => '15/03/1985', 'age' => 39],
-            ['name' => 'Lê Minh Cường', 'gender' => 'Nam', 'birth' => '22/08/1992', 'age' => 32],
-            ['name' => 'Phạm Thị Dung', 'gender' => 'Nữ', 'birth' => '10/12/1988', 'age' => 36],
-            ['name' => 'Hoàng Văn Em', 'gender' => 'Nam', 'birth' => '05/07/1995', 'age' => 29],
-        ];
+        // Server-side pagination + DB integration
+        $perPage = 20; // default page size
 
-        $rowsCount    = 15;
-        $totalPeople  = 20; // hiển thị tổng số ví dụ
-        $peopleRows   = [];
-        for ($i = 0; $i < $rowsCount; $i++) {
-            $person              = $basePeople[$i % count($basePeople)];
-            $person['id']        = $i + 1;
-            // Các ngày bí tích minh hoạ
-            $birthDate = \DateTime::createFromFormat('d/m/Y', $person['birth']);
-            if ($birthDate instanceof \DateTime) {
-                $baptism = (clone $birthDate)->modify('+30 days');
-                $person['baptismDate'] = $baptism->format('d/m/Y');
-                if ($person['age'] >= 8) {
-                    $communion = (clone $birthDate)->modify('+8 years');
-                    $person['communionDate'] = $communion->format('d/m/Y');
+        $model = new PersonModel();
+
+        // Select only used columns
+        $model = $model->select([
+            'PID',
+            'holy_name',
+            'first_name',
+            'last_name',
+            'gender',
+            'date_of_birth',
+            'date_RT',
+            'date_RL',
+            'date_TS',
+            'date_HP',
+            'date_Dead',
+        ]);
+
+        // Paginate results
+        $rows = $model->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC')->paginate($perPage, 'people');
+        $pager = $model->pager;
+
+        $dateFmt = function (?string $date) {
+            $date = $date ? trim($date) : '';
+            if ($date === '' || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+                return null;
+            }
+            try {
+                $dt = new \DateTime($date);
+                // Map option format (e.g., dd/mm/yyyy) to PHP DateTime format
+                $opt = function_exists('date_format_option') ? date_format_option() : 'dd/mm/yyyy';
+                $fmt = 'd/m/Y';
+                if ($opt === 'mm/dd/yyyy') {
+                    $fmt = 'm/d/Y';
                 }
-                if ($person['age'] >= 16) {
-                    $confirmation = (clone $birthDate)->modify('+16 years');
-                    $person['confirmationDate'] = $confirmation->format('d/m/Y');
-                }
-                if ($person['age'] >= 25 && $person['id'] % 3 === 0) {
-                    $marriage = (clone $birthDate)->modify('+25 years');
-                    $person['marriageDate'] = $marriage->format('d/m/Y');
+                return $dt->format($fmt);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        };
+
+        $calcAge = function (?string $dob) {
+            if (!$dob || $dob === '0000-00-00') return null;
+            try {
+                $birth = new \DateTime($dob);
+                $today = new \DateTime();
+                return (int)$today->diff($birth)->y;
+            } catch (\Throwable $e) {
+                return null;
+            }
+        };
+
+        // Prepare family and zone mappings for current page
+        $pids = array_map(fn($r) => (int) $r['PID'], $rows ?: []);
+        $familiesByPid = [];
+        $zonesByPid = [];
+        if (!empty($pids)) {
+            $db = \Config\Database::connect();
+            // Families
+            $pf = $db->table('person_family pf')
+                ->select('pf.PID, f.name as family_name, pf.relationship')
+                ->join('family f', 'f.FID = pf.FID', 'left')
+                ->whereIn('pf.PID', $pids)
+                ->get()->getResultArray();
+
+            // Choose best family per PID based on relationship priority
+            $relPriority = ['chủ hộ' => 3, 'vợ/chồng' => 2, 'con' => 1];
+            foreach ($pf as $row) {
+                $pid = (int) $row['PID'];
+                $name = (string) ($row['family_name'] ?? '');
+                $rel  = mb_strtolower(trim((string) ($row['relationship'] ?? '')));
+                $score = $relPriority[$rel] ?? 0;
+                if ($name !== '') {
+                    if (!isset($familiesByPid[$pid]) || $familiesByPid[$pid]['score'] < $score) {
+                        $familiesByPid[$pid] = ['name' => $name, 'score' => $score];
+                    }
                 }
             }
-            $peopleRows[] = $person;
+
+            // Zones
+            $pz = $db->table('person_zone pz')
+                ->select('pz.PID, z.name as zone_name')
+                ->join('zone z', 'z.ZID = pz.ZID', 'left')
+                ->whereIn('pz.PID', $pids)
+                ->get()->getResultArray();
+            foreach ($pz as $row) {
+                $pid = (int) $row['PID'];
+                $name = (string) ($row['zone_name'] ?? '');
+                if ($name !== '') {
+                    $zonesByPid[$pid] = $zonesByPid[$pid] ?? [];
+                    if (!in_array($name, $zonesByPid[$pid], true)) {
+                        $zonesByPid[$pid][] = $name;
+                    }
+                }
+            }
         }
+
+        $peopleRows = [];
+        foreach ($rows as $r) {
+            $fullNameParts = [];
+            if (!empty($r['holy_name'])) $fullNameParts[] = trim($r['holy_name']);
+            // Vietnamese naming often: last_name first
+            if (!empty($r['last_name'])) $fullNameParts[] = trim($r['last_name']);
+            if (!empty($r['first_name'])) $fullNameParts[] = trim($r['first_name']);
+            $displayName = trim(implode(' ', $fullNameParts));
+
+            $genderRaw = $r['gender'] ?? null;
+            if ($genderRaw === 1 || $genderRaw === '1') {
+                $genderLabel = 'Nam';
+            } elseif ($genderRaw === 0 || $genderRaw === '0') {
+                $genderLabel = 'Nữ';
+            } else {
+                $genderLabel = is_string($genderRaw) && $genderRaw !== '' ? $genderRaw : '-';
+            }
+
+            $peopleRows[] = [
+                'id' => (int)($r['PID'] ?? 0),
+                'name' => $displayName ?: ('#' . (int)($r['PID'] ?? 0)),
+                'gender' => $genderLabel,
+                'birth' => $dateFmt($r['date_of_birth']) ?? '-',
+                'age' => $calcAge($r['date_of_birth']) ?? '-',
+                'baptismDate' => $dateFmt($r['date_RT']),
+                'communionDate' => $dateFmt($r['date_RL']),
+                'confirmationDate' => $dateFmt($r['date_TS']),
+                'marriageDate' => $dateFmt($r['date_HP']),
+                'family' => isset($familiesByPid[(int)$r['PID']]) ? $familiesByPid[(int)$r['PID']]['name'] : null,
+                'zones' => !empty($zonesByPid[(int)$r['PID']]) ? implode(', ', $zonesByPid[(int)$r['PID']]) : null,
+            ];
+        }
+
+        $currentPage = method_exists($pager, 'getCurrentPage') ? $pager->getCurrentPage('people') : (int)($this->request->getGet('page_people') ?? 1);
+        $totalPeople = method_exists($pager, 'getTotal') ? (int)$pager->getTotal('people') : (int)($model->pager->getTotal('people') ?? 0);
+        $from = $totalPeople > 0 ? (($currentPage - 1) * $perPage + 1) : 0;
+        $to = min($currentPage * $perPage, $totalPeople);
 
         $pageData = [
             'page_title'   => 'Quản lý Giáo dân',
             'peopleRows'   => $peopleRows,
             'total_people' => $totalPeople,
-            'display_from' => 1,
-            'display_to'   => $rowsCount,
+            'display_from' => $from,
+            'display_to'   => $to,
+            'pager'        => $pager,
         ];
 
         return view('Person', $pageData + [
