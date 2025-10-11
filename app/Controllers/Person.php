@@ -240,15 +240,18 @@ class Person extends BaseController
 
         $rules = [
             'full_name'         => 'required|min_length[2]|max_length[100]',
+            'holy_name'         => 'permit_empty|max_length[100]',
             'gender'            => 'permit_empty|in_list[Nam,Nữ,nam,nữ,Nam ,Nữ ]',
-            'birth_year'        => 'permit_empty|regex_match[/^\d{4}$/]',
-            'baptism_year'      => 'permit_empty|regex_match[/^\d{4}$/]',
-            'communion_year'    => 'permit_empty|regex_match[/^\d{4}$/]',
-            'confirmation_year' => 'permit_empty|regex_match[/^\d{4}$/]',
-            'marriage_year'     => 'permit_empty|regex_match[/^\d{4}$/]',
-            'deceased_year'     => 'permit_empty|regex_match[/^\d{4}$/]',
+            // Chấp nhận yyyy hoặc dd/mm/yyyy (hoặc dd-mm-yyyy)
+            'birth_year'        => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'baptism_year'      => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'communion_year'    => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'confirmation_year' => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'marriage_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'deceased_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'phone'             => 'permit_empty|max_length[20]',
             'zone_id'           => 'permit_empty|integer',
+            'family_id'         => 'permit_empty|integer',
             'notes'             => 'permit_empty|max_length[1000]',
         ];
 
@@ -261,10 +264,12 @@ class Person extends BaseController
 
         $data = [
             'name'   => trim((string) $this->request->getPost('full_name')),
+            'holy_name' => trim((string) $this->request->getPost('holy_name')),
             'gender' => (string) $this->request->getPost('gender'),
             'birth'  => (string) $this->request->getPost('birth_year'),
             'phone'  => (string) $this->request->getPost('phone'),
             'zone'   => (string) $this->request->getPost('zone_id'),
+            'family' => (string) $this->request->getPost('family_id'),
             'notes'  => (string) $this->request->getPost('notes'),
             'sacraments' => [
                 'baptism'      => (string) $this->request->getPost('baptism_year'),
@@ -275,10 +280,19 @@ class Person extends BaseController
             ],
         ];
 
+        // Helper: parse year from yyyy or dd/mm/yyyy
+        $extractYear = function (?string $val) {
+            $s = trim((string) $val);
+            if ($s === '') return null;
+            if (preg_match('/^\d{4}$/', $s)) return (int) $s;
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $s, $m)) return (int) $m[3];
+            return null;
+        };
+
         // Business rule: deceased_year >= birth_year (if both provided)
-        $by = $data['birth'];
-        $dy = $data['sacraments']['deceased'] ?? '';
-        if ($by && $dy && is_numeric($by) && is_numeric($dy) && (int)$dy < (int)$by) {
+        $by = $extractYear($data['birth']);
+        $dy = $extractYear($data['sacraments']['deceased'] ?? '');
+        if ($by !== null && $dy !== null && $dy < $by) {
             return $this->response->setStatusCode(422)->setJSON([
                 'ok' => false,
                 'errors' => ['deceased_year' => 'Năm mất phải lớn hơn hoặc bằng năm sinh.'],
@@ -294,12 +308,42 @@ class Person extends BaseController
         }
 
         // Prepare a simple row payload to append on client
+        // Tính tuổi từ ngày sinh (nếu có)
+        $age = '-';
+        $birthDisplay = '-';
+        if ($data['birth'] !== '') {
+            $birthStr = $data['birth'];
+            $y = $extractYear($birthStr);
+            if ($y) {
+                // Chuẩn hóa hiển thị dd/mm/yyyy
+                if (preg_match('/^\d{4}$/', $birthStr)) {
+                    $birthDisplay = '01/01/' . $y;
+                } elseif (preg_match('/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/', $birthStr)) {
+                    // đổi - thành /
+                    $birthDisplay = str_replace('-', '/', $birthStr);
+                }
+                try {
+                    $dob = \DateTime::createFromFormat('d/m/Y', $birthDisplay);
+                    if ($dob) {
+                        $today = new \DateTime();
+                        $age = (int) $today->diff($dob)->y;
+                    } else {
+                        $age = date('Y') - $y;
+                    }
+                } catch (\Throwable $e) {
+                    $age = date('Y') - $y;
+                }
+            }
+        }
+
+        $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
+
         $newRow = [
             'id' => random_int(1000, 9999),
-            'name' => $data['name'],
+            'name' => $displayName,
             'gender' => $data['gender'] ?: 'Nam',
-            'birth' => $data['birth'] ? ('01/01/' . $data['birth']) : '-',
-            'age' => $data['birth'] ? (date('Y') - (int)$data['birth']) : '-',
+            'birth' => $birthDisplay,
+            'age' => $age,
             'baptismDate' => $data['sacraments']['baptism'] ?: null,
             'communionDate' => $data['sacraments']['communion'] ?: null,
             'confirmationDate' => $data['sacraments']['confirmation'] ?: null,
@@ -310,6 +354,44 @@ class Person extends BaseController
             'ok' => true,
             'message' => 'Đã lưu giáo dân (mô phỏng).',
             'row' => $newRow,
+        ]);
+    }
+
+    // AJAX: trả danh sách gia đình theo giáo khu (nếu có)
+    public function families()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zoneId = (int) ($this->request->getGet('zone_id') ?? 0);
+        $limit  = (int) ($this->request->getGet('limit') ?? 500);
+        if ($limit <= 0 || $limit > 2000) { $limit = 500; }
+
+        $db = \Config\Database::connect();
+        try {
+            if ($zoneId > 0) {
+                // Ưu tiên bảng family_zone nếu có để lọc theo giáo khu
+                $rows = $db->table('family f')
+                    ->select('f.FID, f.name')
+                    ->join('family_zone fz', 'fz.FID = f.FID', 'inner')
+                    ->where('fz.ZID', $zoneId)
+                    ->orderBy('f.name', 'ASC')
+                    ->limit($limit)
+                    ->get()->getResultArray();
+            } else {
+                $rows = $db->table('family')->select('FID, name')->orderBy('name','ASC')->limit($limit)->get()->getResultArray();
+            }
+        } catch (\Throwable $e) {
+            // Fallback: nếu join lỗi (bảng family_zone không tồn tại) thì trả tất cả gia đình
+            $rows = $db->table('family')->select('FID, name')->orderBy('name','ASC')->limit($limit)->get()->getResultArray();
+        }
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'families' => array_map(function($r){
+                return [
+                    'id' => (int)($r['FID'] ?? 0),
+                    'name' => (string)($r['name'] ?? ''),
+                ];
+            }, $rows ?: []),
         ]);
     }
 }

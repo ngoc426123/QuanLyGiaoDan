@@ -9,6 +9,7 @@ $routes->get('/', 'Home::index');
 $routes->get('/family', 'Family::index');
 $routes->get('/person', 'Person::index');
 $routes->post('/person/create', 'Person::create');
+$routes->get('/person/families', 'Person::families');
 
 $routes->get('/zone', 'Zone::index');
 

@@ -6,6 +6,53 @@
     var form = container.getElementById ? container.getElementById('personCreateForm') : document.getElementById('personCreateForm');
   if (!form) return;
 
+    // zone -> families dynamic loader
+    var zoneSelect = form.querySelector('select[name="zone_id"]');
+    var familySelect = form.querySelector('select[name="family_id"]');
+    function populateFamilies(options){
+      if (!familySelect) return;
+      var current = familySelect.value;
+      // Build options
+      var frag = document.createDocumentFragment();
+      var first = document.createElement('option');
+      first.value = '';
+      first.textContent = '-- Chọn gia đình --';
+      frag.appendChild(first);
+      (options || []).forEach(function(it){
+        var opt = document.createElement('option');
+        opt.value = String(it.id || '');
+        opt.textContent = it.name || ('#' + it.id);
+        frag.appendChild(opt);
+      });
+      // Replace children
+      while (familySelect.firstChild) familySelect.removeChild(familySelect.firstChild);
+      familySelect.appendChild(frag);
+      // Try to keep selection if still present
+      if (current) {
+        var found = Array.prototype.some.call(familySelect.options, function(o){ return o.value === current; });
+        if (found) familySelect.value = current; else familySelect.value = '';
+      }
+    }
+    function loadFamilies(zoneId){
+      if (!familySelect) return Promise.resolve();
+      familySelect.disabled = true;
+      var url = '/person/families' + (zoneId ? ('?zone_id=' + encodeURIComponent(zoneId)) : '');
+      return fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+        .then(function(res){ return res.json(); })
+        .then(function(json){ populateFamilies(json.families || []); })
+        .catch(function(){ /* ignore */ })
+        .finally(function(){ familySelect.disabled = false; });
+    }
+    if (zoneSelect && familySelect && !zoneSelect.dataset.boundFamilies){
+      zoneSelect.addEventListener('change', function(){
+        var zid = this.value ? parseInt(this.value, 10) : 0;
+        loadFamilies(isNaN(zid) ? 0 : zid);
+      });
+      zoneSelect.dataset.boundFamilies = '1';
+      // Optional: initial sync when modal shown (keeps server-rendered list if no zone)
+      // loadFamilies(parseInt(zoneSelect.value || '0', 10) || 0);
+    }
+
     // submit handler (bind once per form)
     if (!form.dataset.boundSubmit) {
       form.addEventListener('submit', function(e){
@@ -16,9 +63,24 @@
           // deceased year >= birth year
           var birthYearEl = form.querySelector('input[name="birth_year"]');
           var deceasedYearEl = form.querySelector('input[name="deceased_year"]');
+          function extractYear(val){
+            if (!val) return NaN;
+            var s = (val || '').trim();
+            // Accept YYYY or dd/mm/yyyy or dd-mm-yyyy
+            var m = s.match(/^\d{4}$/);
+            if (m) return parseInt(s,10);
+            var parts = s.split(/[\/\-]/);
+            if (parts.length === 3){
+              // dd/mm/yyyy (default)
+              var y = parts[2];
+              var yi = parseInt(y,10);
+              if (!isNaN(yi)) return yi;
+            }
+            return NaN;
+          }
           if (deceasedYearEl && deceasedYearEl.value){
-            var by = parseInt((birthYearEl && birthYearEl.value || '').trim(), 10);
-            var dy = parseInt(deceasedYearEl.value.trim(), 10);
+            var by = extractYear(birthYearEl && birthYearEl.value || '');
+            var dy = extractYear(deceasedYearEl.value || '');
             if (!isNaN(by) && !isNaN(dy) && dy < by){
               deceasedYearEl.classList.add('is-invalid');
               return; // stop submit
@@ -193,17 +255,15 @@
       if (el.dataset.yearpickerInited === '1') return;
       if (typeof Datepicker === 'undefined') return;
       var initialYear = currentYear - 10;
-      // clamp to allowed range
       if (initialYear < minYear) initialYear = minYear;
       if (initialYear > currentYear) initialYear = currentYear;
 
+      // Configure full date picking (day-month-year)
       var dp = new Datepicker(el, {
         buttonClass: 'btn btn-sm btn-outline-secondary',
         autohide: true,
-        format: 'yyyy',
-        minView: 2,
-        maxView: 2,
-        pickLevel: 2,
+        format: 'dd/mm/yyyy',
+        pickLevel: 0, // day level
         minDate: new Date(minYear, 0, 1),
         maxDate: new Date(currentYear, 11, 31),
         defaultViewDate: new Date(initialYear, 0, 1)

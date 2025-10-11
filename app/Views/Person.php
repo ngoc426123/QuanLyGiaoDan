@@ -186,10 +186,16 @@
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="row g-4">
-                        <!-- Column: Basic Info & Linking -->
+                        <!-- Row 1: Basic Info (left) + Links (right) -->
                         <div class="col-md-6">
                             <div class="modal-section-title">Thông tin cơ bản</div>
                             <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" name="holy_name" id="holyNameInput" class="form-control" placeholder="Tên thánh">
+                                        <label for="holyNameInput">Tên thánh</label>
+                                    </div>
+                                </div>
                                 <div class="col-12">
                                     <div class="form-floating">
                                         <input type="text" name="full_name" id="fullNameInput" class="form-control" placeholder="Họ và tên" required>
@@ -209,7 +215,7 @@
                                 <div class="col-md-6">
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
-                                        <input type="text" name="birth_year" class="form-control yearpicker" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4" aria-label="Năm sinh">
+                                        <input type="text" name="birth_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Ngày sinh">
                                     </div>
                                 </div>
                                 <div class="col-12">
@@ -220,7 +226,10 @@
                                 </div>
                             </div>
 
-                            <div class="form-divider"></div>
+                        </div>
+
+                        <!-- Column: Liên kết (Row 1 right) -->
+                        <div class="col-md-6">
                             <div class="modal-section-title">Liên kết</div>
                             <div class="row g-3">
                                 <div class="col-12">
@@ -228,9 +237,20 @@
                                         <span class="input-group-text"><i class="fa-solid fa-church"></i></span>
                                         <select class="form-select" name="zone_id" aria-label="Giáo khu">
                                             <option value="">-- Chọn giáo khu --</option>
-                                            <option value="1">Giáo khu 1</option>
-                                            <option value="2">Giáo khu 2</option>
-                                            <option value="3">Giáo khu 3</option>
+                                            <?php foreach (($zones ?? []) as $z): ?>
+                                                <option value="<?= (int)$z['ZID'] ?>"><?= esc($z['name'] ?: ('#' . (int)$z['ZID'])) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-house"></i></span>
+                                        <select class="form-select" name="family_id" aria-label="Gia đình">
+                                            <option value="">-- Chọn gia đình --</option>
+                                            <?php foreach (($families ?? []) as $f): ?>
+                                                <option value="<?= (int)$f['FID'] ?>"><?= esc($f['name'] ?: ('#' . (int)$f['FID'])) ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                 </div>
@@ -240,53 +260,51 @@
                                         <label for="notesInput">Ghi chú</label>
                                     </div>
                                 </div>
-                                <div class="col-12 d-flex justify-content-between align-items-end">
-                                    <div class="form-text text-muted">Thông tin sẽ được lưu và có thể chỉnh sửa sau.</div>
-                                </div>
+                                
                             </div>
                         </div>
 
-                        <!-- Column: Sacraments -->
-                        <div class="col-md-6">
+                        <!-- Row 2: Các bí tích (full width) -->
+                        <div class="col-12">
+                            <div class="form-divider"></div>
                             <div class="modal-section-title">Các bí tích</div>
                             <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label mb-1">Rửa tội (năm)</label>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Rửa tội</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-water"></i></span>
-                                        <input type="text" name="baptism_year" class="form-control yearpicker" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4" aria-label="Rửa tội (năm)">
+                                        <input type="text" name="baptism_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Rửa tội (ngày/tháng/năm)">
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <label class="form-label mb-1">Rước lễ (năm)</label>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Rước lễ</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-bread-slice"></i></span>
-                                        <input type="text" name="communion_year" class="form-control yearpicker" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4" aria-label="Rước lễ (năm)">
+                                        <input type="text" name="communion_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Rước lễ (ngày/tháng/năm)">
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <label class="form-label mb-1">Thêm sức (năm)</label>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Thêm sức</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-dove"></i></span>
-                                        <input type="text" name="confirmation_year" class="form-control yearpicker" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4" aria-label="Thêm sức (năm)">
+                                        <input type="text" name="confirmation_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Thêm sức (ngày/tháng/năm)">
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <label class="form-label mb-1">Hôn phối (năm)</label>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Hôn phối</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-ring"></i></span>
-                                        <input type="text" name="marriage_year" class="form-control yearpicker" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4" aria-label="Hôn phối (năm)">
+                                        <input type="text" name="marriage_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Hôn phối (ngày/tháng/năm)">
                                     </div>
                                 </div>
                                 <div class="form-divider"></div>
-                                <!-- Deceased controls moved below marriage -->
                                 <div class="col-12 text-end deceased-block">
                                     <div class="form-check form-switch d-inline-flex align-items-center gap-2">
                                         <input class="form-check-input" type="checkbox" id="isDeceasedSwitch" name="is_deceased">
                                         <label class="form-check-label mb-0 small text-muted" for="isDeceasedSwitch">Đã qua đời</label>
                                     </div>
                                     <div class="mt-2 d-none" id="deceasedYearWrap" style="max-width: 200px; margin-left: auto;">
-                                        <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="YYYY" autocomplete="off" inputmode="numeric" pattern="\\d{4}" maxlength="4">
+                                        <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="dd/mm/yyyy" autocomplete="off">
                                         <div class="invalid-feedback text-end">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
                                     </div>
                                 </div>
@@ -294,6 +312,7 @@
                         </div>
                     </div>
                     <small class="text-muted d-block mt-3"><span class="text-danger">*</span> Thông tin bắt buộc</small>
+                    <div class="text-muted small mt-1">Thông tin sẽ được lưu và có thể chỉnh sửa sau.</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
