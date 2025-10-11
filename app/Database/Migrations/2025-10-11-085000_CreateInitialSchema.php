@@ -95,6 +95,11 @@ class CreateInitialSchema extends Migration
                 'unsigned' => true,
                 'auto_increment' => true,
             ],
+            'name' => [
+                'type' => 'VARCHAR',
+                'constraint' => 25,
+                'null' => true,
+            ],
             'address' => [
                 'type' => 'VARCHAR',
                 'constraint' => 100,
