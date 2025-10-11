@@ -14,3 +14,7 @@ $routes->get('/zone', 'Zone::index');
 
 $routes->get('/overview', 'Overview::index');
 $routes->get('/import-export', 'ImportExport::index');
+
+// Setup (initial installation)
+$routes->get('setup', 'Setup::index');
+$routes->post('setup/install', 'Setup::install');
