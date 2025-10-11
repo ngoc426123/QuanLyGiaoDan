@@ -11,7 +11,7 @@ class FamilyModel extends Model
     protected $useAutoIncrement = true;
 
     protected $allowedFields = [
-        'address','note','CreatedAt','UpdatedAt'
+        'name','address','note','CreatedAt','UpdatedAt'
     ];
 
     protected $useTimestamps = false;
