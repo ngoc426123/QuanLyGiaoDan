@@ -43,6 +43,53 @@
     </div>
 </div>
 <div class="mt-4">
+    <div class="border rounded p-3 bg-white">
+        <h5 class="mb-3"><i class="fas fa-clock-rotate-left me-2"></i>Lịch sử nhập/xuất gần đây</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Loại</th>
+                        <th>Dữ liệu</th>
+                        <th>Định dạng</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($history ?? [])): ?>
+                        <?php foreach ($history as $h): ?>
+                            <tr>
+                                <td class="text-muted small"><?= esc($h['time']) ?></td>
+                                <td>
+                                    <?php if ($h['type'] === 'import'): ?>
+                                        <span class="badge bg-success-subtle text-success"><i class="fas fa-upload me-1"></i>Nhập</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-primary-subtle text-primary"><i class="fas fa-download me-1"></i>Xuất</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= esc($h['target']) ?></td>
+                                <td><?= esc(strtoupper($h['format'])) ?></td>
+                                <td>
+                                    <?php if (($h['status'] ?? '') === 'success'): ?>
+                                        <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Thành công</span>
+                                    <?php elseif (($h['status'] ?? '') === 'processing'): ?>
+                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-rotate me-1"></i>Đang xử lý</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>Thất bại</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-muted small"><?= esc($h['note'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="6" class="text-center text-muted">Chưa có lịch sử.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="alert alert-info">
         <i class="fas fa-info-circle me-2"></i>
         <strong>Gợi ý giao diện:</strong> Trang này nên có 2 khối: <b>Nhập dữ liệu</b> (upload file, chọn loại dữ liệu) và <b>Xuất dữ liệu</b> (chọn loại, định dạng, nút tải về). Có thể bổ sung lịch sử nhập/xuất, trạng thái xử lý, hướng dẫn sử dụng, và các cảnh báo về dữ liệu.

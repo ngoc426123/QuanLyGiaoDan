@@ -54,4 +54,83 @@ class Person extends BaseController
             'activeTab' => 'person',
         ]);
     }
+
+    public function create()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+
+        $rules = [
+            'full_name'         => 'required|min_length[2]|max_length[100]',
+            'gender'            => 'permit_empty|in_list[Nam,Nữ,nam,nữ,Nam ,Nữ ]',
+            'birth_year'        => 'permit_empty|regex_match[/^\d{4}$/]',
+            'baptism_year'      => 'permit_empty|regex_match[/^\d{4}$/]',
+            'communion_year'    => 'permit_empty|regex_match[/^\d{4}$/]',
+            'confirmation_year' => 'permit_empty|regex_match[/^\d{4}$/]',
+            'marriage_year'     => 'permit_empty|regex_match[/^\d{4}$/]',
+            'deceased_year'     => 'permit_empty|regex_match[/^\d{4}$/]',
+            'phone'             => 'permit_empty|max_length[20]',
+            'zone_id'           => 'permit_empty|integer',
+            'notes'             => 'permit_empty|max_length[1000]',
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => $this->validator->getErrors(),
+            ]);
+        }
+
+        $data = [
+            'name'   => trim((string) $this->request->getPost('full_name')),
+            'gender' => (string) $this->request->getPost('gender'),
+            'birth'  => (string) $this->request->getPost('birth_year'),
+            'phone'  => (string) $this->request->getPost('phone'),
+            'zone'   => (string) $this->request->getPost('zone_id'),
+            'notes'  => (string) $this->request->getPost('notes'),
+            'sacraments' => [
+                'baptism'      => (string) $this->request->getPost('baptism_year'),
+                'communion'    => (string) $this->request->getPost('communion_year'),
+                'confirmation' => (string) $this->request->getPost('confirmation_year'),
+                'marriage'     => (string) $this->request->getPost('marriage_year'),
+                'deceased'     => (string) $this->request->getPost('deceased_year'),
+            ],
+        ];
+
+        // Business rule: deceased_year >= birth_year (if both provided)
+        $by = $data['birth'];
+        $dy = $data['sacraments']['deceased'] ?? '';
+        if ($by && $dy && is_numeric($by) && is_numeric($dy) && (int)$dy < (int)$by) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => ['deceased_year' => 'Năm mất phải lớn hơn hoặc bằng năm sinh.'],
+            ]);
+        }
+
+        // Mock persistence: write to a log file under writable/logs/person_create.log
+        try {
+            $line = date('c') . ' | ' . json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+            @file_put_contents(WRITEPATH . 'logs/person_create.log', $line, FILE_APPEND);
+        } catch (\Throwable $e) {
+            // ignore in mock mode
+        }
+
+        // Prepare a simple row payload to append on client
+        $newRow = [
+            'id' => random_int(1000, 9999),
+            'name' => $data['name'],
+            'gender' => $data['gender'] ?: 'Nam',
+            'birth' => $data['birth'] ? ('01/01/' . $data['birth']) : '-',
+            'age' => $data['birth'] ? (date('Y') - (int)$data['birth']) : '-',
+            'baptismDate' => $data['sacraments']['baptism'] ?: null,
+            'communionDate' => $data['sacraments']['communion'] ?: null,
+            'confirmationDate' => $data['sacraments']['confirmation'] ?: null,
+            'marriageDate' => $data['sacraments']['marriage'] ?: null,
+        ];
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Đã lưu giáo dân (mô phỏng).',
+            'row' => $newRow,
+        ]);
+    }
 }

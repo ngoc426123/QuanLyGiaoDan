@@ -473,34 +473,51 @@
 
 .baptism-date {
     background: #fff3cd;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.2rem;
     border: 1px solid #ffeeba;
     display: inline-block;
+    font-size: 0.78rem;
+    line-height: 1.1;
 }
 
 .communion-date {
     background: #cff4fc;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.2rem;
     border: 1px solid #b6effb;
     display: inline-block;
+    font-size: 0.78rem;
+    line-height: 1.1;
 }
 
 .confirmation-date {
     background: #d1ecf1;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.2rem;
     border: 1px solid #bee5eb;
     display: inline-block;
+    font-size: 0.78rem;
+    line-height: 1.1;
 }
 
 .marriage-date {
     background: #f8d7da;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.2rem;
     border: 1px solid #f5c6cb;
     display: inline-block;
+    font-size: 0.78rem;
+    line-height: 1.1;
+}
+
+/* Make icons inside sacrament badges slightly smaller for compact look */
+.baptism-date i,
+.communion-date i,
+.confirmation-date i,
+.marriage-date i {
+    font-size: 0.9em;
+    line-height: 1;
 }
 
 .person-pagination {
@@ -745,4 +762,112 @@
         margin-right: 0;
         margin-bottom: 0.5rem;
     }
+}
+
+/* Overview dashboard cards */
+.dashboard-card {
+    border-radius: 1rem;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 1.2rem 1rem 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 140px;
+    transition: transform 0.15s;
+}
+
+/* Modal section titles and dividers (Person create) */
+.modal-section-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: .5rem;
+}
+.form-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e9ecef, transparent);
+    margin: 1rem 0 1.25rem;
+}
+.form-divider.solid {
+    background: #e9ecef;
+}
+
+/* De-emphasize deceased block */
+.deceased-block {
+    opacity: .7;
+    margin-top: 0;
+}
+.deceased-block:focus-within,
+.deceased-block .form-check-input:checked ~ label,
+.deceased-block .form-check-input:checked {
+    opacity: 1;
+}
+.dashboard-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.2rem;
+}
+.card-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    margin-right: 0.7rem;
+}
+.card-info-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    height: 100%;
+    flex: 1;
+}
+.dashboard-card:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.card-icon {
+    font-size: 2.6rem;
+    margin-right: 0.5rem;
+    opacity: 0.92;
+    flex-shrink: 0;
+}
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-align: right;
+    margin-bottom: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    flex: none;
+}
+.card-value {
+    font-size: 2.7rem;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    margin-top: 0.1rem;
+    text-align: right;
+    width: auto;
+}
+.bg-gradient-person {
+    background: linear-gradient(135deg, #36A2EB 0%, #007bff 100%);
+}
+.bg-gradient-male {
+    background: linear-gradient(135deg, #1e90ff 0%, #00c6fb 100%);
+}
+.bg-gradient-female {
+    background: linear-gradient(135deg, #ff6384 0%, #ff8fa3 100%);
+}
+.bg-gradient-family {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+.bg-gradient-zone {
+    background: linear-gradient(135deg, #8f5cff 0%, #5f72bd 100%);
+}
+
+/* Alerts: remove outer margins but keep a bit of space below for breathing room */
+.alert {
+    margin: 0 0 0.75rem 0 !important;
 }

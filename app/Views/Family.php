@@ -15,30 +15,47 @@
 
 <!-- Search and Filter Bar -->
 <div class="family-filter-bar bg-light rounded p-3 mb-4">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="input-group">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                <input type="text" class="form-control" placeholder="Tìm kiếm theo tên gia đình, chủ hộ...">
+    <form>
+        <div class="row g-2 align-items-center">
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Tìm: tên gia đình, chủ hộ, địa chỉ...">
+                </div>
+            </div>
+            <div class="col-lg-2 col-6">
+                <select class="form-select">
+                    <option value="">Tất cả giáo khu</option>
+                    <option value="1">Giáo khu 1</option>
+                    <option value="2">Giáo khu 2</option>
+                    <option value="3">Giáo khu 3</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-6">
+                <select class="form-select">
+                    <option value="">Số thành viên</option>
+                    <option value="lte-2">≤ 2</option>
+                    <option value="lte-4">≤ 4</option>
+                    <option value="lte-6">≤ 6</option>
+                    <option value="gte-7">≥ 7</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-6">
+                <input type="text" class="form-control" placeholder="Chủ hộ (VD: Nguyễn)">
+            </div>
+            <div class="col-lg-2 col-6">
+                <input type="text" class="form-control" placeholder="SĐT (VD: 09)">
+            </div>
+            <div class="col-lg-2 col-6">
+                <select class="form-select">
+                    <option value="">Sắp xếp theo</option>
+                    <option value="name">Tên gia đình</option>
+                    <option value="members">Số thành viên</option>
+                    <option value="zone">Giáo khu</option>
+                </select>
             </div>
         </div>
-        <div class="col-md-3">
-            <select class="form-select">
-                <option value="">Tất cả giáo khu</option>
-                <option value="1">Giáo khu 1</option>
-                <option value="2">Giáo khu 2</option>
-                <option value="3">Giáo khu 3</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <select class="form-select">
-                <option value="">Sắp xếp theo</option>
-                <option value="name">Tên gia đình</option>
-                <option value="members">Số thành viên</option>
-                <option value="zone">Giáo khu</option>
-            </select>
-        </div>
-    </div>
+    </form>
 </div>
 
 <!-- Family Cards Grid -->

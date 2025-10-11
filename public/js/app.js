@@ -4,7 +4,7 @@
   function initPersonForm(root){
     var container = root || document;
     var form = container.getElementById ? container.getElementById('personCreateForm') : document.getElementById('personCreateForm');
-    if (!form) return;
+  if (!form) return;
 
     // submit handler (bind once per form)
     if (!form.dataset.boundSubmit) {
@@ -27,23 +27,104 @@
             }
           }
 
-          // Mock save: close modal and reset form
-          var modalEl = document.getElementById('modalCreatePerson');
-          if (modalEl && window.bootstrap){
-            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modal.hide();
-          }
-          form.reset();
-          form.classList.remove('was-validated');
+          // Submit via AJAX to server
+          var action = form.getAttribute('action') || '/person/create';
+          var fd = new FormData(form);
+          fetch(action, {
+            method: 'POST',
+            body: fd,
+            headers: {
+              'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+          }).then(function(res){
+            if (!res.ok) return res.json().then(function(err){ throw err; });
+            return res.json();
+          }).then(function(json){
+            // Close modal
+            var modalEl = document.getElementById('modalCreatePerson');
+            if (modalEl && window.bootstrap){
+              var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+              modal.hide();
+            }
+            // Reset form
+            form.reset();
+            form.classList.remove('was-validated');
+            var deceasedWrap = document.getElementById('deceasedYearWrap');
+            if (deceasedWrap) deceasedWrap.classList.add('d-none');
 
-          // success alert
-          var alertPlaceholder = document.createElement('div');
-          alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
-          alertPlaceholder.setAttribute('role', 'alert');
-          alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã lưu thông tin (mô phỏng). Kết nối CSDL sẽ được bổ sung sau.' +
-            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
-          var mount = document.querySelector('.web-body') || document.body;
-          mount.prepend(alertPlaceholder);
+            // Append new row to table if available
+            try {
+              var row = json.row || {};
+              var tbody = document.querySelector('.person-table tbody');
+              if (tbody){
+                // remove empty row if exists
+                var empty = tbody.querySelector('tr td[colspan]');
+                if (empty && tbody.children.length === 1) tbody.removeChild(empty.parentElement);
+                var g = (row.gender || '').toString().toLowerCase();
+                var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                  var tr = document.createElement('tr');
+                  var base = (window.BASE_URL || '/');
+                  tr.innerHTML = `
+                    <td class="text-center"><input type="checkbox" class="form-check-input"></td>
+                    <td>
+                      <div class="person-info">
+                        <div class="person-avatar">
+                          <img class="person-avatar-img" src="${base}${icon}" alt="avatar">
+                        </div>
+                        <div class="person-details">
+                          <div class="person-name">${row.name || '-'}</div>
+                          <div class="person-meta text-muted small">
+                            <span class="me-2"><i class="fa-solid fa-venus-mars me-1"></i>${row.gender || '-'}</span>
+                            <span><i class="fa-regular fa-calendar me-1"></i>${row.birth || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="text-sm">
+                        <div><i class="fa-regular fa-id-card me-1 text-secondary"></i>Tuổi: <strong>${row.age || '-'}</strong></div>
+                        <div class="text-muted">Mã: #${row.id || '-'}</div>
+                      </div>
+                    </td>
+                    <td><div class="text-sm text-muted">Gia đình: —<br>Giáo khu: —</div></td>
+                    <td>${row.baptismDate ? (`<span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i>${row.baptismDate}</span>`) : '<span class="text-muted">—</span>'}</td>
+                    <td>${row.communionDate ? (`<span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i>${row.communionDate}</span>`) : '<span class="text-muted">—</span>'}</td>
+                    <td>${row.confirmationDate ? (`<span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i>${row.confirmationDate}</span>`) : '<span class="text-muted">—</span>'}</td>
+                    <td>${row.marriageDate ? (`<span class="marriage-date"><i class="fa-solid fa-ring me-1 text-danger"></i>${row.marriageDate}</span>`) : '<span class="text-muted">—</span>'}</td>
+                    <td class="text-center">
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Thao tác</button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                          <li><a class="dropdown-item" href="#"><i class="fa-regular fa-eye me-2"></i>Xem</a></li>
+                          <li><a class="dropdown-item" href="#"><i class="fa-regular fa-pen-to-square me-2"></i>Sửa</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item text-danger" href="#"><i class="fa-regular fa-trash-can me-2"></i>Xoá</a></li>
+                        </ul>
+                      </div>
+                    </td>`;
+                tbody.prepend(tr);
+              }
+            } catch(_) {}
+
+            // success alert
+            var alertPlaceholder = document.createElement('div');
+            alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
+            alertPlaceholder.setAttribute('role', 'alert');
+            alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + (json.message || 'Đã lưu thông tin.') +
+              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            var mount = document.querySelector('.web-body') || document.body;
+            mount.prepend(alertPlaceholder);
+          }).catch(function(err){
+            var msg = (err && err.errors) ? Object.values(err.errors).join('<br>') : 'Không thể lưu dữ liệu.';
+            var alertPlaceholder = document.createElement('div');
+            alertPlaceholder.className = 'alert alert-danger alert-dismissible fade show m-3';
+            alertPlaceholder.setAttribute('role', 'alert');
+            alertPlaceholder.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + msg +
+              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            var mount = document.querySelector('.web-body') || document.body;
+            mount.prepend(alertPlaceholder);
+          });
         } else {
           form.classList.add('was-validated');
         }
