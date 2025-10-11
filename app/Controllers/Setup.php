@@ -34,16 +34,18 @@ class Setup extends Controller
 
         $validation = service('validation');
         $validation->setRules([
-            'church_name'   => 'required|min_length[2]|max_length[100]',
-            'date_format'   => 'required|in_list[dd/mm/yyyy,mm/dd/yyyy]',
-            'sample_data'   => 'permit_empty|in_list[0,1]'
+            'church_name'    => 'required|min_length[2]|max_length[100]',
+            'church_address' => 'permit_empty|max_length[200]',
+            'date_format'    => 'required|in_list[dd/mm/yyyy,mm/dd/yyyy]',
+            'sample_data'    => 'permit_empty|in_list[0,1]'
         ]);
 
         if (!$validation->withRequest($this->request)->run()) {
             return redirect()->back()->withInput()->with('errors', $validation->getErrors());
         }
 
-        $churchName = trim((string) $this->request->getPost('church_name'));
+    $churchName = trim((string) $this->request->getPost('church_name'));
+    $churchAddress = trim((string) $this->request->getPost('church_address'));
         $dateFormat = (string) $this->request->getPost('date_format');
         $sampleData = (string) $this->request->getPost('sample_data') === '1';
 
@@ -73,6 +75,9 @@ class Setup extends Controller
             $options = new OptionsModel();
             $this->saveOption($options, 'church_name', $churchName);
             $this->saveOption($options, 'date_format', $dateFormat);
+            if ($churchAddress !== '') {
+                $this->saveOption($options, 'church_address', $churchAddress);
+            }
             $this->saveOption($options, 'installed', '1');
             $this->saveOption($options, 'installed_at', date('Y-m-d H:i:s'));
         } catch (\Throwable $e) {

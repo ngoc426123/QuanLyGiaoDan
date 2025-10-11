@@ -35,6 +35,11 @@
         </div>
 
         <div class="mb-3">
+            <label for="church_address" class="form-label">Địa chỉ nhà thờ</label>
+            <input type="text" id="church_address" name="church_address" class="form-control" value="<?= old('church_address') ?>" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" />
+        </div>
+
+        <div class="mb-3">
             <label for="date_format" class="form-label">Định dạng ngày tháng</label>
             <select id="date_format" name="date_format" class="form-select" required>
                 <option value="dd/mm/yyyy" <?= old('date_format')==='dd/mm/yyyy' ? 'selected' : '' ?>>dd/mm/yyyy</option>
