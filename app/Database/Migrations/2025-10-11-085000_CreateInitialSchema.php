@@ -243,12 +243,12 @@ class CreateInitialSchema extends Migration
             ],
             'key' => [
                 'type' => 'VARCHAR',
-                'constraint' => 10,
+                'constraint' => 15,
                 'null' => true,
             ],
             'value' => [
                 'type' => 'VARCHAR',
-                'constraint' => 30,
+                'constraint' => 100,
                 'null' => true,
             ],
             'note' => [

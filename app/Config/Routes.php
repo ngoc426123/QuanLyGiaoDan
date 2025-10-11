@@ -18,3 +18,6 @@ $routes->get('/import-export', 'ImportExport::index');
 // Setup (initial installation)
 $routes->get('setup', 'Setup::index');
 $routes->post('setup/install', 'Setup::install');
+
+// Dev-only reset endpoint (development environment only)
+$routes->get('dev/reset-setup', 'DevReset::index');

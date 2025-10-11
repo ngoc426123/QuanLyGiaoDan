@@ -2,20 +2,61 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use Config\Database;
 
 class Overview extends BaseController
 {
     public function index()
     {
-        // Mock data, replace with real queries as needed
+        $db = Database::connect();
+        // Basic aggregate metrics
+        $totalPeople = (int) ($db->table('person')->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
+        $male = (int) ($db->table('person')->where('gender', 1)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
+        $female = (int) ($db->table('person')->where('gender', 0)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
+        $families = (int) ($db->table('family')->selectCount('FID','c')->get()->getFirstRow()->c ?? 0);
+        $zones = (int) ($db->table('zone')->selectCount('ZID','c')->get()->getFirstRow()->c ?? 0);
+
+        // Top zones by persons (via person_zone)
+        $zoneStats = $db->table('zone z')
+            ->select('z.name AS zone_name, COUNT(pz.PID) AS total')
+            ->join('person_zone pz', 'pz.ZID = z.ZID', 'left')
+            ->groupBy('z.ZID')
+            ->orderBy('total', 'DESC')
+            ->orderBy('z.ZID', 'ASC')
+            ->limit(5)
+            ->get()
+            ->getResultArray();
+
+        $zoneLabels = array_map(fn($r) => $r['zone_name'] ?: 'Không tên', $zoneStats);
+        $zoneValues = array_map(fn($r) => (int) $r['total'], $zoneStats);
+
+        // Top families by members (via person_family)
+        $familyStats = $db->table('family f')
+            ->select('f.name AS family_name, COUNT(pf.PID) AS members')
+            ->join('person_family pf', 'pf.FID = f.FID', 'left')
+            ->groupBy('f.FID')
+            ->orderBy('members', 'DESC')
+            ->orderBy('f.FID', 'ASC')
+            ->limit(5)
+            ->get()
+            ->getResultArray();
+
         $data = [
-            'page_title' => 'Tổng quan hệ thống',
-            'activeTab' => 'overview',
-            'total_people' => 1200,
-            'male' => 550,
-            'female' => 650,
-            'families' => 320,
-            'notes' => 'Hệ thống quản lý giáo dân đang hoạt động ổn định. Dữ liệu được cập nhật thường xuyên. Vui lòng kiểm tra các báo cáo định kỳ để đảm bảo tính chính xác.',
+            'page_title'   => 'Tổng quan',
+            'activeTab'    => 'overview',
+            // church info
+            'church_name'  => church_name('Giáo xứ'),
+            'church_addr'  => church_address(''),
+            // metrics
+            'total_people' => $totalPeople,
+            'male'         => $male,
+            'female'       => $female,
+            'families'     => $families,
+            'zones'        => $zones,
+            // charts/list data
+            'zone_labels'  => $zoneLabels,
+            'zone_values'  => $zoneValues,
+            'top_families' => $familyStats,
         ];
         return view('Overview', $data);
     }

@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         // Làm sạch dữ liệu để seed mẫu nhất quán
         $db = \Config\Database::connect();
-        $db->query('SET FOREIGN_KEY_CHECKS=0');
+        $db->disableForeignKeyChecks();
         foreach ([
             'person_family', 'person_zone', 'family_zone',
             'options', 'history',
@@ -18,12 +18,12 @@ class DatabaseSeeder extends Seeder
         ] as $table) {
             // Dùng TRUNCATE nếu bảng tồn tại
             try {
-                $db->query("TRUNCATE TABLE `{$table}`");
+                $db->table($table)->truncate();
             } catch (\Throwable $e) {
                 // Bỏ qua nếu bảng chưa tồn tại
             }
         }
-        $db->query('SET FOREIGN_KEY_CHECKS=1');
+        $db->enableForeignKeyChecks();
 
         // Thứ tự: person -> family -> zone -> link tables
         $this->call(PersonSeeder::class);

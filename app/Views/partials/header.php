@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title><?= esc($page_title ?? 'Hệ thống Quản lý Giáo dân') ?></title>
+    <title><?= esc(($page_title ?? 'Hệ thống Quản lý Giáo dân') . ' - ' . church_name('Giáo xứ')) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Hệ thống quản lý giáo dân Giáo xứ Phú Hòa - Quản lý thông tin giáo dân, gia đình và giáo khu hiệu quả">
-    <meta name="keywords" content="quản lý giáo dân, giáo xứ, phú hòa, catholic, parish management">
+    <meta name="description" content="Hệ thống quản lý giáo dân <?= esc(church_name('Giáo xứ')) ?> - Quản lý thông tin giáo dân, gia đình và giáo khu hiệu quả">
+    <meta name="keywords" content="quản lý giáo dân, giáo xứ, <?= esc(church_name('giáo xứ')) ?>, catholic, parish management">
     <meta name="author" content="Hoàng Minh Ngọc">
     
     <!-- Favicon -->

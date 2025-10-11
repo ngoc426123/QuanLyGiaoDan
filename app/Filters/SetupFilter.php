@@ -14,6 +14,12 @@ class SetupFilter implements FilterInterface
         'options', 'history',
     ];
 
+    // System/auxiliary tables to ignore when checking extras
+    protected array $systemTables = [
+        'migrations', // CI4 migration history table
+        // add 'ci_sessions' here if you enable DB sessions later
+    ];
+
     public function before(RequestInterface $request, $arguments = null)
     {
         // Allow setup URIs to pass
@@ -27,16 +33,36 @@ class SetupFilter implements FilterInterface
             return;
         }
 
-        $db = \Config\Database::connect();
+    $db = \Config\Database::connect();
+    // Ensure migrations system is initialized so migrations table may exist
+    try { \Config\Services::migrations(); } catch (\Throwable $e) {}
         $tables = array_map('strtolower', $db->listTables());
+
+        // If already installed (options.installed = 1), do not enforce setup again
+        if (in_array('options', $tables, true)) {
+            try {
+                $installed = $db->table('options')
+                    ->select('value')
+                    ->where('`key`', 'installed')
+                    ->get()
+                    ->getFirstRow();
+                if ($installed && (string) $installed->value === '1') {
+                    return; // skip any wiping or redirect once installed
+                }
+            } catch (\Throwable $e) {
+                // ignore and continue normal checks
+            }
+        }
 
         // If no tables at all => go to setup (no need to drop)
         if (empty($tables)) {
             return redirect()->to(base_url('setup'));
         }
 
-        $missing = array_diff($this->expectedTables, $tables);
-        $extras  = array_diff($tables, $this->expectedTables);
+    $missing = array_diff($this->expectedTables, $tables);
+    // Ignore known system tables when computing extras
+    $known   = array_merge($this->expectedTables, $this->systemTables);
+    $extras  = array_diff($tables, $known);
 
         // If missing any expected table OR there are unrelated tables => wipe and go to setup
         if (!empty($missing) || !empty($extras)) {
@@ -55,15 +81,20 @@ class SetupFilter implements FilterInterface
 
     protected function dropAllTables($db, array $tables): void
     {
-        // Disable FK checks to drop in any order
-        try { $db->query('SET FOREIGN_KEY_CHECKS=0'); } catch (\Throwable $e) {}
+        // Disable FK checks to drop in any order using framework API
+        try { $db->disableForeignKeyChecks(); } catch (\Throwable $e) {}
+        $forge = \Config\Database::forge();
         foreach ($tables as $table) {
+            // Skip system tables if any slipped in
+            if (in_array($table, $this->systemTables, true)) {
+                continue;
+            }
             try {
-                $db->query("DROP TABLE IF EXISTS `{$table}`");
+                $forge->dropTable($table, true);
             } catch (\Throwable $e) {
                 // ignore
             }
         }
-        try { $db->query('SET FOREIGN_KEY_CHECKS=1'); } catch (\Throwable $e) {}
+        try { $db->enableForeignKeyChecks(); } catch (\Throwable $e) {}
     }
 }

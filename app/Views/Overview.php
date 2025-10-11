@@ -1,9 +1,18 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('content') ?>
-<div class="overview-header mb-4">
-    <h2 class="mb-1">Tổng quan hệ thống quản lý giáo dân</h2>
-    <p class="text-muted">Thông tin tổng hợp về số lượng giáo dân, hộ gia đình, giáo khu, và các ghi chú chung.</p>
+<div class="overview-header mb-4 p-3 border rounded bg-white">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1"><?= esc($church_name ?? church_name('Giáo xứ')) ?></h2>
+            <?php if (!empty($church_addr ?? '')): ?>
+                <div class="text-muted" style="max-width: 720px;"><?= esc($church_addr) ?></div>
+            <?php endif; ?>
+        </div>
+        <div class="text-muted small">
+            Định dạng ngày: <?= esc(date_format_option()) ?>
+        </div>
+    </div>
 </div>
 <div class="row g-4 mb-4 d-flex">
     <div class="col">
@@ -56,7 +65,7 @@
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-church"></i></span></div>
                 <div class="card-info-box">
                     <div class="card-title">Giáo khu</div>
-                    <div class="card-value">5</div>
+                    <div class="card-value"><?= (int)($zones ?? 0) ?></div>
                 </div>
             </div>
         </div>
@@ -86,39 +95,35 @@
     <div class="col-md-6">
         <div class="border rounded p-3 bg-white">
             <h5 class="mb-2">Top giáo khu</h5>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Giáo khu 1
-                    <span class="badge bg-primary rounded-pill">320 giáo dân</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Giáo khu 2
-                    <span class="badge bg-primary rounded-pill">250 giáo dân</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Giáo khu 3
-                    <span class="badge bg-primary rounded-pill">210 giáo dân</span>
-                </li>
-            </ul>
+            <?php if (!empty($zone_labels ?? []) && !empty($zone_values ?? [])): ?>
+                <ul class="list-group">
+                    <?php foreach (($zone_labels ?? []) as $i => $label): $val = $zone_values[$i] ?? 0; ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <?= esc($label) ?>
+                            <span class="badge bg-primary rounded-pill"><?= (int) $val ?> giáo dân</span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <div class="text-muted">Chưa có dữ liệu.</div>
+            <?php endif; ?>
         </div>
     </div>
     <div class="col-md-6">
         <div class="border rounded p-3 bg-white">
             <h5 class="mb-2">Top hộ gia đình</h5>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Gia đình Nguyễn Văn A
-                    <span class="badge bg-success rounded-pill">12 thành viên</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Gia đình Trần Thị B
-                    <span class="badge bg-success rounded-pill">10 thành viên</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Gia đình Phạm Văn C
-                    <span class="badge bg-success rounded-pill">9 thành viên</span>
-                </li>
-            </ul>
+            <?php if (!empty($top_families ?? [])): ?>
+                <ul class="list-group">
+                    <?php foreach (($top_families ?? []) as $row): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <?= esc($row['family_name'] ?: 'Gia đình') ?>
+                            <span class="badge bg-success rounded-pill"><?= (int)($row['members'] ?? 0) ?> thành viên</span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <div class="text-muted">Chưa có dữ liệu.</div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -130,9 +135,13 @@
     </div>
 </div>
 
+<?php
+    $zl = json_encode($zone_labels ?? []);
+    $zv = json_encode($zone_values ?? []);
+?>
 <div id="charts-data"
-     data-gender-male="<?= (int)($male ?? 0) ?>"
-     data-gender-female="<?= (int)($female ?? 0) ?>"
-     data-zone-labels='["Giáo khu 1","Giáo khu 2","Giáo khu 3","Giáo khu 4","Giáo khu 5"]'
-     data-zone-values='[320,250,210,180,240]'></div>
+    data-gender-male="<?= (int)($male ?? 0) ?>"
+    data-gender-female="<?= (int)($female ?? 0) ?>"
+    data-zone-labels='<?= $zl ?>'
+    data-zone-values='<?= $zv ?>'></div>
 <?= $this->endSection() ?>

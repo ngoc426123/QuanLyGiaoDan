@@ -13,8 +13,11 @@ class PersonSeeder extends Seeder
         $holyNames = ['Giuse', 'Phêrô', 'Gioan', 'Maria', 'Têrêsa', 'Phanxicô', 'Phaolô'];
         $lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Võ'];
 
-        $batch = [];
-        for ($i = 0; $i < 50; $i++) {
+    $count = (int) getenv('SEED_PERSON_COUNT');
+    if ($count <= 0) { $count = 50; }
+
+    $batch = [];
+    for ($i = 0; $i < $count; $i++) {
             $gender = $faker->randomElement([0, 1]);
             $first = $gender ? $faker->firstNameMale() : $faker->firstNameFemale();
             $last = $faker->randomElement($lastNames);
