@@ -11,7 +11,7 @@
     <div class="col-lg-3">
     <div class="scroll-area-70vh">
             <div class="mb-2 text-end">
-                <button class="btn btn-primary btn-sm" type="button">
+                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#modalCreateZone">
                     <i class="fas fa-plus me-1"></i>Thêm giáo khu mới
                 </button>
             </div>
@@ -199,6 +199,128 @@
           })
           .catch(function(){ /* ignore */});
     }, { passive: false });
+})();
+</script>
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- Alerts container -->
+<div id="zoneAlerts" class="mt-3"></div>
+
+<!-- Modal: Create Zone -->
+<?php helper('lists'); $holyNames = get_suggestion_list('holy_names', ['Giuse','Maria','Phêrô']); ?>
+<div class="modal fade" id="modalCreateZone" tabindex="-1" aria-labelledby="modalCreateZoneLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCreateZoneLabel"><i class="fas fa-layer-group me-2"></i>Thêm giáo khu mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCreateZone" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" name="name" id="zoneNameInput" class="form-control" placeholder="Tên giáo khu" required>
+                                <label for="zoneNameInput">Tên giáo khu <span class="text-danger">*</span></label>
+                                <div class="invalid-feedback">Vui lòng nhập tên giáo khu.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" name="holy_name" id="zoneHolyNameInput" class="form-control" placeholder="Tên thánh" list="zoneHolyNameOptions">
+                                <label for="zoneHolyNameInput">Tên thánh (tùy chọn)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" placeholder="Ghi chú" name="note" id="zoneNoteInput" style="height: 90px"></textarea>
+                                <label for="zoneNoteInput">Ghi chú</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <datalist id="zoneHolyNameOptions">
+        <?php foreach (($holyNames ?? []) as $hn): ?>
+            <option value="<?= esc($hn) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
+</div>
+
+<script>
+(function(){
+    var submitting = false;
+    function showAlert(type, message){
+        var wrap = document.getElementById('zoneAlerts'); if (!wrap) return;
+        var div = document.createElement('div');
+        div.className = 'alert alert-' + type + ' alert-dismissible fade show';
+        div.setAttribute('role','alert');
+        div.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+        wrap.appendChild(div);
+        setTimeout(function(){ try { div.classList.remove('show'); div.remove(); } catch(e){} }, 5000);
+    }
+
+    var form = document.getElementById('formCreateZone');
+    if (form){
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            if (submitting) return;
+            var nameEl = document.getElementById('zoneNameInput');
+            var name = (nameEl && nameEl.value || '').trim();
+            var holy = (document.getElementById('zoneHolyNameInput').value || '').trim();
+            var note = (document.getElementById('zoneNoteInput').value || '').trim();
+            if (!name){ form.classList.add('was-validated'); return; }
+            submitting = true;
+            fetch('/zone/create', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                body: new URLSearchParams({ name: name, holy_name: holy, note: note })
+            })
+            .then(function(res){ return res.json().then(function(json){ return { status: res.status, json: json }; }); })
+            .then(function(res){
+                if (!res || !res.json){ showAlert('danger','Có lỗi xảy ra.'); return; }
+                if (res.status >= 400 || res.json.ok === false){
+                    var msg = 'Thêm giáo khu thất bại.';
+                    if (res.json.errors){
+                        var errMsgs = Object.values(res.json.errors).filter(Boolean).join('<br>');
+                        if (errMsgs) msg = errMsgs;
+                    }
+                    showAlert('danger', msg);
+                    submitting = false; return;
+                }
+                // Success: close modal, prepend to left list, show alert
+                try { var modalEl = document.getElementById('modalCreateZone'); if (modalEl){ var mi = bootstrap.Modal.getInstance(modalEl); if (mi) mi.hide(); } } catch(e){}
+                form.reset(); form.classList.remove('was-validated');
+                var row = res.json.row || {};
+                var ul = document.getElementById('zoneList');
+                if (ul){
+                    var li = document.createElement('li');
+                    li.className = 'list-group-item d-flex align-items-center position-relative';
+                    li.innerHTML = '<div class="me-2">\
+                            <div class="fw-semibold">' + (row.name || '') + '</div>\
+                            <div class="small text-muted">Trưởng khu: ' + (row.leader || '') + '</div>\
+                        </div>\
+                        <span class="badge bg-secondary rounded-pill ms-auto">' + (row.families_count || 0) + '</span>\
+                        <a href="#" class="stretched-link action-zone-select" data-zone-id="' + (row.id || '') + '" aria-label="Xem ' + (row.name || '') + '"></a>';
+                    ul.prepend(li);
+                }
+                // Update right header if first item or if empty
+                var header = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3 h4');
+                if (header && !header.textContent){ header.textContent = row.name || ''; }
+                showAlert('success', res.json.message || 'Đã thêm giáo khu mới.');
+                submitting = false;
+            })
+            .catch(function(){ showAlert('danger','Có lỗi mạng.'); submitting = false; });
+        });
+    }
 })();
 </script>
 <?= $this->endSection() ?>

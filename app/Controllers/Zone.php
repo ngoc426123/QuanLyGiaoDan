@@ -4,6 +4,63 @@ namespace App\Controllers;
 
 class Zone extends BaseController
 {
+    public function create()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'errors' => ['method' => 'Phương thức không hợp lệ.']]);
+        }
+
+        $rules = [
+            'name' => 'required|min_length[2]|max_length[25]',
+            'holy_name' => 'permit_empty|max_length[50]',
+            'leader_pid' => 'permit_empty|integer',
+            'note' => 'permit_empty|max_length[65535]'
+        ];
+        if (!$this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => $this->validator ? $this->validator->getErrors() : ['validate' => 'Dữ liệu không hợp lệ.']
+            ]);
+        }
+
+        $db = db_connect();
+        $name = trim((string)$this->request->getPost('name'));
+        $holyName = trim((string)$this->request->getPost('holy_name')) ?: null;
+        $leaderPid = (int)($this->request->getPost('leader_pid') ?? 0);
+        $note = trim((string)$this->request->getPost('note')) ?: null;
+
+        $insert = [ 'name' => $name, 'holy_name' => $holyName, 'note' => $note, 'CreatedAt' => date('Y-m-d H:i:s'), 'UpdatedAt' => date('Y-m-d H:i:s') ];
+        if ($leaderPid > 0) { $insert['LPID'] = $leaderPid; }
+        $db->table('zone')->insert($insert);
+        $zid = (int)$db->insertID();
+
+        // Resolve leader display if provided
+        $leaderName = '';
+        $leaderPhone = '';
+        if ($leaderPid > 0) {
+            $p = $db->table('person')->select('holy_name, first_name, last_name, phone')->where('PID', $leaderPid)->get()->getRowArray();
+            if ($p) {
+                $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
+                $leaderPhone = (string)($p['phone'] ?? '');
+            }
+        }
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Đã thêm giáo khu mới.',
+            'row' => [
+                'id' => $zid,
+                'name' => $name,
+                'families_count' => 0,
+                'members_count' => 0,
+                'leader' => $leaderName,
+                'phone' => $leaderPhone,
+                'address' => '',
+                'note' => (string)$note,
+            ],
+        ]);
+    }
     public function index()
     {
         $db = db_connect();
