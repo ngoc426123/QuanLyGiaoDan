@@ -23,6 +23,7 @@ $routes->post('/person/(:num)/delete', 'Person::delete/$1');
 $routes->post('/person/(:num)/update', 'Person::update/$1');
 
 $routes->get('/zone', 'Zone::index');
+$routes->get('/zone/(:num)', 'Zone::detail/$1');
 
 $routes->get('/overview', 'Overview::index');
 $routes->get('/import-export', 'ImportExport::index');

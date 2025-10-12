@@ -6,125 +6,284 @@ class Zone extends BaseController
 {
     public function index()
     {
-        // Sample zones data (mock). Replace with DB queries later.
-        $zones = [
-            [
-                'id' => 1,
-                'name' => 'Giáo khu 1',
-                'families_count' => 45,
-                'members_count' => 180,
-                'leader' => 'Ông Trần Văn Minh',
-                'phone' => '0901234561',
-                'address' => 'Nhà thờ A, P.1, Q.1',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Giáo khu 2',
-                'families_count' => 38,
-                'members_count' => 152,
-                'leader' => 'Bà Nguyễn Thị Hoa',
-                'phone' => '0901234562',
-                'address' => 'Nhà thờ B, P.5, Q.3',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Giáo khu 3',
-                'families_count' => 50,
-                'members_count' => 205,
-                'leader' => 'Ông Phạm Văn Long',
-                'phone' => '0901234563',
-                'address' => 'Nhà thờ C, P.7, Q.10',
-            ],
-        ];
+        $db = db_connect();
 
-        // Map for quick lookup
+        // Load all zones
+        $zoneRows = $db->table('zone')->select('ZID, name, LPID, note')->orderBy('name', 'ASC')->get()->getResultArray();
+        if (!$zoneRows) { $zoneRows = []; }
+
+        $zids = array_map(fn($r) => (int) $r['ZID'], $zoneRows);
+        $lpids = array_values(array_unique(array_filter(array_map(fn($r) => (int) ($r['LPID'] ?? 0), $zoneRows))));
+
+        // Families count per zone
+        $familiesByZone = [];
+        if (!empty($zids)) {
+            $fc = $db->table('family_zone')->select('ZID, COUNT(*) as c')->whereIn('ZID', $zids)->groupBy('ZID')->get()->getResultArray();
+            foreach ($fc as $r) { $familiesByZone[(int)$r['ZID']] = (int) $r['c']; }
+        }
+
+        // Members count (distinct persons in families of the zone)
+        $membersByZone = [];
+        if (!empty($zids)) {
+            $mc = $db->table('person_family pf')
+                ->select('fz.ZID, COUNT(DISTINCT pf.PID) as c')
+                ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+                ->whereIn('fz.ZID', $zids)
+                ->groupBy('fz.ZID')
+                ->get()->getResultArray();
+            foreach ($mc as $r) { $membersByZone[(int)$r['ZID']] = (int) $r['c']; }
+        }
+
+        // Leader person info
+        $leaders = [];
+        if (!empty($lpids)) {
+            $pr = $db->table('person')->select('PID, holy_name, first_name, last_name, phone')->whereIn('PID', $lpids)->get()->getResultArray();
+            foreach ($pr as $p) {
+                $name = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
+                $leaders[(int)$p['PID']] = [
+                    'name' => $name !== '' ? $name : ('#' . (int)$p['PID']),
+                    'phone' => (string)($p['phone'] ?? ''),
+                ];
+            }
+        }
+
+        // Build zones payload
+        $zones = [];
+        foreach ($zoneRows as $zr) {
+            $zid = (int) $zr['ZID'];
+            $lpid = (int) ($zr['LPID'] ?? 0);
+            $leaderName = '';
+            $leaderPhone = '';
+            if ($lpid && isset($leaders[$lpid])) { $leaderName = $leaders[$lpid]['name']; $leaderPhone = $leaders[$lpid]['phone']; }
+            $zones[] = [
+                'id' => $zid,
+                'name' => (string) ($zr['name'] ?? ('#'.$zid)),
+                'families_count' => (int) ($familiesByZone[$zid] ?? 0),
+                'members_count' => (int) ($membersByZone[$zid] ?? 0),
+                'leader' => $leaderName,
+                'phone' => $leaderPhone,
+                'address' => '', // không có cột địa chỉ cho zone trong schema
+                'note' => (string) ($zr['note'] ?? ''),
+            ];
+        }
+
+        // Select default zone
         $zonesMap = [];
         foreach ($zones as $z) { $zonesMap[$z['id']] = $z; }
-
         $selectedId = (int) ($this->request->getGet('id') ?? 0);
-        if ($selectedId === 0 || !isset($zonesMap[$selectedId])) {
+        if ($selectedId === 0 && !empty($zones)) {
+            $selectedId = $zones[0]['id'];
+        }
+        if (!isset($zonesMap[$selectedId]) && !empty($zones)) {
             $selectedId = $zones[0]['id'];
         }
 
-        // Mock details per zone
-        $details = [
-            1 => [
-                'overview' => [
-                    'families_count' => 45,
-                    'members_count' => 180,
-                    'male' => 86,
-                    'female' => 94,
-                    'children' => 40,
-                    'youth' => 55,
-                    'adult' => 85,
-                ],
-                'families' => [
-                    ['name' => 'Gia đình Nguyễn Văn An', 'head' => 'Nguyễn Văn An', 'members' => 5, 'phone' => '0901111111', 'address' => '123 Lê Lợi, Q1'],
-                    ['name' => 'Gia đình Trần Thị Bình', 'head' => 'Trần Thị Bình', 'members' => 3, 'phone' => '0902222222', 'address' => '456 Nguyễn Huệ, Q3'],
-                    ['name' => 'Gia đình Lê Minh Cường', 'head' => 'Lê Minh Cường', 'members' => 4, 'phone' => '0903333333', 'address' => '789 Pasteur, Q1'],
-                ],
-                'events' => [
-                    ['date' => '10/10/2025', 'title' => 'Họp giáo khu định kỳ', 'type' => 'meeting'],
-                    ['date' => '15/10/2025', 'title' => 'Bác ái: thăm người bệnh', 'type' => 'charity'],
-                    ['date' => '20/10/2025', 'title' => 'Sinh hoạt thiếu nhi', 'type' => 'youth'],
-                ],
-                'notes' => 'Giáo khu hoạt động đều đặn, cần bổ sung 2 giáo lý viên cho lớp thêm sức.',
-            ],
-            2 => [
-                'overview' => [
-                    'families_count' => 38,
-                    'members_count' => 152,
-                    'male' => 73,
-                    'female' => 79,
-                    'children' => 32,
-                    'youth' => 41,
-                    'adult' => 79,
-                ],
-                'families' => [
-                    ['name' => 'Gia đình Phạm Thị Dung', 'head' => 'Phạm Thị Dung', 'members' => 2, 'phone' => '0904444444', 'address' => '321 Điện Biên Phủ, Q10'],
-                    ['name' => 'Gia đình Hoàng Văn Em', 'head' => 'Hoàng Văn Em', 'members' => 6, 'phone' => '0905555555', 'address' => '654 CMT8, Tân Bình'],
-                ],
-                'events' => [
-                    ['date' => '12/10/2025', 'title' => 'Vệ sinh khuôn viên', 'type' => 'service'],
-                ],
-                'notes' => 'Đề xuất tổ chức buổi tĩnh tâm cuối tháng.',
-            ],
-            3 => [
-                'overview' => [
-                    'families_count' => 50,
-                    'members_count' => 205,
-                    'male' => 98,
-                    'female' => 107,
-                    'children' => 45,
-                    'youth' => 60,
-                    'adult' => 100,
-                ],
-                'families' => [
-                    ['name' => 'Gia đình Vũ Thị Giang', 'head' => 'Vũ Thị Giang', 'members' => 3, 'phone' => '0906666666', 'address' => '987 Lý Tự Trọng, Q1'],
-                ],
-                'events' => [
-                    ['date' => '18/10/2025', 'title' => 'Tập huấn ca đoàn', 'type' => 'training'],
-                ],
-                'notes' => 'Cần nâng cấp âm thanh nhà sinh hoạt giáo khu.',
-            ],
-        ];
+        // Build details for selected zone
+        $selectedZone = $zonesMap[$selectedId] ?? null;
+        $details = [ 'overview' => [], 'families' => [], 'events' => [], 'notes' => '' ];
+        if ($selectedZone) {
+            $zid = $selectedZone['id'];
+            // Gender breakdown
+            $genderCounts = [ 'male' => 0, 'female' => 0 ];
+            $gc = $db->table('person_family pf')
+                ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+                ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+                ->join('person p', 'p.PID = pf.PID', 'inner')
+                ->where('fz.ZID', $zid)
+                ->get()->getRowArray();
+            if ($gc) { $genderCounts['male'] = (int)($gc['male'] ?? 0); $genderCounts['female'] = (int)($gc['female'] ?? 0); }
 
-        $selectedZone    = $zonesMap[$selectedId];
-        $selectedDetails = $details[$selectedId] ?? [
-            'overview' => [], 'families' => [], 'events' => [], 'notes' => ''
-        ];
+            $details['overview'] = [
+                'families_count' => (int) ($familiesByZone[$zid] ?? 0),
+                'members_count' => (int) ($membersByZone[$zid] ?? 0),
+                'male' => $genderCounts['male'],
+                'female' => $genderCounts['female'],
+            ];
+
+            // Families table for this zone
+            $families = $db->table('family f')
+                ->select('f.FID, f.name, f.address')
+                ->join('family_zone fz', 'fz.FID = f.FID', 'inner')
+                ->where('fz.ZID', $zid)
+                ->orderBy('f.name', 'ASC')
+                ->get()->getResultArray();
+
+            $fids = array_map(fn($r) => (int)$r['FID'], $families);
+            $membersPerFamily = [];
+            $heads = [];
+            $phonesByFid = [];
+            if (!empty($fids)) {
+                // Members count per family
+                $mcounts = $db->table('person_family')->select('FID, COUNT(*) as c')->whereIn('FID', $fids)->groupBy('FID')->get()->getResultArray();
+                foreach ($mcounts as $r) { $membersPerFamily[(int)$r['FID']] = (int)$r['c']; }
+
+                // Head of family
+                $headRows = $db->table('person_family pf')
+                    ->select('pf.FID, p.PID, p.holy_name, p.first_name, p.last_name, p.phone')
+                    ->join('person p', 'p.PID = pf.PID', 'inner')
+                    ->whereIn('pf.FID', $fids)
+                    ->where('pf.relationship', 'chủ hộ')
+                    ->get()->getResultArray();
+                foreach ($headRows as $h) {
+                    $fid = (int)$h['FID'];
+                    $heads[$fid] = trim(implode(' ', array_filter([(string)($h['holy_name'] ?? ''), (string)($h['first_name'] ?? ''), (string)($h['last_name'] ?? '')])));
+                    if (!empty($h['phone'])) { $phonesByFid[$fid] = (string)$h['phone']; }
+                }
+                // Fallback phone from any member with phone
+                $needPhoneFids = array_values(array_diff($fids, array_keys($phonesByFid)));
+                if (!empty($needPhoneFids)) {
+                    $phoneRows = $db->table('person_family pf')
+                        ->select('pf.FID, p.phone')
+                        ->join('person p', 'p.PID = pf.PID', 'inner')
+                        ->whereIn('pf.FID', $needPhoneFids)
+                        ->where("p.phone IS NOT NULL AND p.phone <> ''", null, false)
+                        ->groupBy('pf.FID')
+                        ->get()->getResultArray();
+                    foreach ($phoneRows as $r) { $phonesByFid[(int)$r['FID']] = (string)$r['phone']; }
+                }
+            }
+
+            $details['families'] = array_map(function($f) use ($membersPerFamily, $heads, $phonesByFid) {
+                $fid = (int)$f['FID'];
+                return [
+                    'name' => (string) ($f['name'] ?? ''),
+                    'head' => (string) ($heads[$fid] ?? ''),
+                    'members' => (int) ($membersPerFamily[$fid] ?? 0),
+                    'phone' => (string) ($phonesByFid[$fid] ?? ''),
+                    'address' => (string) ($f['address'] ?? ''),
+                ];
+            }, $families ?? []);
+
+            // Notes: from zone.note
+            $details['notes'] = (string) ($zonesMap[$zid]['note'] ?? '');
+        }
 
         $pageData = [
             'page_title'     => 'Quản lý Giáo khu',
             'zones'          => $zones,
             'total_zones'    => count($zones),
-            'selected_id'    => $selectedId,
+            'selected_id'    => (int) ($selectedZone['id'] ?? 0),
             'selected_zone'  => $selectedZone,
-            'details'        => $selectedDetails,
+            'details'        => $details,
         ];
 
-        return view('Zone', $pageData + [
-            'activeTab' => 'zone',
+        return view('Zone', $pageData + [ 'activeTab' => 'zone' ]);
+    }
+
+    public function detail($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zoneId = (int) ($id ?? 0);
+        if ($zoneId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã giáo khu.']]);
+        }
+        $db = db_connect();
+        // Load zone basic info
+        $zr = $db->table('zone')->select('ZID, name, LPID, note')->where('ZID', $zoneId)->get()->getRowArray();
+        if (!$zr) {
+            return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['notfound' => 'Không tìm thấy giáo khu.']]);
+        }
+        $leaderName = '';
+        $leaderPhone = '';
+        $lpid = (int) ($zr['LPID'] ?? 0);
+        if ($lpid > 0) {
+            $p = $db->table('person')->select('holy_name, first_name, last_name, phone')->where('PID', $lpid)->get()->getRowArray();
+            if ($p) {
+                $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
+                $leaderPhone = (string) ($p['phone'] ?? '');
+            }
+        }
+
+        // Overview: families and members counts + gender
+        $fc = $db->table('family_zone')->select('COUNT(*) as c')->where('ZID', $zoneId)->get()->getRowArray();
+        $familiesCount = (int)($fc['c'] ?? 0);
+        $mc = $db->table('person_family pf')
+            ->select('COUNT(DISTINCT pf.PID) as c')
+            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+            ->where('fz.ZID', $zoneId)
+            ->get()->getRowArray();
+        $membersCount = (int)($mc['c'] ?? 0);
+        $gc = $db->table('person_family pf')
+            ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+            ->join('person p', 'p.PID = pf.PID', 'inner')
+            ->where('fz.ZID', $zoneId)
+            ->get()->getRowArray();
+
+        // Families table
+        $families = $db->table('family f')
+            ->select('f.FID, f.name, f.address')
+            ->join('family_zone fz', 'fz.FID = f.FID', 'inner')
+            ->where('fz.ZID', $zoneId)
+            ->orderBy('f.name', 'ASC')
+            ->get()->getResultArray();
+
+        $fids = array_map(fn($r) => (int)$r['FID'], $families);
+        $membersPerFamily = [];
+        $heads = [];
+        $phonesByFid = [];
+        if (!empty($fids)) {
+            $mcounts = $db->table('person_family')->select('FID, COUNT(*) as c')->whereIn('FID', $fids)->groupBy('FID')->get()->getResultArray();
+            foreach ($mcounts as $r) { $membersPerFamily[(int)$r['FID']] = (int)$r['c']; }
+
+            $headRows = $db->table('person_family pf')
+                ->select('pf.FID, p.holy_name, p.first_name, p.last_name, p.phone')
+                ->join('person p', 'p.PID = pf.PID', 'inner')
+                ->whereIn('pf.FID', $fids)
+                ->where('pf.relationship', 'chủ hộ')
+                ->get()->getResultArray();
+            foreach ($headRows as $h) {
+                $fid = (int)$h['FID'];
+                $heads[$fid] = trim(implode(' ', array_filter([(string)($h['holy_name'] ?? ''), (string)($h['first_name'] ?? ''), (string)($h['last_name'] ?? '')])));
+                if (!empty($h['phone'])) { $phonesByFid[$fid] = (string)$h['phone']; }
+            }
+            $needPhoneFids = array_values(array_diff($fids, array_keys($phonesByFid)));
+            if (!empty($needPhoneFids)) {
+                $phoneRows = $db->table('person_family pf')
+                    ->select('pf.FID, p.phone')
+                    ->join('person p', 'p.PID = pf.PID', 'inner')
+                    ->whereIn('pf.FID', $needPhoneFids)
+                    ->where("p.phone IS NOT NULL AND p.phone <> ''", null, false)
+                    ->groupBy('pf.FID')
+                    ->get()->getResultArray();
+                foreach ($phoneRows as $r) { $phonesByFid[(int)$r['FID']] = (string)$r['phone']; }
+            }
+        }
+
+        $familiesTbl = array_map(function($f) use ($membersPerFamily, $heads, $phonesByFid) {
+            $fid = (int)$f['FID'];
+            return [
+                'name' => (string) ($f['name'] ?? ''),
+                'head' => (string) ($heads[$fid] ?? ''),
+                'members' => (int) ($membersPerFamily[$fid] ?? 0),
+                'phone' => (string) ($phonesByFid[$fid] ?? ''),
+                'address' => (string) ($f['address'] ?? ''),
+            ];
+        }, $families ?? []);
+
+        $zonePayload = [
+            'id' => (int) $zr['ZID'],
+            'name' => (string) ($zr['name'] ?? ('#'.$zoneId)),
+            'families_count' => $familiesCount,
+            'members_count' => $membersCount,
+            'leader' => $leaderName,
+            'phone' => $leaderPhone,
+            'address' => '',
+        ];
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'zone' => $zonePayload,
+            'details' => [
+                'overview' => [
+                    'families_count' => $familiesCount,
+                    'members_count' => $membersCount,
+                    'male' => (int)($gc['male'] ?? 0),
+                    'female' => (int)($gc['female'] ?? 0),
+                ],
+                'families' => $familiesTbl,
+                'notes' => (string) ($zr['note'] ?? ''),
+            ],
         ]);
     }
 }

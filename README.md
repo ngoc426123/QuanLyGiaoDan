@@ -93,7 +93,7 @@ Về phần này, bạn đừng tắt *terminal - cái cửa sổ màu đen ho�
 xampp/xampp_stop.exe
 ```
 
-3. "Chạy file này để tắt server tránh gây lỗi.
+3. Chạy file này để tắt server tránh gây lỗi.
 ## 🚀 THÔNG TIN LIÊN HỆ
 HOÀNG MINH NGỌC
 
