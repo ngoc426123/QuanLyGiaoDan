@@ -619,60 +619,6 @@
                 // Track selected person for add
                 var selectedPid = null;
                 document.body.addEventListener('input', function(e){
-                <!-- Modal: Edit Family -->
-                <div class="modal fade" id="modalEditFamily" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-md modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title"><i class="fas fa-pen-to-square me-2"></i>Chỉnh sửa gia đình</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <form id="familyEditForm" method="post" action="#" novalidate>
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="fid" id="editFamilyId" value="">
-                                <div class="modal-body">
-                                    <div class="row g-3">
-                                        <div class="col-12">
-                                            <div class="form-floating">
-                                                <input type="text" class="form-control" name="name" id="editFamilyName" placeholder="Tên gia đình" required>
-                                                <label for="editFamilyName">Tên gia đình <span class="text-danger">*</span></label>
-                                                <div class="invalid-feedback">Vui lòng nhập tên gia đình.</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-floating">
-                                                <input type="text" class="form-control" name="address" id="editFamilyAddress" placeholder="Địa chỉ" required>
-                                                <label for="editFamilyAddress">Địa chỉ <span class="text-danger">*</span></label>
-                                                <div class="invalid-feedback">Vui lòng nhập địa chỉ.</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="fa-solid fa-church"></i></span>
-                                                <select class="form-select" name="zone_id" id="editFamilyZone">
-                                                    <option value="">-- Chọn giáo khu --</option>
-                                                    <?php foreach (($zones ?? []) as $z): ?>
-                                                        <option value="<?= (int)$z['ZID'] ?>"><?= esc($z['name'] ?: ('#'.$z['ZID'])) ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="form-floating">
-                                                <textarea class="form-control" placeholder="Ghi chú" id="editFamilyNote" name="note" style="height: 100px"></textarea>
-                                                <label for="editFamilyNote">Ghi chú</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
                     if (!e.target || e.target.id !== 'familyAddSearch') return;
                     var fid = (document.querySelector('#modalFamilyMembers .modal-title').textContent || '').match(/: \s*(.*)$/);
                     var currentFid = document.querySelector('a.action-view-family-members[data-family-name="' + (fid ? fid[1] : '') + '"]');
@@ -805,6 +751,193 @@
     if (document.readyState === 'loading'){
         document.addEventListener('DOMContentLoaded', mountMembersHandlers, { once: true });
     } else { mountMembersHandlers(); }
+})();
+</script>
+<?= $this->endSection() ?>
+
+<?= $this->section('modals') ?>
+<!-- Modal: Edit Family -->
+<div class="modal fade" id="modalEditFamily" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-pen-to-square me-2"></i>Chỉnh sửa gia đình</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="familyEditForm" method="post" action="#" novalidate>
+                <?= csrf_field() ?>
+                <input type="hidden" name="fid" id="editFamilyId" value="">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" name="name" id="editFamilyName" placeholder="Tên gia đình" required>
+                                <label for="editFamilyName">Tên gia đình <span class="text-danger">*</span></label>
+                                <div class="invalid-feedback">Vui lòng nhập tên gia đình.</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" name="address" id="editFamilyAddress" placeholder="Địa chỉ" required>
+                                <label for="editFamilyAddress">Địa chỉ <span class="text-danger">*</span></label>
+                                <div class="invalid-feedback">Vui lòng nhập địa chỉ.</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-church"></i></span>
+                                <select class="form-select" name="zone_id" id="editFamilyZone">
+                                    <option value="">-- Chọn giáo khu --</option>
+                                    <?php foreach (($zones ?? []) as $z): ?>
+                                        <option value="<?= (int)$z['ZID'] ?>"><?= esc($z['name'] ?: ('#'.$z['ZID'])) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" placeholder="Ghi chú" id="editFamilyNote" name="note" style="height: 100px"></textarea>
+                                <label for="editFamilyNote">Ghi chú</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<script>
+// Edit family: open modal, fetch detail, submit update, update card
+(function(){
+    function bindEditForm(){
+        var form = document.getElementById('familyEditForm');
+        if (!form || form.dataset.boundSubmit === '1') return false;
+        form.dataset.boundSubmit = '1';
+        var submitting = false;
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            if (submitting) return; submitting = true;
+            form.classList.remove('was-validated');
+            var nameInputEl = document.getElementById('editFamilyName');
+            var addrInputEl = document.getElementById('editFamilyAddress');
+            var name = (nameInputEl && nameInputEl.value || '').trim();
+            var address = (addrInputEl && addrInputEl.value || '').trim();
+            if (!name || !address){ form.classList.add('was-validated'); submitting = false; return false; }
+            var btn = form.querySelector('button[type="submit"]');
+            var orig = btn ? btn.innerHTML : '';
+            if (btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...'; }
+            fetch(form.getAttribute('action'), {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            }).then(function(res){ return res.json().then(function(j){ return { ok: res.ok, json: j }; }); })
+              .then(function(res){
+                  if (!res.ok || !res.json || !res.json.ok){
+                      var msg = (res.json && res.json.errors) ? (Object.values(res.json.errors)[0] || 'Cập nhật thất bại.') : 'Cập nhật thất bại.';
+                      throw new Error(msg);
+                  }
+                  // Update card UI
+                  var fid = document.getElementById('editFamilyId').value;
+                  var card = document.querySelector('.family-card[data-family-id="' + fid + '"]');
+                  if (card){
+                      var nameEl = card.querySelector('.family-name'); if (nameEl) nameEl.textContent = res.json.row.name || '';
+                      var addrEl = null;
+                      var addrIcon = card.querySelector('.detail-item .fa-map-marker-alt');
+                      if (addrIcon){
+                          var addrItem = addrIcon.closest ? addrIcon.closest('.detail-item') : null;
+                          if (addrItem) { addrEl = addrItem.querySelector('.detail-value'); }
+                      }
+                      if (!addrEl){
+                          var detailItems = card.querySelectorAll('.detail-item');
+                          if (detailItems && detailItems.length >= 4) { addrEl = detailItems[3].querySelector('.detail-value'); }
+                      }
+                      if (addrEl) addrEl.textContent = res.json.row.address || '';
+                      var zoneBadge = card.querySelector('.family-zone');
+                      var zoneText = res.json.row.parish_zone || '';
+                      if (zoneBadge){
+                          if (zoneText){ zoneBadge.textContent = zoneText; zoneBadge.classList.remove('d-none'); }
+                          else { zoneBadge.textContent = ''; zoneBadge.classList.add('d-none'); }
+                      } else if (zoneText) {
+                          var info = card.querySelector('.family-info');
+                          if (info){ var span = document.createElement('span'); span.className = 'family-zone badge'; span.textContent = zoneText; info.appendChild(span); }
+                      }
+                  }
+                  // Hide modal
+                  var modalEl = document.getElementById('modalEditFamily');
+                  if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+                  // Success alert
+                  var alertEl = document.createElement('div');
+                  alertEl.className = 'alert alert-success alert-dismissible fade show m-3';
+                  alertEl.setAttribute('role', 'alert');
+                  alertEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + (res.json.message || 'Đã cập nhật gia đình.') +
+                      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                  (document.querySelector('.web-body') || document.body).prepend(alertEl);
+                  setTimeout(function(){ try { if (window.bootstrap){ bootstrap.Alert.getOrCreateInstance(alertEl).close(); } } catch(_){} }, 5000);
+              })
+              .catch(function(err){
+                  var alertEl = document.createElement('div');
+                  alertEl.className = 'alert alert-danger alert-dismissible fade show m-3';
+                  alertEl.setAttribute('role', 'alert');
+                  alertEl.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + ((err && err.message) || 'Cập nhật thất bại.') +
+                      '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                  (document.querySelector('.web-body') || document.body).prepend(alertEl);
+              })
+              .finally(function(){ if (btn){ btn.disabled = false; btn.innerHTML = orig; } submitting = false; });
+            return false;
+        });
+        return true;
+    }
+    function openEdit(fid){
+        var form = document.getElementById('familyEditForm');
+        if (!form) return;
+        document.getElementById('editFamilyId').value = fid;
+        form.reset();
+        form.classList.remove('was-validated');
+        // Set action URL
+        form.setAttribute('action', '/family/' + encodeURIComponent(fid) + '/update');
+        // Load details
+        fetch('/family/' + encodeURIComponent(fid), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function(res){ return res.json(); })
+            .then(function(json){
+                if (!json || !json.ok) throw new Error('Load failed');
+                var nameInput = document.getElementById('editFamilyName');
+                var addrInput = document.getElementById('editFamilyAddress');
+                var noteInput = document.getElementById('editFamilyNote');
+                if (nameInput) nameInput.value = json.row.name || '';
+                if (addrInput) addrInput.value = json.row.address || '';
+                if (noteInput) noteInput.value = json.row.note || '';
+                var zoneSel = document.getElementById('editFamilyZone');
+                if (zoneSel){ zoneSel.value = json.row.zone_id || ''; }
+            })
+            .catch(function(){});
+        var modalEl = document.getElementById('modalEditFamily');
+        if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+    }
+
+    // Click handler from dropdown
+    document.body.addEventListener('click', function(e){
+        var a = e.target.closest && e.target.closest('a.action-edit-family');
+        if (!a) return;
+        e.preventDefault();
+        var fid = a.getAttribute('data-family-id');
+        if (fid) openEdit(fid);
+    }, { passive: false });
+
+    // Submit update: bind on DOM ready and when modal is shown
+    if (document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', function(){ bindEditForm(); }, { once: true });
+    } else { bindEditForm(); }
+    document.addEventListener('shown.bs.modal', function(ev){
+        if (ev && ev.target && ev.target.id === 'modalEditFamily') { bindEditForm(); }
+    });
 })();
 </script>
 <?= $this->endSection() ?>
