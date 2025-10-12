@@ -287,6 +287,7 @@ class Zone extends BaseController
             $details['families'] = array_map(function($f) use ($membersPerFamily, $heads, $phonesByFid) {
                 $fid = (int)$f['FID'];
                 return [
+                    'id' => $fid,
                     'name' => (string) ($f['name'] ?? ''),
                     'head' => (string) ($heads[$fid] ?? ''),
                     'members' => (int) ($membersPerFamily[$fid] ?? 0),
@@ -408,6 +409,7 @@ class Zone extends BaseController
         $familiesTbl = array_map(function($f) use ($membersPerFamily, $heads, $phonesByFid) {
             $fid = (int)$f['FID'];
             return [
+                'id' => $fid,
                 'name' => (string) ($f['name'] ?? ''),
                 'head' => (string) ($heads[$fid] ?? ''),
                 'members' => (int) ($membersPerFamily[$fid] ?? 0),

@@ -119,7 +119,7 @@
                                     <td><?= (int)($f['members'] ?? 0) ?></td>
                                     <td><?= esc($f['phone']) ?></td>
                                     <td><?= esc($f['address']) ?></td>
-                                    <td class="text-end"><button class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></button></td>
+                                    <td class="text-end"><button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="<?= (int)($f['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fas fa-eye"></i></button></td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($details['families'])): ?>
@@ -310,6 +310,128 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+
+<!-- Modal: Family Detail -->
+<div class="modal fade" id="modalFamilyDetail" tabindex="-1" aria-labelledby="modalFamilyDetailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFamilyDetailLabel"><i class="fas fa-home me-2"></i>Chi tiết gia đình</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-2"><span class="text-muted small">Tên gia đình</span><div class="fw-semibold" id="fdName">-</div></div>
+                        <div class="mb-2"><span class="text-muted small">Địa chỉ</span><div id="fdAddress">-</div></div>
+                        <div class="mb-2"><span class="text-muted small">Giáo khu</span><div id="fdZone">-</div></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2"><span class="text-muted small">Ghi chú</span><div id="fdNote" class="bg-light border rounded p-2">-</div></div>
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-semibold">Thành viên</div>
+                        <div class="text-muted small" id="fdMemberCount"></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle" id="fdMembersTable">
+                            <thead>
+                                <tr>
+                                    <th>Họ tên</th>
+                                    <th>Quan hệ</th>
+                                    <th>Điện thoại</th>
+                                    <th>Giới tính</th>
+                                    <th>Ngày sinh</th>
+                                </tr>
+                            </thead>
+                            <tbody><tr><td colspan="5" class="text-muted text-center">Đang tải...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<script>
+(function(){
+    // Ensure modal on top of overlays
+    var fm = document.getElementById('modalFamilyDetail');
+    if (fm){ fm.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(fm); } catch(e){} }); }
+
+    function fmtDate(d){
+        if (!d) return '';
+        // Expect YYYY-MM-DD, show DD/MM/YYYY if possible
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)){
+            var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0];
+        }
+        return d;
+    }
+
+    document.body.addEventListener('click', function(e){
+        var btn = e.target.closest && e.target.closest('button.action-family-view');
+        if (!btn) return;
+        e.preventDefault();
+        var fid = parseInt(btn.getAttribute('data-fid')||'0', 10);
+        if (!fid) return;
+
+        // Reset modal
+        var nameEl = document.getElementById('fdName'); if (nameEl) nameEl.textContent = '-';
+        var addrEl = document.getElementById('fdAddress'); if (addrEl) addrEl.textContent = '-';
+        var zoneEl = document.getElementById('fdZone'); if (zoneEl) zoneEl.textContent = '-';
+        var noteEl = document.getElementById('fdNote'); if (noteEl) noteEl.textContent = '-';
+        var tbody = document.querySelector('#fdMembersTable tbody'); if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">Đang tải...</td></tr>';
+        var countEl = document.getElementById('fdMemberCount'); if (countEl) countEl.textContent = '';
+
+        // Open modal immediately
+        if (fm){ try { new bootstrap.Modal(fm).show(); } catch(e){} }
+
+        // Fetch detail and members in parallel
+        Promise.all([
+            fetch('/family/' + encodeURIComponent(fid), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' }).then(function(r){ return r.json(); }),
+            fetch('/family/' + encodeURIComponent(fid) + '/members', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' }).then(function(r){ return r.json(); })
+        ])
+        .then(function(res){
+            var det = res[0] || {}; var mem = res[1] || {};
+            if (det && det.ok && det.row){
+                if (nameEl) nameEl.textContent = det.row.name || '-';
+                if (addrEl) addrEl.textContent = det.row.address || '-';
+                if (zoneEl) zoneEl.textContent = det.row.parish_zone || '-';
+                if (noteEl) noteEl.textContent = det.row.note || '-';
+            }
+            if (mem && mem.ok){
+                var list = mem.members || [];
+                if (tbody){
+                    if (!list.length){ tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">Chưa có thành viên.</td></tr>'; }
+                    else {
+                        tbody.innerHTML = list.map(function(m){
+                            var g = m.gender === '1' || m.gender === 1 ? 'Nam' : (m.gender === '0' || m.gender === 0 ? 'Nữ' : '');
+                            return '<tr>'+
+                                '<td>' + (m.name || '') + '</td>'+
+                                '<td>' + (m.relationship || '') + '</td>'+
+                                '<td>' + (m.phone || '') + '</td>'+
+                                '<td>' + g + '</td>'+
+                                '<td>' + fmtDate(m.birth || '') + '</td>'+
+                            '</tr>';
+                        }).join('');
+                    }
+                }
+                if (countEl) countEl.textContent = list.length ? (list.length + ' người') : '';
+            }
+        })
+        .catch(function(){
+            if (tbody){ tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Không tải được dữ liệu.</td></tr>'; }
+        });
+    }, { passive: false });
+})();
+</script>
+<?= $this->endSection() ?>
 
 <!-- Modal: Create Zone -->
 <?php helper('lists'); $holyNames = get_suggestion_list('holy_names', ['Giuse','Maria','Phêrô']); ?>
