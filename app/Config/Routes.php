@@ -8,6 +8,8 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('/family', 'Family::index');
 $routes->post('/family/create', 'Family::create');
+$routes->get('/family/(:num)', 'Family::detail/$1');
+$routes->post('/family/(:num)/update', 'Family::update/$1');
 $routes->post('/family/(:num)/delete', 'Family::delete/$1');
 $routes->get('/family/(:num)/members', 'Family::members/$1');
 $routes->post('/family/(:num)/remove-member/(:num)', 'Family::removeMember/$1/$2');

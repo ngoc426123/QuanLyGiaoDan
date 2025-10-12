@@ -69,7 +69,7 @@
                             </button>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item action-view-family-members" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>"><i class="fas fa-users me-2"></i>Thành viên</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                <li><a class="dropdown-item action-edit-family" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger action-delete-family" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>">
                                     <i class="fas fa-trash me-2"></i>Xoá gia đình
@@ -193,7 +193,7 @@
                                             </button>
                                             <ul class="dropdown-menu">
                                                  <li><a class="dropdown-item action-view-family-members" href="#" data-family-id="${row.id || ''}" data-family-name="${(row.name || '').replace(/"/g,'&quot;')}"><i class="fas fa-users me-2"></i>Thành viên</a></li>
-                                                <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                                <li><a class="dropdown-item action-edit-family" href="#" data-family-id="${row.id || ''}" data-family-name="${(row.name || '').replace(/"/g,'&quot;')}"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li><a class="dropdown-item text-danger action-delete-family" href="#" data-family-id="${row.id || ''}" data-family-name="${(row.name || '').replace(/"/g,'&quot;')}"><i class="fas fa-trash me-2"></i>Xoá gia đình</a></li>
                                             </ul>
@@ -557,6 +557,19 @@
                 // Remove the member row from the modal list
                 var row = btn.closest('.list-group-item');
                 if (row && row.parentNode){ row.parentNode.removeChild(row); }
+                // Decrement members count on the card
+                try {
+                    var card = document.querySelector('.family-card[data-family-id="' + fid + '"]');
+                    if (card){
+                        var countEl = card.querySelector('.family-members-count');
+                        if (countEl){
+                            var txt = countEl.textContent || '0';
+                            var m = (txt.match(/\d+/) || [0])[0];
+                            var newVal = Math.max(0, (parseInt(m,10) || 0) - 1);
+                            countEl.textContent = newVal + ' người';
+                        }
+                    }
+                } catch(_) {}
                 // Success toast/alert
                 var alertEl = document.createElement('div');
                 alertEl.className = 'alert alert-success alert-dismissible fade show m-3';
@@ -606,6 +619,60 @@
                 // Track selected person for add
                 var selectedPid = null;
                 document.body.addEventListener('input', function(e){
+                <!-- Modal: Edit Family -->
+                <div class="modal fade" id="modalEditFamily" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-md modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"><i class="fas fa-pen-to-square me-2"></i>Chỉnh sửa gia đình</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="familyEditForm" method="post" action="#" novalidate>
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="fid" id="editFamilyId" value="">
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" name="name" id="editFamilyName" placeholder="Tên gia đình" required>
+                                                <label for="editFamilyName">Tên gia đình <span class="text-danger">*</span></label>
+                                                <div class="invalid-feedback">Vui lòng nhập tên gia đình.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" name="address" id="editFamilyAddress" placeholder="Địa chỉ" required>
+                                                <label for="editFamilyAddress">Địa chỉ <span class="text-danger">*</span></label>
+                                                <div class="invalid-feedback">Vui lòng nhập địa chỉ.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fa-solid fa-church"></i></span>
+                                                <select class="form-select" name="zone_id" id="editFamilyZone">
+                                                    <option value="">-- Chọn giáo khu --</option>
+                                                    <?php foreach (($zones ?? []) as $z): ?>
+                                                        <option value="<?= (int)$z['ZID'] ?>"><?= esc($z['name'] ?: ('#'.$z['ZID'])) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-floating">
+                                                <textarea class="form-control" placeholder="Ghi chú" id="editFamilyNote" name="note" style="height: 100px"></textarea>
+                                                <label for="editFamilyNote">Ghi chú</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                     if (!e.target || e.target.id !== 'familyAddSearch') return;
                     var fid = (document.querySelector('#modalFamilyMembers .modal-title').textContent || '').match(/: \s*(.*)$/);
                     var currentFid = document.querySelector('a.action-view-family-members[data-family-name="' + (fid ? fid[1] : '') + '"]');

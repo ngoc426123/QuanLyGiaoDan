@@ -158,6 +158,106 @@ class Family extends BaseController
         ]);
     }
 
+    public function detail($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $fid = (int) ($id ?? 0);
+        if ($fid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã gia đình hợp lệ.']]);
+        }
+        $db = \Config\Database::connect();
+        try {
+            $row = $db->table('family')->select('FID, name, address, note')->where('FID', $fid)->get()->getRowArray();
+            if (!$row) {
+                return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['notfound' => 'Không tìm thấy gia đình.']]);
+            }
+            $zoneId = null; $zoneName = null;
+            try {
+                $fz = $db->table('family_zone fz')->select('fz.ZID, z.name as zone_name')->join('zone z','z.ZID=fz.ZID','left')->where('fz.FID',$fid)->get()->getRowArray();
+                if ($fz) { $zoneId = (int) ($fz['ZID'] ?? 0); $zoneName = (string) ($fz['zone_name'] ?? ''); }
+            } catch (\Throwable $e) {}
+            return $this->response->setJSON([
+                'ok' => true,
+                'row' => [
+                    'id' => (int) $row['FID'],
+                    'name' => (string) ($row['name'] ?? ''),
+                    'address' => (string) ($row['address'] ?? ''),
+                    'note' => (string) ($row['note'] ?? ''),
+                    'zone_id' => $zoneId,
+                    'parish_zone' => $zoneName,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'errors' => ['server' => 'Lỗi: ' . $e->getMessage()]]);
+        }
+    }
+
+    public function update($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $fid = (int) ($id ?? 0);
+        if ($fid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã gia đình hợp lệ.']]);
+        }
+        $rules = [
+            'name' => 'required|min_length[2]|max_length[150]',
+            'address' => 'required|min_length[2]|max_length[255]',
+            'note' => 'permit_empty|max_length[1000]',
+            'zone_id' => 'permit_empty|integer',
+        ];
+        if (! $this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => $this->validator->getErrors(),
+            ]);
+        }
+        $name = trim((string) $this->request->getPost('name'));
+        $address = trim((string) $this->request->getPost('address'));
+        $note = trim((string) $this->request->getPost('note'));
+        $zoneId = (int) ($this->request->getPost('zone_id') ?? 0);
+
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            $affected = $db->table('family')->where('FID', $fid)->update([
+                'name' => $name,
+                'address' => $address !== '' ? $address : null,
+                'note' => $note !== '' ? $note : null,
+                'UpdatedAt' => date('Y-m-d H:i:s'),
+            ]);
+            if ($affected === false) { throw new \RuntimeException('Không thể cập nhật.'); }
+
+            $zoneName = null;
+            try {
+                // Upsert family_zone link to the single selected zone
+                $db->table('family_zone')->where('FID', $fid)->delete();
+                if ($zoneId > 0) {
+                    $db->table('family_zone')->insert(['FID' => $fid, 'ZID' => $zoneId]);
+                    $zr = $db->table('zone')->select('name')->where('ZID', $zoneId)->get()->getRowArray();
+                    $zoneName = (string) ($zr['name'] ?? '');
+                }
+            } catch (\Throwable $e) { /* ignore if table missing */ }
+
+            $db->transCommit();
+            return $this->response->setJSON([
+                'ok' => true,
+                'message' => 'Đã cập nhật gia đình.',
+                'row' => [
+                    'id' => $fid,
+                    'name' => $name,
+                    'address' => $address,
+                    'note' => $note,
+                    'parish_zone' => $zoneName,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            if ($db->transStatus() !== false) { $db->transRollback(); }
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Cập nhật thất bại: ' . $e->getMessage()],
+            ]);
+        }
+    }
     public function create()
     {
         $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
