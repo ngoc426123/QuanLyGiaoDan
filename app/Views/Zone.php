@@ -143,9 +143,6 @@
     </div>
  </div>
 
-<?= $this->endSection() ?>
-
-<?= $this->section('content') ?>
 <script>
 (function(){
     var currentZoneId = <?= (int)($selected_id ?? 0) ?>;
@@ -161,7 +158,7 @@
                 '<td>' + (f.members || 0) + '</td>'+
                 '<td>' + (f.phone || '') + '</td>'+
                 '<td>' + (f.address || '') + '</td>'+
-                '<td class="text-end"><button class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></button></td>'+
+                '<td class="text-end"><button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="' + (f.id || '') + '" title="Xem chi tiết"><i class="fas fa-eye"></i></button></td>'+
             '</tr>';
         }).join('');
     }
@@ -307,9 +304,6 @@
     }
 })();
 </script>
-<?= $this->endSection() ?>
-
-<?= $this->section('content') ?>
 
 <!-- Modal: Family Detail -->
 <div class="modal fade" id="modalFamilyDetail" tabindex="-1" aria-labelledby="modalFamilyDetailLabel" aria-hidden="true">
@@ -431,7 +425,6 @@
     }, { passive: false });
 })();
 </script>
-<?= $this->endSection() ?>
 
 <!-- Modal: Create Zone -->
 <?php helper('lists'); $holyNames = get_suggestion_list('holy_names', ['Giuse','Maria','Phêrô']); ?>
@@ -555,9 +548,6 @@
     }
 })();
 </script>
-<?= $this->endSection() ?>
-
-<?= $this->section('content') ?>
 <!-- Modal: Edit Zone -->
 <div class="modal fade" id="modalEditZone" tabindex="-1" aria-labelledby="modalEditZoneLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
