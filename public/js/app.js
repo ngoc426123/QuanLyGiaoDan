@@ -53,6 +53,26 @@
       // loadFamilies(parseInt(zoneSelect.value || '0', 10) || 0);
     }
 
+    // Toggle relationship input based on family selection
+    var relationshipWrap = (container.getElementById ? container.getElementById('relationshipWrap') : document.getElementById('relationshipWrap'));
+    var relationshipInput = form.querySelector('input[name="relationship"]');
+    function toggleRelationship(){
+      if (!familySelect || !relationshipWrap) return;
+      var hasFamily = !!(familySelect.value && familySelect.value.trim() !== '');
+      if (hasFamily){
+        relationshipWrap.classList.remove('d-none');
+      } else {
+        relationshipWrap.classList.add('d-none');
+        if (relationshipInput) relationshipInput.value = '';
+      }
+    }
+    if (familySelect && !familySelect.dataset.boundRelToggle){
+      familySelect.addEventListener('change', toggleRelationship);
+      familySelect.dataset.boundRelToggle = '1';
+      // initial state
+      toggleRelationship();
+    }
+
     // submit handler (bind once per form)
     if (!form.dataset.boundSubmit) {
       form.addEventListener('submit', function(e){
@@ -125,6 +145,25 @@
                 if (empty && tbody.children.length === 1) tbody.removeChild(empty.parentElement);
                 var g = (row.gender || '').toString().toLowerCase();
                 var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                // Determine family/zone display with fallback to selected options
+                var famText = row.family || '';
+                var zoneText = row.zones || '';
+                try {
+                  if (!famText) {
+                    var famSel = form.querySelector('select[name="family_id"]');
+                    if (famSel && famSel.value) {
+                      var opt = famSel.options[famSel.selectedIndex];
+                      famText = (opt && opt.textContent) ? opt.textContent.trim() : '';
+                    }
+                  }
+                  if (!zoneText) {
+                    var zoneSel = form.querySelector('select[name="zone_id"]');
+                    if (zoneSel && zoneSel.value) {
+                      var optz = zoneSel.options[zoneSel.selectedIndex];
+                      zoneText = (optz && optz.textContent) ? optz.textContent.trim() : '';
+                    }
+                  }
+                } catch(_) {}
                   var tr = document.createElement('tr');
                   var base = (window.BASE_URL || '/');
                   tr.innerHTML = `
@@ -149,7 +188,7 @@
                         <div class="text-muted">Mã: #${row.id || '-'}</div>
                       </div>
                     </td>
-                    <td><div class="text-sm text-muted">Gia đình: —<br>Giáo khu: —</div></td>
+                    <td><div class="text-sm text-muted">Gia đình: <span class="text-dark">${famText || '—'}</span><br>Giáo khu: <span class="text-dark">${zoneText || '—'}</span></div></td>
                     <td>${row.baptismDate ? (`<span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i>${row.baptismDate}</span>`) : '<span class="text-muted">—</span>'}</td>
                     <td>${row.communionDate ? (`<span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i>${row.communionDate}</span>`) : '<span class="text-muted">—</span>'}</td>
                     <td>${row.confirmationDate ? (`<span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i>${row.confirmationDate}</span>`) : '<span class="text-muted">—</span>'}</td>
@@ -177,6 +216,25 @@
               '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
             var mount = document.querySelector('.web-body') || document.body;
             mount.prepend(alertPlaceholder);
+
+            // Auto-dismiss success alert after 5 seconds (keep close button for manual dismiss)
+            try {
+              setTimeout(function(){
+                if (!alertPlaceholder || !alertPlaceholder.parentNode) return;
+                if (window.bootstrap && bootstrap.Alert) {
+                  var bsAlert = bootstrap.Alert.getOrCreateInstance(alertPlaceholder);
+                  bsAlert.close();
+                } else {
+                  // Fallback: remove with fade-out
+                  alertPlaceholder.classList.remove('show');
+                  setTimeout(function(){
+                    if (alertPlaceholder && alertPlaceholder.parentNode) {
+                      alertPlaceholder.parentNode.removeChild(alertPlaceholder);
+                    }
+                  }, 300);
+                }
+              }, 5000);
+            } catch(_) {}
           }).catch(function(err){
             var msg = (err && err.errors) ? Object.values(err.errors).join('<br>') : 'Không thể lưu dữ liệu.';
             var alertPlaceholder = document.createElement('div');

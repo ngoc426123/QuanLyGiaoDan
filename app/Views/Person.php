@@ -46,9 +46,10 @@
         <div class="col-md-2">
             <select class="form-select" name="sort">
                 <option value="">Sắp xếp theo</option>
-                <option value="name" <?= (($filters['sort'] ?? '')==='name') ? 'selected' : '' ?>>Tên A-Z</option>
+                <option value="created_desc" <?= (($filters['sort'] ?? '')==='' || ($filters['sort'] ?? '')==='created_desc') ? 'selected' : '' ?>>Mới nhất</option>
+                <option value="name" <?= (($filters['sort'] ?? '')==='name') ? 'selected' : '' ?>>Tên A - Z</option>
+                <option value="name_desc" <?= (($filters['sort'] ?? '')==='name_desc') ? 'selected' : '' ?>>Tên Z - A</option>
                 <option value="age" <?= (($filters['sort'] ?? '')==='age') ? 'selected' : '' ?>>Tuổi</option>
-                <option value="baptism" <?= (($filters['sort'] ?? '')==='baptism') ? 'selected' : '' ?>>Ngày rửa tội</option>
             </select>
         </div>
         <div class="col-md-12 col-lg-auto ms-auto">
@@ -253,6 +254,28 @@
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
+                                </div>
+                                <!-- Relationship (visible only when family selected) -->
+                                <div class="col-12 d-none" id="relationshipWrap">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-people-roof"></i></span>
+                                        <input type="text" class="form-control" name="relationship" list="relationshipOptions" placeholder="Quan hệ trong gia đình (VD: Chủ hộ, Vợ/chồng, Con, Cha, Mẹ, ...)">
+                                    </div>
+                                    <datalist id="relationshipOptions">
+                                        <option value="Chủ hộ"></option>
+                                        <option value="Vợ/chồng"></option>
+                                        <option value="Vợ"></option>
+                                        <option value="Chồng"></option>
+                                        <option value="Cha"></option>
+                                        <option value="Mẹ"></option>
+                                        <option value="Con"></option>
+                                        <option value="Ông"></option>
+                                        <option value="Bà"></option>
+                                        <option value="Anh"></option>
+                                        <option value="Chị"></option>
+                                        <option value="Em"></option>
+                                    </datalist>
+                                    <div class="form-text">Bạn có thể chọn từ gợi ý hoặc tự nhập.</div>
                                 </div>
                                 <div class="col-12">
                                     <div class="form-floating">

@@ -81,12 +81,22 @@ class Person extends BaseController
                 // Older first (earlier birthdate)
                 $model = $model->orderBy('date_of_birth', 'ASC');
                 break;
-            case 'baptism':
-                $model = $model->orderBy('date_RT', 'ASC');
-                break;
             case 'name':
+                // Name A-Z using Vietnamese-friendly key for Đ/đ
+                $keyAsc = "REPLACE(REPLACE(first_name,'Đ','D'),'đ','d') ASC, REPLACE(REPLACE(last_name,'Đ','D'),'đ','d') ASC";
+                $model = $model->orderBy($keyAsc, '', false);
+                break;
+            case 'name_desc':
+                // Name Z-A using Vietnamese-friendly key for Đ/đ
+                $keyDesc = "REPLACE(REPLACE(first_name,'Đ','D'),'đ','d') DESC, REPLACE(REPLACE(last_name,'Đ','D'),'đ','d') DESC";
+                $model = $model->orderBy($keyDesc, '', false);
+                break;
+            case 'created_desc':
+                $model = $model->orderBy('CreatedAt', 'DESC')->orderBy('PID', 'DESC');
+                break;
             default:
-                $model = $model->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC');
+                // Default: newest first
+                $model = $model->orderBy('CreatedAt', 'DESC')->orderBy('PID', 'DESC');
                 break;
         }
 
@@ -299,12 +309,100 @@ class Person extends BaseController
             ]);
         }
 
-        // Mock persistence: write to a log file under writable/logs/person_create.log
+        // Persist to DB using models and transaction
+        $db = \Config\Database::connect();
+        $db->transBegin();
+
+        // Helper: parse full name into last_name + first_name (last token as first_name)
+        $parseName = function(string $full) {
+            $full = trim(preg_replace('/\s+/', ' ', $full));
+            if ($full === '') return ['last_name' => '', 'first_name' => ''];
+            $parts = explode(' ', $full);
+            $first = array_pop($parts);
+            $last  = trim(implode(' ', $parts));
+            return ['last_name' => $last, 'first_name' => $first];
+        };
+        // Helper: normalize dd/mm/yyyy or dd-mm-yyyy or yyyy to Y-m-d
+        $toDate = function (?string $val) {
+            $s = trim((string) $val);
+            if ($s === '') return null;
+            // yyyy
+            if (preg_match('/^\d{4}$/', $s)) {
+                return $s . '-01-01';
+            }
+            // dd/mm/yyyy or dd-mm-yyyy
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $s, $m)) {
+                $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                $M = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+                $Y = $m[3];
+                return "$Y-$M-$d";
+            }
+            return null;
+        };
+
+        $nameParts = $parseName($data['name']);
+        $personData = [
+            'holy_name'    => $data['holy_name'] ?: null,
+            'first_name'   => $nameParts['first_name'] ?: null,
+            'last_name'    => $nameParts['last_name'] ?: null,
+            'gender'       => $data['gender'] ?: null,
+            'date_of_birth'=> $toDate($data['birth']),
+            'date_RT'      => $toDate($data['sacraments']['baptism'] ?? ''),
+            'date_RL'      => $toDate($data['sacraments']['communion'] ?? ''),
+            'date_TS'      => $toDate($data['sacraments']['confirmation'] ?? ''),
+            'date_HP'      => $toDate($data['sacraments']['marriage'] ?? ''),
+            'date_Dead'    => $toDate($data['sacraments']['deceased'] ?? ''),
+            'phone'        => $data['phone'] ?: null,
+            'note'         => $data['notes'] ?: null,
+            'CreatedAt'    => date('Y-m-d H:i:s'),
+            'UpdatedAt'    => date('Y-m-d H:i:s'),
+        ];
+
         try {
-            $line = date('c') . ' | ' . json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
-            @file_put_contents(WRITEPATH . 'logs/person_create.log', $line, FILE_APPEND);
+            $personModel = new \App\Models\PersonModel();
+            $personModel->insert($personData);
+            $newId = (int) $personModel->getInsertID();
+
+            if ($newId <= 0) {
+                throw new \RuntimeException('Không thể tạo mới giáo dân.');
+            }
+
+            // Link zone if provided
+            $zid = (int) ($data['zone'] ?: 0);
+            $zoneName = null;
+            if ($zid > 0) {
+                $db->table('person_zone')->insert(['PID' => $newId, 'ZID' => $zid]);
+                // Fetch zone display name
+                $zrow = $db->table('zone')->select('name')->where('ZID', $zid)->get()->getRowArray();
+                $zoneName = (string) ($zrow['name'] ?? '');
+            }
+            // Link family if provided
+            $fid = (int) ($data['family'] ?: 0);
+            $familyName = null;
+            if ($fid > 0) {
+                $rel = trim((string) $this->request->getPost('relationship'));
+                $db->table('person_family')->insert([
+                    'PID' => $newId,
+                    'FID' => $fid,
+                    'relationship' => $rel !== '' ? $rel : null,
+                ]);
+                // Fetch family display name
+                $frow = $db->table('family')->select('name')->where('FID', $fid)->get()->getRowArray();
+                $familyName = (string) ($frow['name'] ?? '');
+            }
+
+            $db->transCommit();
+
+            // Continue to build response with real ID
+            $realId = $newId;
         } catch (\Throwable $e) {
-            // ignore in mock mode
+            if ($db->transStatus() !== false) {
+                $db->transRollback();
+            }
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Lỗi khi lưu dữ liệu: ' . $e->getMessage()],
+            ]);
         }
 
         // Prepare a simple row payload to append on client
@@ -339,7 +437,7 @@ class Person extends BaseController
         $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
 
         $newRow = [
-            'id' => random_int(1000, 9999),
+            'id' => $realId,
             'name' => $displayName,
             'gender' => $data['gender'] ?: 'Nam',
             'birth' => $birthDisplay,
@@ -348,11 +446,13 @@ class Person extends BaseController
             'communionDate' => $data['sacraments']['communion'] ?: null,
             'confirmationDate' => $data['sacraments']['confirmation'] ?: null,
             'marriageDate' => $data['sacraments']['marriage'] ?: null,
+            'family' => isset($familyName) ? ($familyName ?: null) : null,
+            'zones' => isset($zoneName) ? ($zoneName ?: null) : null,
         ];
 
         return $this->response->setJSON([
             'ok' => true,
-            'message' => 'Đã lưu giáo dân (mô phỏng).',
+            'message' => 'Đã lưu giáo dân thành công.',
             'row' => $newRow,
         ]);
     }
