@@ -61,11 +61,24 @@ class Person extends BaseController
 
         // Apply search filter (match person fields OR family address/name)
         if ($q !== '') {
+            // Chuẩn hóa chuỗi tìm kiếm (gom khoảng trắng)
+            $qNorm = trim(preg_replace('/\s+/', ' ', $q));
+
+            // Tìm theo từng trường & theo họ + tên (CONCAT) để bắt trường hợp nhập "Phạm Yến"
             $model = $model->groupStart()
-                ->like('first_name', $q)
-                ->orLike('last_name', $q)
-                ->orLike('holy_name', $q)
-                ->orLike('phone', $q)
+                // first/last/holy/phone riêng lẻ
+                ->like('first_name', $qNorm)
+                ->orLike('last_name', $qNorm)
+                ->orLike('holy_name', $qNorm)
+                ->orLike('phone', $qNorm);
+
+            // Các điều kiện CONCAT sử dụng chuỗi where thô để tránh bị backtick hoá hàm và đảm bảo value được quote
+            $pattern = '%' . $qNorm . '%';
+            $escLike = $db->escape($pattern);
+            $model = $model
+                ->orWhere("CONCAT_WS(' ', last_name, first_name) LIKE $escLike", null, false)
+                ->orWhere("CONCAT_WS(' ', first_name, last_name) LIKE $escLike", null, false)
+                ->orWhere("CONCAT_WS(' ', holy_name, last_name, first_name) LIKE $escLike", null, false)
             ->groupEnd();
 
             // Find PIDs by family address/name

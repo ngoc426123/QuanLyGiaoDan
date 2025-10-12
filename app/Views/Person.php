@@ -1,6 +1,7 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('content') ?>
+<?php helper('lists'); ?>
 <style>
 /* Elevate row when its dropdown/dropup is open to avoid clipping
     Keep below Bootstrap modal/backdrop (1050/1055) */
@@ -194,7 +195,7 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="form-floating">
-                                        <input type="text" name="holy_name" id="holyNameInput" class="form-control" placeholder="Tên thánh">
+                                        <input type="text" name="holy_name" id="holyNameInput" class="form-control" placeholder="Tên thánh" list="holyNameOptions">
                                         <label for="holyNameInput">Tên thánh</label>
                                     </div>
                                 </div>
@@ -262,19 +263,11 @@
                                         <span class="input-group-text"><i class="fa-solid fa-people-roof"></i></span>
                                         <input type="text" class="form-control" name="relationship" list="relationshipOptions" placeholder="Quan hệ trong gia đình (VD: Chủ hộ, Vợ/chồng, Con, Cha, Mẹ, ...)">
                                     </div>
+                                    <?php $relationships = get_suggestion_list('relationships', ['Chủ hộ','Vợ/chồng','Vợ','Chồng','Cha','Mẹ','Con','Ông','Bà','Anh','Chị','Em']); ?>
                                     <datalist id="relationshipOptions">
-                                        <option value="Chủ hộ"></option>
-                                        <option value="Vợ/chồng"></option>
-                                        <option value="Vợ"></option>
-                                        <option value="Chồng"></option>
-                                        <option value="Cha"></option>
-                                        <option value="Mẹ"></option>
-                                        <option value="Con"></option>
-                                        <option value="Ông"></option>
-                                        <option value="Bà"></option>
-                                        <option value="Anh"></option>
-                                        <option value="Chị"></option>
-                                        <option value="Em"></option>
+                                        <?php foreach ($relationships as $rel): ?>
+                                            <option value="<?= esc($rel) ?>"></option>
+                                        <?php endforeach; ?>
                                     </datalist>
                                     <div class="form-text">Bạn có thể chọn từ gợi ý hoặc tự nhập.</div>
                                 </div>
@@ -346,6 +339,12 @@
         </div>
     </div>
         </div>
+<?php helper('lists'); $holyNames = get_suggestion_list('holy_names', ['Giuse','Maria','Phêrô']); ?>
+<datalist id="holyNameOptions">
+    <?php foreach ($holyNames as $hn): ?>
+        <option value="<?= esc($hn) ?>"></option>
+    <?php endforeach; ?>
+</datalist>
 <!-- Modal: Person Detail -->
 <div class="modal fade" id="modalPersonDetail" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -398,7 +397,7 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="form-floating">
-                                        <input type="text" name="holy_name" id="editHolyNameInput" class="form-control" placeholder="Tên thánh">
+                                                    <input type="text" name="holy_name" id="editHolyNameInput" class="form-control" placeholder="Tên thánh" list="holyNameOptions">
                                         <label for="editHolyNameInput">Tên thánh</label>
                                     </div>
                                 </div>
