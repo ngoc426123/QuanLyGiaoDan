@@ -296,6 +296,7 @@ class Person extends BaseController
             'deceased_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'phone'             => 'permit_empty|max_length[20]',
             'zone_id'           => 'permit_empty|integer',
+            'zone_relationship' => 'permit_empty|max_length[100]',
             'family_id'         => 'permit_empty|integer',
             'notes'             => 'permit_empty|max_length[1000]',
         ];
@@ -314,6 +315,7 @@ class Person extends BaseController
             'birth'  => (string) $this->request->getPost('birth_year'),
             'phone'  => (string) $this->request->getPost('phone'),
             'zone'   => (string) $this->request->getPost('zone_id'),
+            'zone_relationship' => (string) $this->request->getPost('zone_relationship'),
             'family' => (string) $this->request->getPost('family_id'),
             'notes'  => (string) $this->request->getPost('notes'),
             'sacraments' => [
@@ -406,7 +408,8 @@ class Person extends BaseController
             $zid = (int) ($data['zone'] ?: 0);
             $zoneName = null;
             if ($zid > 0) {
-                $db->table('person_zone')->insert(['PID' => $newId, 'ZID' => $zid]);
+                $zrel = trim((string) $data['zone_relationship']);
+                $db->table('person_zone')->insert(['PID' => $newId, 'ZID' => $zid, 'relationship' => $zrel !== '' ? $zrel : null]);
                 // Fetch zone display name
                 $zrow = $db->table('zone')->select('name')->where('ZID', $zid)->get()->getRowArray();
                 $zoneName = (string) ($zrow['name'] ?? '');
@@ -443,6 +446,7 @@ class Person extends BaseController
                 'after' => [
                     'person' => $personData,
                     'zone_id' => $zid ?? null,
+                    'zone_relationship' => isset($zrel) ? $zrel : null,
                     'family_id' => $fid ?? null,
                     'relationship' => isset($rel) ? $rel : null,
                 ],
@@ -579,7 +583,7 @@ class Person extends BaseController
             ->where('pf.PID', $pid)
             ->get()->getResultArray();
         $zones = $db->table('person_zone pz')
-            ->select('pz.ZID, z.name as zone_name, z.holy_name as zone_holy_name')
+            ->select('pz.ZID, pz.relationship as zone_relationship, z.name as zone_name, z.holy_name as zone_holy_name')
             ->join('zone z', 'z.ZID = pz.ZID', 'left')
             ->where('pz.PID', $pid)
             ->get()->getResultArray();
@@ -688,6 +692,7 @@ class Person extends BaseController
             'deceased_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'phone'             => 'permit_empty|max_length[20]',
             'zone_id'           => 'permit_empty|integer',
+            'zone_relationship' => 'permit_empty|max_length[100]',
             'family_id'         => 'permit_empty|integer',
             'relationship'      => 'permit_empty|max_length[100]',
             'notes'             => 'permit_empty|max_length[1000]',
@@ -703,6 +708,7 @@ class Person extends BaseController
             'birth'  => (string) $this->request->getPost('birth_year'),
             'phone'  => (string) $this->request->getPost('phone'),
             'zone'   => (string) $this->request->getPost('zone_id'),
+            'zone_relationship' => (string) $this->request->getPost('zone_relationship'),
             'family' => (string) $this->request->getPost('family_id'),
             'relationship' => (string) $this->request->getPost('relationship'),
             'notes'  => (string) $this->request->getPost('notes'),
@@ -786,7 +792,10 @@ class Person extends BaseController
             // Update zone link (replace simple)
             $zid = (int) ($data['zone'] ?: 0);
             $db->table('person_zone')->where('PID', $pid)->delete();
-            if ($zid > 0) { $db->table('person_zone')->insert(['PID' => $pid, 'ZID' => $zid]); }
+            if ($zid > 0) {
+                $zrel = trim((string) $data['zone_relationship']);
+                $db->table('person_zone')->insert(['PID' => $pid, 'ZID' => $zid, 'relationship' => $zrel !== '' ? $zrel : null]);
+            }
 
             // Update family link
             $fid = (int) ($data['family'] ?: 0);

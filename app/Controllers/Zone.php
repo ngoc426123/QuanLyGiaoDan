@@ -45,19 +45,30 @@ class Zone extends BaseController
             'UpdatedAt' => date('Y-m-d H:i:s'),
         ]);
 
-        // Derive leader for response
-        $p = $db->table('person_zone pz')
-            ->select('p.holy_name, p.first_name, p.last_name, p.phone')
+        // Derive leaders for response (may have multiple)
+        $lr = $db->table('person_zone pz')
+            ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.phone')
             ->join('person p', 'p.PID = pz.PID', 'inner')
             ->where('pz.ZID', $zid)
             ->where('pz.relationship', 'trưởng khu')
-            ->get()->getRowArray();
-        $leaderName = '';
-        $leaderPhone = '';
-        if ($p) {
-            $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-            $leaderPhone = (string) ($p['phone'] ?? '');
+            ->get()->getResultArray();
+        $leaderList = [];
+        foreach ($lr as $p) {
+            // Vietnamese order: holy_name + last_name + first_name
+            $name = trim(implode(' ', array_filter([
+                (string)($p['holy_name'] ?? ''),
+                (string)($p['last_name'] ?? ''),
+                (string)($p['first_name'] ?? ''),
+            ])));
+            $leaderList[] = [
+                'name' => $name !== '' ? $name : ('#' . (int)($p['PID'] ?? 0)),
+                'phone' => (string)($p['phone'] ?? ''),
+            ];
         }
+        $leaderNames = array_values(array_unique(array_map(fn($r) => (string)($r['name'] ?? ''), $leaderList)));
+        $leaderPhones = array_values(array_unique(array_filter(array_map(fn($r) => trim((string)($r['phone'] ?? '')), $leaderList))));
+        $leaderName = implode(', ', array_filter($leaderNames));
+        $leaderPhone = implode(', ', array_filter($leaderPhones));
 
         return $this->response->setJSON([
             'ok' => true,
@@ -69,6 +80,7 @@ class Zone extends BaseController
                 'note' => (string)($note ?? ''),
                 'leader' => $leaderName,
                 'phone' => $leaderPhone,
+                'leaders' => $leaderList,
             ],
         ]);
     }
@@ -149,8 +161,8 @@ class Zone extends BaseController
             foreach ($mc as $r) { $membersByZone[(int)$r['ZID']] = (int) $r['c']; }
         }
 
-        // Lấy leader per zone từ person_zone
-        $leaders = [];
+        // Lấy tất cả trưởng khu per zone từ person_zone
+        $leadersByZone = [];
         if (!empty($zids)) {
             $lr = $db->table('person_zone pz')
                 ->select('pz.ZID, p.PID, p.holy_name, p.first_name, p.last_name, p.phone')
@@ -159,8 +171,15 @@ class Zone extends BaseController
                 ->where('pz.relationship', 'trưởng khu')
                 ->get()->getResultArray();
             foreach ($lr as $p) {
-                $name = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-                $leaders[(int)$p['ZID']] = [
+                $zid = (int)$p['ZID'];
+                // Vietnamese order: holy_name + last_name + first_name
+                $name = trim(implode(' ', array_filter([
+                    (string)($p['holy_name'] ?? ''),
+                    (string)($p['last_name'] ?? ''),
+                    (string)($p['first_name'] ?? ''),
+                ])));
+                if (!isset($leadersByZone[$zid])) { $leadersByZone[$zid] = []; }
+                $leadersByZone[$zid][] = [
                     'name' => $name !== '' ? $name : ('#' . (int)$p['PID']),
                     'phone' => (string)($p['phone'] ?? ''),
                 ];
@@ -171,8 +190,11 @@ class Zone extends BaseController
         $zones = [];
         foreach ($zoneRows as $zr) {
             $zid = (int) $zr['ZID'];
-            $leaderName = (string)($leaders[$zid]['name'] ?? '');
-            $leaderPhone = (string)($leaders[$zid]['phone'] ?? '');
+            $leaderList = $leadersByZone[$zid] ?? [];
+            $leaderNames = array_values(array_unique(array_map(fn($r) => (string)($r['name'] ?? ''), $leaderList)));
+            $leaderPhones = array_values(array_unique(array_filter(array_map(fn($r) => trim((string)($r['phone'] ?? '')), $leaderList))));
+            $leaderName = implode(', ', array_filter($leaderNames));
+            $leaderPhone = implode(', ', array_filter($leaderPhones));
             $zones[] = [
                 'id' => $zid,
                 'name' => (string) ($zr['name'] ?? ('#'.$zid)),
@@ -182,6 +204,7 @@ class Zone extends BaseController
                 'phone' => $leaderPhone,
                 'address' => '', // không có cột địa chỉ cho zone trong schema
                 'note' => (string) ($zr['note'] ?? ''),
+                'leaders' => $leaderList,
             ];
         }
 
@@ -301,19 +324,30 @@ class Zone extends BaseController
         if (!$zr) {
             return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['notfound' => 'Không tìm thấy giáo khu.']]);
         }
-        // Leader xác định qua person_zone.relationship = 'trưởng khu'
-        $leaderName = '';
-        $leaderPhone = '';
-        $p = $db->table('person_zone pz')
-            ->select('p.holy_name, p.first_name, p.last_name, p.phone')
+        // Leader xác định qua person_zone.relationship = 'trưởng khu' (có thể nhiều người)
+        $leaderList = [];
+        $lr = $db->table('person_zone pz')
+            ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.phone')
             ->join('person p', 'p.PID = pz.PID', 'inner')
             ->where('pz.ZID', $zoneId)
             ->where('pz.relationship', 'trưởng khu')
-            ->get()->getRowArray();
-        if ($p) {
-            $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-            $leaderPhone = (string) ($p['phone'] ?? '');
+            ->get()->getResultArray();
+        foreach ($lr as $p) {
+            // Vietnamese order: holy_name + last_name + first_name
+            $name = trim(implode(' ', array_filter([
+                (string)($p['holy_name'] ?? ''),
+                (string)($p['last_name'] ?? ''),
+                (string)($p['first_name'] ?? ''),
+            ])));
+            $leaderList[] = [
+                'name' => $name !== '' ? $name : ('#' . (int)($p['PID'] ?? 0)),
+                'phone' => (string)($p['phone'] ?? ''),
+            ];
         }
+        $leaderNames = array_values(array_unique(array_map(fn($r) => (string)($r['name'] ?? ''), $leaderList)));
+        $leaderPhones = array_values(array_unique(array_filter(array_map(fn($r) => trim((string)($r['phone'] ?? '')), $leaderList))));
+        $leaderName = implode(', ', array_filter($leaderNames));
+        $leaderPhone = implode(', ', array_filter($leaderPhones));
 
         // Overview: families and members counts + gender
         $fc = $db->table('family_zone')->select('COUNT(*) as c')->where('ZID', $zoneId)->get()->getRowArray();
@@ -390,6 +424,7 @@ class Zone extends BaseController
             'members_count' => $membersCount,
             'leader' => $leaderName,
             'phone' => $leaderPhone,
+            'leaders' => $leaderList,
             'address' => '',
         ];
 

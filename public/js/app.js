@@ -538,6 +538,11 @@
           var famSel = form.querySelector('[name="family_id"]'); if (famSel) famSel.value = fams[0] && fams[0].FID ? String(fams[0].FID) : '';
           var relInput = form.querySelector('[name="relationship"]'); if (relInput) relInput.value = fams[0] && fams[0].relationship ? fams[0].relationship : '';
           if (relWrap) relWrap.classList.toggle('d-none', !(famSel && famSel.value));
+          // Zone relationship prefill and visibility
+          var zoneRelWrap = modalEl.querySelector('#editZoneRelationshipWrap');
+          var zoneRelInput = form.querySelector('input[name="zone_relationship"]');
+          if (zoneRelInput) zoneRelInput.value = zones[0] && zones[0].zone_relationship ? zones[0].zone_relationship : '';
+          if (zoneRelWrap) zoneRelWrap.classList.toggle('d-none', !(zoneSel && zoneSel.value));
 
           // Show modal
           if (window.bootstrap && bootstrap.Modal) {

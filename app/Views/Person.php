@@ -241,6 +241,20 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!-- Zone Relationship (visible only when zone selected) -->
+                                <div class="col-12 d-none" id="zoneRelationshipWrap">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+                                        <input type="text" class="form-control" name="zone_relationship" list="zoneRelationshipOptions" placeholder="Chức vụ trong giáo khu (VD: Trưởng khu, Phó khu, Thư ký, ...)">
+                                    </div>
+                                    <?php $zoneRoles = get_suggestion_list('zone_roles', ['Trưởng khu','Phó khu','Thư ký','Thủ quỹ','Ủy viên','Thành viên']); ?>
+                                    <datalist id="zoneRelationshipOptions">
+                                        <?php foreach ($zoneRoles as $zr): ?>
+                                            <option value="<?= esc($zr) ?>"></option>
+                                        <?php endforeach; ?>
+                                    </datalist>
+                                    <div class="form-text">Có thể để trống hoặc chọn từ gợi ý.</div>
+                                </div>
                                 <div class="col-12">
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-house"></i></span>
@@ -440,6 +454,13 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="col-12 d-none" id="editZoneRelationshipWrap">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+                                        <input type="text" class="form-control" name="zone_relationship" list="zoneRelationshipOptions" placeholder="Chức vụ trong giáo khu (VD: Trưởng khu, Phó khu, Thư ký, ...)">
+                                    </div>
+                                    <div class="form-text">Có thể để trống hoặc chọn từ gợi ý.</div>
+                                </div>
                                 <div class="col-12">
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fa-solid fa-house"></i></span>
@@ -543,6 +564,33 @@
                 if (tr) tr.classList.remove('row-elevated');
             });
         });
+    })();
+
+    // Toggle zone relationship input visibility (Create + Edit)
+    (function(){
+        function setupToggle(formId, selectName, wrapId, inputName){
+            var form = document.getElementById(formId);
+            if (!form) return;
+            var sel = form.querySelector('select[name="' + selectName + '"]');
+            var wrap = document.getElementById(wrapId);
+            var input = form.querySelector('input[name="' + inputName + '"]');
+            if (!sel || !wrap || !input) return;
+            function apply(){
+                if (sel.value && String(sel.value).trim() !== ''){
+                    wrap.classList.remove('d-none');
+                } else {
+                    wrap.classList.add('d-none');
+                    input.value = '';
+                }
+            }
+            sel.addEventListener('change', apply);
+            // initial state
+            apply();
+        }
+        // Create
+        setupToggle('personCreateForm', 'zone_id', 'zoneRelationshipWrap', 'zone_relationship');
+        // Edit
+        setupToggle('personEditForm', 'zone_id', 'editZoneRelationshipWrap', 'zone_relationship');
     })();
 </script>
 <?= $this->endSection() ?>

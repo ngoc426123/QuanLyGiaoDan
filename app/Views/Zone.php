@@ -201,7 +201,17 @@
             // Update active in list
             var items = document.querySelectorAll('#zoneList .list-group-item');
             Array.prototype.forEach.call(items, function(li){ li.classList.remove('active','text-white'); var sub = li.querySelector('.small'); if (sub){ sub.classList.remove('text-white-50'); sub.classList.add('text-muted'); } });
-            var li = a.closest('.list-group-item'); if (li){ li.classList.add('active','text-white'); var sub = li.querySelector('.small'); if (sub){ sub.classList.remove('text-muted'); sub.classList.add('text-white-50'); } }
+                var li = a.closest('.list-group-item');
+                if (li){
+                    li.classList.add('active','text-white');
+                    var sub = li.querySelector('.small');
+                    if (sub){
+                        sub.classList.remove('text-muted');
+                        sub.classList.add('text-white-50');
+                        // Sync leader name on left with detail response
+                        sub.textContent = 'Trưởng khu: ' + (json.zone.leader || '');
+                    }
+                }
           })
           .catch(function(){ /* ignore */});
     }, { passive: false });
@@ -242,6 +252,59 @@
               .catch(function(){});
         }
     }, { passive: false });
+
+    // Initial sync on load: fetch details for the currently selected zone and update UI
+    var didInitialSync = false;
+    function initialSync(){
+        if (didInitialSync) return; // run once
+        if (!currentZoneId || Number(currentZoneId) <= 0) return;
+        didInitialSync = true;
+        fetch('/zone/' + encodeURIComponent(currentZoneId), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function(res){ return res.json(); })
+            .then(function(json){
+                if (!json || !json.ok) return;
+                zoneCache = json;
+                // Header
+                var right = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3');
+                if (right){
+                    var headerTitle = right.querySelector('h4'); if (headerTitle) headerTitle.textContent = json.zone.name || '';
+                    var small = right.querySelector('.text-muted.small');
+                    if (small){ small.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (json.zone.leader||'') +
+                        '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (json.zone.phone||'') +
+                        '<span class="mx-2">|</span><i class="fas fa-location-dot me-1"></i>' + (json.zone.address||''); }
+                }
+                // Overview numbers
+                var ov = json.details && json.details.overview ? json.details.overview : {};
+                var elFam = document.getElementById('ovFamiliesCount'); if (elFam) elFam.textContent = (ov.families_count || 0);
+                var elMem = document.getElementById('ovMembersCount'); if (elMem) elMem.textContent = (ov.members_count || 0);
+                var elMale = document.getElementById('ovMale'); if (elMale) elMale.textContent = (ov.male || 0);
+                var elFem = document.getElementById('ovFemale'); if (elFem) elFem.textContent = (ov.female || 0);
+                // Families table
+                var tbody = document.querySelector('#zoneFamiliesTable tbody');
+                if (tbody){ tbody.innerHTML = renderFamilies((json.details && json.details.families) || []); }
+                // Notes
+                var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = (json.details && json.details.notes) || 'Chưa có ghi chú.'; }
+                // Update left leader subtitle for the selected item if exists and ensure active state
+                var link = document.querySelector('#zoneList a.action-zone-select[data-zone-id="' + json.zone.id + '"]');
+                if (link){
+                    var lis = document.querySelectorAll('#zoneList .list-group-item');
+                    Array.prototype.forEach.call(lis, function(li){ li.classList.remove('active','text-white'); var sub = li.querySelector('.small'); if (sub){ sub.classList.remove('text-white-50'); sub.classList.add('text-muted'); } });
+                    var li = link.closest('.list-group-item');
+                    if (li){
+                        li.classList.add('active','text-white');
+                        var sub = li.querySelector('.small');
+                        if (sub){ sub.classList.remove('text-muted'); sub.classList.add('text-white-50'); sub.textContent = 'Trưởng khu: ' + (json.zone.leader || ''); }
+                    }
+                }
+            })
+            .catch(function(){ /* ignore */});
+    }
+    // Run on DOMContentLoaded and on window load, and immediately if already loaded
+    document.addEventListener('DOMContentLoaded', initialSync, { once: true });
+    window.addEventListener('load', initialSync, { once: true });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initialSync, 0);
+    }
 })();
 </script>
 <?= $this->endSection() ?>
@@ -465,13 +528,22 @@
                 form.classList.remove('was-validated');
                 // Update header title
                 var headerTitle = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3 h4'); if (headerTitle) headerTitle.textContent = name;
+                                // Update header small (leader/phone/address)
+                                var headerSmall = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3 .text-muted.small');
+                                if (headerSmall){ headerSmall.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (res.json.row.leader||'') +
+                                    '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (res.json.row.phone||'') +
+                                    '<span class="mx-2">|</span><i class="fas fa-location-dot me-1"></i>' + '';
+                                }
                 // Update notes panel
                 var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = note || 'Chưa có ghi chú.'; }
                 // Update left list item label
                 var a = document.querySelector('#zoneList a.action-zone-select[data-zone-id="' + zid + '"]');
                 if (a){
                     var li = a.closest('.list-group-item');
-                    if (li){ var title = li.querySelector('.fw-semibold'); if (title) title.textContent = name; }
+                                        if (li){
+                                                var title = li.querySelector('.fw-semibold'); if (title) title.textContent = name;
+                                                var sub = li.querySelector('.small'); if (sub){ sub.textContent = 'Trưởng khu: ' + (res.json.row.leader || ''); }
+                                        }
                 }
                 showAlert('success', res.json.message || 'Đã cập nhật giáo khu.');
                 submittingEdit = false;
