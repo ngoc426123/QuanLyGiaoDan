@@ -31,4 +31,4 @@
     <link rel="stylesheet" href="<?= base_url('css/material.css') ?>">
     <script>window.BASE_URL = <?= json_encode(rtrim(base_url('/'), '/').'/') ?>;</script>
 </head>
-<body class="vista-theme">
+<body class="material-theme">
