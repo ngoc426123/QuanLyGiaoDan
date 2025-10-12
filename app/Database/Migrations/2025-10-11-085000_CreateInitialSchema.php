@@ -97,7 +97,7 @@ class CreateInitialSchema extends Migration
             ],
             'name' => [
                 'type' => 'VARCHAR',
-                'constraint' => 25,
+                'constraint' => 100,
                 'null' => true,
             ],
             'address' => [
@@ -121,19 +121,13 @@ class CreateInitialSchema extends Migration
         $this->forge->addKey('FID', true);
         $this->forge->createTable('family', true, $this->tableAttributes);
 
-        // zone
+        // zone (không còn LPID)
         $this->forge->addField([
             'ZID' => [
                 'type' => 'INT',
                 'constraint' => 10,
                 'unsigned' => true,
                 'auto_increment' => true,
-            ],
-            'LPID' => [
-                'type' => 'INT',
-                'constraint' => 10,
-                'unsigned' => true,
-                'null' => true, // có thể để trống nếu chưa có người quản lý
             ],
             'name' => [
                 'type' => 'VARCHAR',
@@ -142,7 +136,7 @@ class CreateInitialSchema extends Migration
             ],
             'holy_name' => [
                 'type' => 'VARCHAR',
-                'constraint' => 50,
+                'constraint' => 75,
                 'null' => true,
             ],
             'note' => [
@@ -159,7 +153,6 @@ class CreateInitialSchema extends Migration
             ],
         ]);
         $this->forge->addKey('ZID', true);
-        $this->forge->addForeignKey('LPID', 'person', 'PID', 'SET NULL', 'CASCADE');
         $this->forge->createTable('zone', true, $this->tableAttributes);
 
         // person_family (bảng liên kết person - family)
@@ -189,7 +182,7 @@ class CreateInitialSchema extends Migration
         $this->forge->addForeignKey('FID', 'family', 'FID', 'CASCADE', 'CASCADE');
         $this->forge->createTable('person_family', true, $this->tableAttributes);
 
-        // person_zone (bảng liên kết person - zone)
+        // person_zone (bảng liên kết person - zone) + relationship
         $this->forge->addField([
             'PID' => [
                 'type' => 'INT',
@@ -200,6 +193,11 @@ class CreateInitialSchema extends Migration
                 'type' => 'INT',
                 'constraint' => 10,
                 'unsigned' => true,
+            ],
+            'relationship' => [
+                'type' => 'VARCHAR',
+                'constraint' => 25,
+                'null' => true,
             ],
             'note' => [
                 'type' => 'TEXT',

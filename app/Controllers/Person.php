@@ -579,7 +579,7 @@ class Person extends BaseController
             ->where('pf.PID', $pid)
             ->get()->getResultArray();
         $zones = $db->table('person_zone pz')
-            ->select('pz.ZID, z.name as zone_name, z.holy_name as zone_holy_name, z.LPID')
+            ->select('pz.ZID, z.name as zone_name, z.holy_name as zone_holy_name')
             ->join('zone z', 'z.ZID = pz.ZID', 'left')
             ->where('pz.PID', $pid)
             ->get()->getResultArray();

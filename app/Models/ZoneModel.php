@@ -11,7 +11,7 @@ class ZoneModel extends Model
     protected $useAutoIncrement = true;
 
     protected $allowedFields = [
-        'LPID','name','holy_name','note','CreatedAt','UpdatedAt'
+        'name','holy_name','note','CreatedAt','UpdatedAt'
     ];
 
     protected $useTimestamps = false;

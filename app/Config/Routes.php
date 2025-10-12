@@ -25,6 +25,7 @@ $routes->post('/person/(:num)/update', 'Person::update/$1');
 $routes->get('/zone', 'Zone::index');
 $routes->get('/zone/(:num)', 'Zone::detail/$1');
 $routes->post('/zone/create', 'Zone::create');
+$routes->post('/zone/(:num)/update', 'Zone::update/$1');
 
 $routes->get('/overview', 'Overview::index');
 $routes->get('/import-export', 'ImportExport::index');

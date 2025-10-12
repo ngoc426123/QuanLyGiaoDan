@@ -1,6 +1,8 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('content') ?>
+<!-- Alerts container at top -->
+<div id="zoneAlerts" class="mb-3"></div>
 <div class="d-flex flex-column mb-3">
     <h2 class="mb-1">Quản lý Giáo khu</h2>
     <div class="text-muted">Tổng cộng: <strong><?= esc($total_zones ?? 0) ?></strong> giáo khu</div>
@@ -46,7 +48,7 @@
                     </div>
                 </div>
                 <div>
-                    <button class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit me-1"></i>Chỉnh sửa</button>
+                    <button class="btn btn-sm btn-outline-primary me-2 action-zone-edit" type="button"><i class="fas fa-edit me-1"></i>Chỉnh sửa</button>
                 </div>
             </div>
 
@@ -146,6 +148,8 @@
 <?= $this->section('content') ?>
 <script>
 (function(){
+    var currentZoneId = <?= (int)($selected_id ?? 0) ?>;
+    var zoneCache = null; // last loaded detail json for prefill
     function renderFamilies(rows){
         if (!rows || !rows.length){
             return '<tr><td colspan="6" class="text-center text-muted">Chưa có gia đình nào.</td></tr>';
@@ -162,7 +166,7 @@
         }).join('');
     }
 
-    document.body.addEventListener('click', function(e){
+        document.body.addEventListener('click', function(e){
         var a = e.target.closest && e.target.closest('a.action-zone-select');
         if (!a) return;
         e.preventDefault();
@@ -172,6 +176,8 @@
           .then(function(res){ return res.json(); })
           .then(function(json){
             if (!json || !json.ok) return;
+                        currentZoneId = json.zone && json.zone.id ? json.zone.id : parseInt(zid, 10);
+                        zoneCache = json;
             // Header
             var right = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3');
             if (right){
@@ -199,13 +205,48 @@
           })
           .catch(function(){ /* ignore */});
     }, { passive: false });
+
+    // Edit Zone: open modal with prefilled data
+    document.body.addEventListener('click', function(e){
+        var btn = e.target.closest && e.target.closest('button.action-zone-edit');
+        if (!btn) return;
+        e.preventDefault();
+        var zid = currentZoneId || (function(){
+            var active = document.querySelector('#zoneList .list-group-item.active a.action-zone-select');
+            return active ? parseInt(active.getAttribute('data-zone-id')||'0', 10) : 0;
+        })();
+        if (!zid) return;
+        function openWith(data){
+            try {
+                var mEl = document.getElementById('modalEditZone');
+                if (!mEl) return;
+                var nameEl = document.getElementById('editZoneNameInput');
+                var holyEl = document.getElementById('editZoneHolyNameInput');
+                var noteEl = document.getElementById('editZoneNoteInput');
+                if (nameEl) nameEl.value = (data.zone && data.zone.name) ? data.zone.name : '';
+                if (holyEl) holyEl.value = (data.zone && data.zone.holy_name) ? data.zone.holy_name : '';
+                if (noteEl) noteEl.value = (data.details && data.details.notes) ? data.details.notes : '';
+                var form = document.getElementById('formEditZone');
+                if (form) form.setAttribute('data-zone-id', String(zid));
+                document.body.appendChild(mEl); // ensure atop
+                var modal = new bootstrap.Modal(mEl);
+                modal.show();
+            } catch(e) { /* ignore */ }
+        }
+        if (zoneCache && zoneCache.zone && zoneCache.zone.id === zid){
+            openWith(zoneCache);
+        } else {
+            fetch('/zone/' + encodeURIComponent(zid), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+              .then(function(res){ return res.json(); })
+              .then(function(json){ if (json && json.ok){ zoneCache = json; openWith(json); } })
+              .catch(function(){});
+        }
+    }, { passive: false });
 })();
 </script>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-<!-- Alerts container -->
-<div id="zoneAlerts" class="mt-3"></div>
 
 <!-- Modal: Create Zone -->
 <?php helper('lists'); $holyNames = get_suggestion_list('holy_names', ['Giuse','Maria','Phêrô']); ?>
@@ -221,14 +262,14 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" name="name" id="zoneNameInput" class="form-control" placeholder="Tên giáo khu" required>
+                                <input type="text" name="name" id="zoneNameInput" class="form-control" placeholder="Tên giáo khu" required maxlength="100">
                                 <label for="zoneNameInput">Tên giáo khu <span class="text-danger">*</span></label>
                                 <div class="invalid-feedback">Vui lòng nhập tên giáo khu.</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" name="holy_name" id="zoneHolyNameInput" class="form-control" placeholder="Tên thánh" list="zoneHolyNameOptions">
+                                <input type="text" name="holy_name" id="zoneHolyNameInput" class="form-control" placeholder="Tên thánh" list="zoneHolyNameOptions" maxlength="75">
                                 <label for="zoneHolyNameInput">Tên thánh (tùy chọn)</label>
                             </div>
                         </div>
@@ -270,6 +311,12 @@
 
     var form = document.getElementById('formCreateZone');
     if (form){
+            // Move modal under <body> on show to escape any stacking context
+            var mEl = document.getElementById('modalCreateZone');
+            if (mEl){
+                mEl.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(mEl); } catch(e){} });
+            }
+
         form.addEventListener('submit', function(e){
             e.preventDefault();
             if (submitting) return;
@@ -319,6 +366,117 @@
                 submitting = false;
             })
             .catch(function(){ showAlert('danger','Có lỗi mạng.'); submitting = false; });
+        });
+    }
+})();
+</script>
+<?= $this->endSection() ?>
+
+<?= $this->section('content') ?>
+<!-- Modal: Edit Zone -->
+<div class="modal fade" id="modalEditZone" tabindex="-1" aria-labelledby="modalEditZoneLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditZoneLabel"><i class="fas fa-pen-to-square me-2"></i>Chỉnh sửa giáo khu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditZone" class="needs-validation" novalidate>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" name="name" id="editZoneNameInput" class="form-control" placeholder="Tên giáo khu" required maxlength="100">
+                                <label for="editZoneNameInput">Tên giáo khu <span class="text-danger">*</span></label>
+                                <div class="invalid-feedback">Vui lòng nhập tên giáo khu.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" name="holy_name" id="editZoneHolyNameInput" class="form-control" placeholder="Tên thánh" list="zoneHolyNameOptions" maxlength="75">
+                                <label for="editZoneHolyNameInput">Tên thánh (tùy chọn)</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" placeholder="Ghi chú" name="note" id="editZoneNoteInput" style="height: 90px"></textarea>
+                                <label for="editZoneNoteInput">Ghi chú</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    var submittingEdit = false;
+    function showAlert(type, message){
+        var wrap = document.getElementById('zoneAlerts'); if (!wrap) return;
+        var div = document.createElement('div');
+        div.className = 'alert alert-' + type + ' alert-dismissible fade show';
+        div.setAttribute('role','alert');
+        div.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+        wrap.appendChild(div);
+        setTimeout(function(){ try { div.classList.remove('show'); div.remove(); } catch(e){} }, 5000);
+    }
+
+    var form = document.getElementById('formEditZone');
+    if (form){
+        // Ensure modal appended to body on show
+        var mEl = document.getElementById('modalEditZone');
+        if (mEl){ mEl.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(mEl); } catch(e){} }); }
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            if (submittingEdit) return;
+            var zid = parseInt(form.getAttribute('data-zone-id')||'0', 10);
+            if (!zid) return;
+            var name = (document.getElementById('editZoneNameInput').value || '').trim();
+            var holy = (document.getElementById('editZoneHolyNameInput').value || '').trim();
+            var note = (document.getElementById('editZoneNoteInput').value || '').trim();
+            if (!name){ form.classList.add('was-validated'); return; }
+            submittingEdit = true;
+            fetch('/zone/' + encodeURIComponent(zid) + '/update', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                body: new URLSearchParams({ name: name, holy_name: holy, note: note })
+            })
+            .then(function(res){ return res.json().then(function(json){ return { status: res.status, json: json }; }); })
+            .then(function(res){
+                if (!res || !res.json){ showAlert('danger','Có lỗi xảy ra.'); submittingEdit = false; return; }
+                if (res.status >= 400 || res.json.ok === false){
+                    var msg = 'Cập nhật giáo khu thất bại.';
+                    if (res.json.errors){
+                        var errMsgs = Object.values(res.json.errors).filter(Boolean).join('<br>');
+                        if (errMsgs) msg = errMsgs;
+                    }
+                    showAlert('danger', msg);
+                    submittingEdit = false; return;
+                }
+                // Success: close modal, update UI
+                try { var modalEl = document.getElementById('modalEditZone'); if (modalEl){ var mi = bootstrap.Modal.getInstance(modalEl); if (mi) mi.hide(); } } catch(e){}
+                form.classList.remove('was-validated');
+                // Update header title
+                var headerTitle = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3 h4'); if (headerTitle) headerTitle.textContent = name;
+                // Update notes panel
+                var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = note || 'Chưa có ghi chú.'; }
+                // Update left list item label
+                var a = document.querySelector('#zoneList a.action-zone-select[data-zone-id="' + zid + '"]');
+                if (a){
+                    var li = a.closest('.list-group-item');
+                    if (li){ var title = li.querySelector('.fw-semibold'); if (title) title.textContent = name; }
+                }
+                showAlert('success', res.json.message || 'Đã cập nhật giáo khu.');
+                submittingEdit = false;
+            })
+            .catch(function(){ showAlert('danger','Có lỗi mạng.'); submittingEdit = false; });
         });
     }
 })();

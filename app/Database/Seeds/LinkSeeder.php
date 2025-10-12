@@ -38,29 +38,64 @@ class LinkSeeder extends Seeder
         // Mỗi person thuộc 1-2 zone ngẫu nhiên
         if ($persons && $zones) {
             $pzBatch = [];
+            $zids = array_column($zones, 'ZID');
+            // Gán người vào 1-2 giáo khu với quan hệ mặc định 'thành viên'
             foreach ($persons as $p) {
-                $count = $faker->numberBetween(1, min(2, count($zones)));
-                $zPick = (array) $faker->randomElements(array_column($zones, 'ZID'), $count);
+                $count = $faker->numberBetween(1, min(2, count($zids)));
+                $zPick = (array) $faker->randomElements($zids, $count);
                 foreach ($zPick as $zid) {
                     $pzBatch[] = [
                         'PID' => $p['PID'],
                         'ZID' => $zid,
+                        'relationship' => 'thành viên',
                         'note' => null,
                     ];
                 }
             }
-            // Loại bỏ trùng (PID,ZID)
-            $unique = [];
+
+            // Đảm bảo mỗi giáo khu có 1 trưởng khu
+            foreach ($zids as $zid) {
+                // tìm những PID đã được gán cho giáo khu này trong batch
+                $candidates = array_values(array_map(
+                    fn($r) => $r['PID'],
+                    array_filter($pzBatch, fn($r) => $r['ZID'] === $zid)
+                ));
+                if (empty($candidates)) {
+                    // nếu chưa có ai, chọn ngẫu nhiên một person
+                    $randP = $faker->randomElement($persons);
+                    $candidates = [$randP['PID']];
+                    $pzBatch[] = [
+                        'PID' => $randP['PID'],
+                        'ZID' => $zid,
+                        'relationship' => 'thành viên',
+                        'note' => null,
+                    ];
+                }
+                // chọn một người làm trưởng khu
+                $leaderPid = $faker->randomElement($candidates);
+                $pzBatch[] = [
+                    'PID' => $leaderPid,
+                    'ZID' => $zid,
+                    'relationship' => 'trưởng khu',
+                    'note' => null,
+                ];
+            }
+
+            // Loại bỏ trùng (PID,ZID), ưu tiên giữ 'trưởng khu' nếu có
             $dedup = [];
             foreach ($pzBatch as $row) {
                 $key = $row['PID'] . '-' . $row['ZID'];
-                if (!isset($unique[$key])) {
-                    $unique[$key] = true;
-                    $dedup[] = $row;
+                if (!isset($dedup[$key])) {
+                    $dedup[$key] = $row;
+                } else {
+                    // nếu một trong hai là trưởng khu thì giữ trưởng khu
+                    if (($row['relationship'] ?? '') === 'trưởng khu') {
+                        $dedup[$key] = $row;
+                    }
                 }
             }
             if (!empty($dedup)) {
-                $this->db->table('person_zone')->insertBatch($dedup);
+                $this->db->table('person_zone')->insertBatch(array_values($dedup));
             }
         }
 

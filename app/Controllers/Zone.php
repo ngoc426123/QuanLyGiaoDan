@@ -4,6 +4,74 @@ namespace App\Controllers;
 
 class Zone extends BaseController
 {
+    public function update($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zid = (int) ($id ?? 0);
+        if ($zid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã giáo khu.']]);
+        }
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'errors' => ['method' => 'Phương thức không hợp lệ.']]);
+        }
+
+        $rules = [
+            'name' => 'required|min_length[2]|max_length[100]',
+            'holy_name' => 'permit_empty|max_length[75]',
+            'note' => 'permit_empty|max_length[65535]'
+        ];
+        if (!$this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => $this->validator ? $this->validator->getErrors() : ['validate' => 'Dữ liệu không hợp lệ.']
+            ]);
+        }
+
+        $db = db_connect();
+        // Ensure zone exists
+        $exists = $db->table('zone')->select('ZID')->where('ZID', $zid)->get()->getRowArray();
+        if (!$exists) {
+            return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['notfound' => 'Không tìm thấy giáo khu.']]);
+        }
+
+        $name = trim((string)$this->request->getPost('name'));
+        $holyName = trim((string)$this->request->getPost('holy_name')) ?: null;
+        $note = trim((string)$this->request->getPost('note')) ?: null;
+
+        $db->table('zone')->where('ZID', $zid)->update([
+            'name' => $name,
+            'holy_name' => $holyName,
+            'note' => $note,
+            'UpdatedAt' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Derive leader for response
+        $p = $db->table('person_zone pz')
+            ->select('p.holy_name, p.first_name, p.last_name, p.phone')
+            ->join('person p', 'p.PID = pz.PID', 'inner')
+            ->where('pz.ZID', $zid)
+            ->where('pz.relationship', 'trưởng khu')
+            ->get()->getRowArray();
+        $leaderName = '';
+        $leaderPhone = '';
+        if ($p) {
+            $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
+            $leaderPhone = (string) ($p['phone'] ?? '');
+        }
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Đã cập nhật giáo khu.',
+            'row' => [
+                'id' => $zid,
+                'name' => $name,
+                'holy_name' => (string)($holyName ?? ''),
+                'note' => (string)($note ?? ''),
+                'leader' => $leaderName,
+                'phone' => $leaderPhone,
+            ],
+        ]);
+    }
     public function create()
     {
         $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -12,9 +80,8 @@ class Zone extends BaseController
         }
 
         $rules = [
-            'name' => 'required|min_length[2]|max_length[25]',
-            'holy_name' => 'permit_empty|max_length[50]',
-            'leader_pid' => 'permit_empty|integer',
+            'name' => 'required|min_length[2]|max_length[100]',
+            'holy_name' => 'permit_empty|max_length[75]',
             'note' => 'permit_empty|max_length[65535]'
         ];
         if (!$this->validate($rules)) {
@@ -27,24 +94,15 @@ class Zone extends BaseController
         $db = db_connect();
         $name = trim((string)$this->request->getPost('name'));
         $holyName = trim((string)$this->request->getPost('holy_name')) ?: null;
-        $leaderPid = (int)($this->request->getPost('leader_pid') ?? 0);
         $note = trim((string)$this->request->getPost('note')) ?: null;
 
         $insert = [ 'name' => $name, 'holy_name' => $holyName, 'note' => $note, 'CreatedAt' => date('Y-m-d H:i:s'), 'UpdatedAt' => date('Y-m-d H:i:s') ];
-        if ($leaderPid > 0) { $insert['LPID'] = $leaderPid; }
         $db->table('zone')->insert($insert);
         $zid = (int)$db->insertID();
 
-        // Resolve leader display if provided
+        // Không có LPID nữa, leader sẽ được xác định qua person_zone.relationship = 'trưởng khu' nếu có.
         $leaderName = '';
         $leaderPhone = '';
-        if ($leaderPid > 0) {
-            $p = $db->table('person')->select('holy_name, first_name, last_name, phone')->where('PID', $leaderPid)->get()->getRowArray();
-            if ($p) {
-                $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-                $leaderPhone = (string)($p['phone'] ?? '');
-            }
-        }
 
         return $this->response->setJSON([
             'ok' => true,
@@ -66,11 +124,11 @@ class Zone extends BaseController
         $db = db_connect();
 
         // Load all zones
-        $zoneRows = $db->table('zone')->select('ZID, name, LPID, note')->orderBy('name', 'ASC')->get()->getResultArray();
+    $zoneRows = $db->table('zone')->select('ZID, name, note')->orderBy('name', 'ASC')->get()->getResultArray();
         if (!$zoneRows) { $zoneRows = []; }
 
         $zids = array_map(fn($r) => (int) $r['ZID'], $zoneRows);
-        $lpids = array_values(array_unique(array_filter(array_map(fn($r) => (int) ($r['LPID'] ?? 0), $zoneRows))));
+    // Leader theo person_zone (trưởng khu)
 
         // Families count per zone
         $familiesByZone = [];
@@ -91,13 +149,18 @@ class Zone extends BaseController
             foreach ($mc as $r) { $membersByZone[(int)$r['ZID']] = (int) $r['c']; }
         }
 
-        // Leader person info
+        // Lấy leader per zone từ person_zone
         $leaders = [];
-        if (!empty($lpids)) {
-            $pr = $db->table('person')->select('PID, holy_name, first_name, last_name, phone')->whereIn('PID', $lpids)->get()->getResultArray();
-            foreach ($pr as $p) {
+        if (!empty($zids)) {
+            $lr = $db->table('person_zone pz')
+                ->select('pz.ZID, p.PID, p.holy_name, p.first_name, p.last_name, p.phone')
+                ->join('person p', 'p.PID = pz.PID', 'inner')
+                ->whereIn('pz.ZID', $zids)
+                ->where('pz.relationship', 'trưởng khu')
+                ->get()->getResultArray();
+            foreach ($lr as $p) {
                 $name = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-                $leaders[(int)$p['PID']] = [
+                $leaders[(int)$p['ZID']] = [
                     'name' => $name !== '' ? $name : ('#' . (int)$p['PID']),
                     'phone' => (string)($p['phone'] ?? ''),
                 ];
@@ -108,10 +171,8 @@ class Zone extends BaseController
         $zones = [];
         foreach ($zoneRows as $zr) {
             $zid = (int) $zr['ZID'];
-            $lpid = (int) ($zr['LPID'] ?? 0);
-            $leaderName = '';
-            $leaderPhone = '';
-            if ($lpid && isset($leaders[$lpid])) { $leaderName = $leaders[$lpid]['name']; $leaderPhone = $leaders[$lpid]['phone']; }
+            $leaderName = (string)($leaders[$zid]['name'] ?? '');
+            $leaderPhone = (string)($leaders[$zid]['phone'] ?? '');
             $zones[] = [
                 'id' => $zid,
                 'name' => (string) ($zr['name'] ?? ('#'.$zid)),
@@ -236,19 +297,22 @@ class Zone extends BaseController
         }
         $db = db_connect();
         // Load zone basic info
-        $zr = $db->table('zone')->select('ZID, name, LPID, note')->where('ZID', $zoneId)->get()->getRowArray();
+    $zr = $db->table('zone')->select('ZID, name, holy_name, note')->where('ZID', $zoneId)->get()->getRowArray();
         if (!$zr) {
             return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['notfound' => 'Không tìm thấy giáo khu.']]);
         }
+        // Leader xác định qua person_zone.relationship = 'trưởng khu'
         $leaderName = '';
         $leaderPhone = '';
-        $lpid = (int) ($zr['LPID'] ?? 0);
-        if ($lpid > 0) {
-            $p = $db->table('person')->select('holy_name, first_name, last_name, phone')->where('PID', $lpid)->get()->getRowArray();
-            if ($p) {
-                $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
-                $leaderPhone = (string) ($p['phone'] ?? '');
-            }
+        $p = $db->table('person_zone pz')
+            ->select('p.holy_name, p.first_name, p.last_name, p.phone')
+            ->join('person p', 'p.PID = pz.PID', 'inner')
+            ->where('pz.ZID', $zoneId)
+            ->where('pz.relationship', 'trưởng khu')
+            ->get()->getRowArray();
+        if ($p) {
+            $leaderName = trim(implode(' ', array_filter([(string)($p['holy_name'] ?? ''), (string)($p['first_name'] ?? ''), (string)($p['last_name'] ?? '')])));
+            $leaderPhone = (string) ($p['phone'] ?? '');
         }
 
         // Overview: families and members counts + gender
@@ -321,6 +385,7 @@ class Zone extends BaseController
         $zonePayload = [
             'id' => (int) $zr['ZID'],
             'name' => (string) ($zr['name'] ?? ('#'.$zoneId)),
+            'holy_name' => (string) ($zr['holy_name'] ?? ''),
             'families_count' => $familiesCount,
             'members_count' => $membersCount,
             'leader' => $leaderName,
