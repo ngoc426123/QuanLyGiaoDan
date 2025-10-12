@@ -6,6 +6,7 @@
     <script src="<?= base_url('js/chart.min.js') ?>"></script>
     <!-- App scripts -->
     <script src="<?= base_url('js/app.js') ?>"></script>
+    <script src="<?= base_url('js/theme.js') ?>"></script>
         <!-- ...existing code... -->
 </body>
 </html>
