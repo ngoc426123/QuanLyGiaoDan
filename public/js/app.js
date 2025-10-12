@@ -334,7 +334,7 @@
   document.addEventListener('DOMContentLoaded', function(){
     // Đảm bảo các modal không bị kẹt trong stacking context: chuyển lên body
     (function(){
-      ['modalEditPerson', 'modalConfirmDeletePerson', 'modalPersonDetail'].forEach(function(id){
+      ['modalEditPerson', 'modalConfirmDeletePerson', 'modalPersonDetail', 'modalCreatePerson'].forEach(function(id){
         var el = document.getElementById(id);
         if (el && el.parentNode && el.parentNode !== document.body){
           try { document.body.appendChild(el); } catch(_) {}
@@ -505,8 +505,18 @@
           var fams = json.families || [];
           var zones = json.zones || [];
 
-          // Fill fields
-          var full = p.full_name || [p.holy_name, p.last_name, p.first_name].filter(Boolean).join(' ');
+          // Fill fields (ensure full_name does NOT include holy_name)
+          // Prefer composing from last_name + first_name; if falling back to full_name, strip holy_name prefix if present.
+          function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+          var lastFirst = [p.last_name, p.first_name].filter(Boolean).join(' ').trim();
+          var full = (lastFirst || (p.full_name || '').trim());
+          if (full && p.holy_name) {
+            var holy = String(p.holy_name).trim();
+            if (holy) {
+              var re = new RegExp('^' + escapeRegExp(holy) + '(\s+|\s*\-|\s*\,)?', 'i');
+              full = full.replace(re, '').trim();
+            }
+          }
           form.setAttribute('data-person-id', String(p.PID || pid));
           var holy = form.querySelector('[name="holy_name"]'); if (holy) holy.value = p.holy_name || '';
           var fn = form.querySelector('[name="full_name"]'); if (fn) fn.value = full || '';

@@ -6,72 +6,455 @@ class Family extends BaseController
 {
     public function index()
     {
-        // Sample family data - replace with database query
-        $families = [
-            [
-                'id' => 1,
-                'name' => 'Gia đình Nguyễn Văn An',
-                'address' => '123 Đường Lê Lợi, Quận 1',
-                'members_count' => 4,
-                'head_of_family' => 'Nguyễn Văn An',
-                'phone' => '0901234567',
-                'parish_zone' => 'Giáo khu 1'
-            ],
-            [
-                'id' => 2,
-                'name' => 'Gia đình Trần Thị Bình',
-                'address' => '456 Đường Nguyễn Huệ, Quận 3',
-                'members_count' => 3,
-                'head_of_family' => 'Trần Thị Bình',
-                'phone' => '0907654321',
-                'parish_zone' => 'Giáo khu 2'
-            ],
-            [
-                'id' => 3,
-                'name' => 'Gia đình Lê Minh Cường',
-                'address' => '789 Đường Pasteur, Quận 1',
-                'members_count' => 5,
-                'head_of_family' => 'Lê Minh Cường',
-                'phone' => '0912345678',
-                'parish_zone' => 'Giáo khu 1'
-            ],
-            [
-                'id' => 4,
-                'name' => 'Gia đình Phạm Thị Dung',
-                'address' => '321 Đường Điện Biên Phủ, Quận 10',
-                'members_count' => 2,
-                'head_of_family' => 'Phạm Thị Dung',
-                'phone' => '0909876543',
-                'parish_zone' => 'Giáo khu 3'
-            ],
-            [
-                'id' => 5,
-                'name' => 'Gia đình Hoàng Văn Em',
-                'address' => '654 Đường Cách Mạng Tháng 8, Quận Tân Bình',
-                'members_count' => 6,
-                'head_of_family' => 'Hoàng Văn Em',
-                'phone' => '0918765432',
-                'parish_zone' => 'Giáo khu 2'
-            ],
-            [
-                'id' => 6,
-                'name' => 'Gia đình Vũ Thị Giang',
-                'address' => '987 Đường Lý Tự Trọng, Quận 1',
-                'members_count' => 3,
-                'head_of_family' => 'Vũ Thị Giang',
-                'phone' => '0903456789',
-                'parish_zone' => 'Giáo khu 1'
-            ]
-        ];
+        // Pagination size suggestion: 12 cards/page (3 columns x 4 rows on desktop)
+        $perPage = 12;
+
+        $db = \Config\Database::connect();
+        $model = new \App\Models\FamilyModel();
+
+        // Filters
+        $q = trim((string) $this->request->getGet('q'));
+        $zoneId = (int) ($this->request->getGet('zone') ?? 0);
+        $sort = (string) ($this->request->getGet('sort') ?? '');
+
+        if ($q !== '') {
+            $model = $model->groupStart()
+                ->like('name', $q)
+                ->orLike('address', $q)
+                ->groupEnd();
+        }
+
+        // Filter by zone via family_zone
+        if ($zoneId > 0) {
+            $fidRows = $db->table('family_zone')->select('FID')->where('ZID', $zoneId)->get()->getResultArray();
+            $fids = array_map(fn($r) => (int) $r['FID'], $fidRows);
+            if (empty($fids)) { $fids = [-1]; }
+            $model = $model->whereIn('FID', $fids);
+        }
+
+        // Sort
+        switch ($sort) {
+            case 'name':
+                $model = $model->orderBy("REPLACE(REPLACE(name,'Đ','D'),'đ','d')", 'ASC', false);
+                break;
+            case 'name_desc':
+                $model = $model->orderBy("REPLACE(REPLACE(name,'Đ','D'),'đ','d')", 'DESC', false);
+                break;
+            default:
+                $model = $model->orderBy('UpdatedAt', 'DESC')->orderBy('FID', 'DESC');
+                break;
+        }
+
+        // Paginate families
+        $rows = $model->select(['FID','name','address','note','CreatedAt','UpdatedAt'])->paginate($perPage, 'families');
+        $pager = $model->pager; if ($pager) { $pager->only(['q','zone','sort']); }
+
+        // Prepare auxiliary data for current page
+        $fids = array_map(fn($r) => (int) $r['FID'], $rows ?: []);
+        $membersByFid = [];
+        $headByFid = [];
+        $zoneNamesByFid = [];
+        $phonesByFid = [];
+        if (!empty($fids)) {
+            // Members count
+            $pf = $db->table('person_family')
+                ->select('FID, COUNT(*) as cnt')
+                ->whereIn('FID', $fids)
+                ->groupBy('FID')->get()->getResultArray();
+            foreach ($pf as $r) { $membersByFid[(int)$r['FID']] = (int)$r['cnt']; }
+
+            // Head of family (relationship like 'chủ hộ'), fetch name + phone
+            $heads = $db->table('person_family pf')
+                ->select("pf.FID, p.PID, p.holy_name, p.first_name, p.last_name, p.phone, pf.relationship")
+                ->join('person p', 'p.PID = pf.PID', 'left')
+                ->whereIn('pf.FID', $fids)
+                ->where("LOWER(TRIM(pf.relationship)) IN ('chủ hộ','chu ho','chu hộ','chu hộ')", null, false)
+                ->get()->getResultArray();
+            foreach ($heads as $h) {
+                $fid = (int) $h['FID'];
+                $name = trim(implode(' ', array_filter([
+                    $h['holy_name'] ?? null,
+                    $h['last_name'] ?? null,
+                    $h['first_name'] ?? null,
+                ])));
+                if ($name !== '') { $headByFid[$fid] = $name; }
+                if (!empty($h['phone'])) { $phonesByFid[$fid] = (string) $h['phone']; }
+            }
+
+            // Fallback phone (any member with phone if head not found)
+            $needPhoneFids = array_values(array_diff($fids, array_keys($phonesByFid)));
+            if (!empty($needPhoneFids)) {
+                $phones = $db->table('person_family pf')
+                    ->select('pf.FID, p.phone')
+                    ->join('person p', 'p.PID = pf.PID', 'left')
+                    ->whereIn('pf.FID', $needPhoneFids)
+                    ->where("p.phone IS NOT NULL AND p.phone <> ''", null, false)
+                    ->groupBy('pf.FID')
+                    ->get()->getResultArray();
+                foreach ($phones as $r) { $phonesByFid[(int)$r['FID']] = (string) $r['phone']; }
+            }
+
+            // Zones
+            try {
+                $fz = $db->table('family_zone fz')
+                    ->select('fz.FID, z.name as zone_name')
+                    ->join('zone z', 'z.ZID = fz.ZID', 'left')
+                    ->whereIn('fz.FID', $fids)
+                    ->get()->getResultArray();
+                foreach ($fz as $r) {
+                    $fid = (int) $r['FID'];
+                    $zn = (string) ($r['zone_name'] ?? '');
+                    if ($zn !== '') {
+                        $zoneNamesByFid[$fid] = $zoneNamesByFid[$fid] ?? [];
+                        if (!in_array($zn, $zoneNamesByFid[$fid], true)) { $zoneNamesByFid[$fid][] = $zn; }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // family_zone may not exist in some setups
+            }
+        }
+
+        $familyCards = [];
+        foreach ($rows ?: [] as $r) {
+            $fid = (int) $r['FID'];
+            $familyCards[] = [
+                'id' => $fid,
+                'name' => (string) ($r['name'] ?? ''),
+                'address' => (string) ($r['address'] ?? ''),
+                'members_count' => (int) ($membersByFid[$fid] ?? 0),
+                'head_of_family' => (string) ($headByFid[$fid] ?? ''),
+                'phone' => (string) ($phonesByFid[$fid] ?? ''),
+                'parish_zone' => !empty($zoneNamesByFid[$fid]) ? implode(', ', $zoneNamesByFid[$fid]) : '',
+            ];
+        }
+
+        // Totals
+        $currentPage = method_exists($pager, 'getCurrentPage') ? $pager->getCurrentPage('families') : (int) ($this->request->getGet('page_families') ?? 1);
+        $totalFamilies = method_exists($pager, 'getTotal') ? (int) $pager->getTotal('families') : 0;
+        $from = $totalFamilies > 0 ? (($currentPage - 1) * $perPage + 1) : 0;
+        $to = min($currentPage * $perPage, $totalFamilies);
+
+        // Zones list for filters and modal
+        $zonesList = $db->table('zone')->select('ZID, name')->orderBy('name','ASC')->get()->getResultArray();
 
         $pageData = [
-            'families' => $families,
-            'total_families' => count($families),
-            'page_title' => 'Quản lý Gia đình'
+            'families' => $familyCards,
+            'total_families' => $totalFamilies,
+            'display_from' => $from,
+            'display_to' => $to,
+            'pager' => $pager,
+            'page_title' => 'Quản lý Gia đình',
+            'filters' => [
+                'q' => $q,
+                'zone' => $zoneId,
+                'sort' => $sort,
+            ],
+            'zones' => $zonesList,
+            'per_page_suggestion' => $perPage,
         ];
 
         return view('Family', $pageData + [
             'activeTab' => 'family',
         ]);
+    }
+
+    public function create()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+
+        $rules = [
+            'name' => 'required|min_length[2]|max_length[150]',
+            'address' => 'required|min_length[2]|max_length[255]',
+            'note' => 'permit_empty|max_length[1000]',
+            'zone_id' => 'permit_empty|integer',
+        ];
+        if (! $this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON([
+                'ok' => false,
+                'errors' => $this->validator->getErrors(),
+            ]);
+        }
+
+        $name = trim((string) $this->request->getPost('name'));
+    $address = trim((string) $this->request->getPost('address'));
+        $note = trim((string) $this->request->getPost('note'));
+        $zoneId = (int) ($this->request->getPost('zone_id') ?? 0);
+
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            $model = new \App\Models\FamilyModel();
+            $model->insert([
+                'name' => $name,
+                'address' => $address !== '' ? $address : null,
+                'note' => $note !== '' ? $note : null,
+                'CreatedAt' => date('Y-m-d H:i:s'),
+                'UpdatedAt' => date('Y-m-d H:i:s'),
+            ]);
+            $fid = (int) $model->getInsertID();
+            if ($fid <= 0) { throw new \RuntimeException('Không thể tạo gia đình.'); }
+
+            $zoneName = null;
+            if ($zoneId > 0) {
+                try {
+                    $db->table('family_zone')->insert(['FID' => $fid, 'ZID' => $zoneId]);
+                    $zr = $db->table('zone')->select('name')->where('ZID', $zoneId)->get()->getRowArray();
+                    $zoneName = (string) ($zr['name'] ?? '');
+                } catch (\Throwable $e) {
+                    // ignore if family_zone not exists
+                }
+            }
+
+            $db->transCommit();
+
+            return $this->response->setJSON([
+                'ok' => true,
+                'message' => 'Đã thêm gia đình mới.',
+                'row' => [
+                    'id' => $fid,
+                    'name' => $name,
+                    'address' => $address,
+                    'members_count' => 0,
+                    'head_of_family' => '',
+                    'phone' => '',
+                    'parish_zone' => $zoneName,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            if ($db->transStatus() !== false) { $db->transRollback(); }
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Lỗi khi lưu: ' . $e->getMessage()],
+            ]);
+        }
+    }
+
+    public function delete($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $fid = (int) ($id ?? 0);
+        if ($fid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'ok' => false,
+                'errors' => ['id' => 'Thiếu mã gia đình hợp lệ.'],
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            // Optionally check constraints: deny deletion if has members
+            $hasMembers = $db->table('person_family')->where('FID', $fid)->countAllResults();
+            if ($hasMembers > 0) {
+                // You can allow cascade by deleting relations, but for safety, block delete by default
+                return $this->response->setStatusCode(409)->setJSON([
+                    'ok' => false,
+                    'errors' => ['conflict' => 'Gia đình còn thành viên, không thể xoá.'],
+                ]);
+            }
+
+            // Delete zone links if table exists
+            try { $db->table('family_zone')->where('FID', $fid)->delete(); } catch (\Throwable $e) { /* ignore */ }
+
+            // Delete family
+            $affected = $db->table('family')->where('FID', $fid)->delete();
+            if (!$affected) { throw new \RuntimeException('Không tìm thấy gia đình để xoá.'); }
+
+            $db->transCommit();
+            return $this->response->setJSON(['ok' => true, 'message' => 'Đã xoá gia đình.']);
+        } catch (\Throwable $e) {
+            if ($db->transStatus() !== false) { $db->transRollback(); }
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Xoá thất bại: ' . $e->getMessage()],
+            ]);
+        }
+    }
+
+    public function members($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $fid = (int) ($id ?? 0);
+        if ($fid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'ok' => false,
+                'errors' => ['id' => 'Thiếu mã gia đình hợp lệ.'],
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        try {
+            $rows = $db->table('person_family pf')
+                ->select('pf.PID, pf.relationship, p.holy_name, p.first_name, p.last_name, p.phone, p.gender, p.date_of_birth')
+                ->join('person p', 'p.PID = pf.PID', 'left')
+                ->where('pf.FID', $fid)
+                ->orderBy('pf.relationship', 'ASC')
+                ->orderBy('p.last_name', 'ASC')
+                ->orderBy('p.first_name', 'ASC')
+                ->get()->getResultArray();
+
+            $members = [];
+            foreach ($rows as $r) {
+                $name = trim(implode(' ', array_filter([
+                    $r['holy_name'] ?? null,
+                    $r['last_name'] ?? null,
+                    $r['first_name'] ?? null,
+                ])));
+                $members[] = [
+                    'pid' => (int) ($r['PID'] ?? 0),
+                    'name' => $name !== '' ? $name : ('#' . (int) ($r['PID'] ?? 0)),
+                    'relationship' => (string) ($r['relationship'] ?? ''),
+                    'phone' => (string) ($r['phone'] ?? ''),
+                    'gender' => (string) ($r['gender'] ?? ''),
+                    'birth' => (string) ($r['date_of_birth'] ?? ''),
+                ];
+            }
+
+            return $this->response->setJSON([
+                'ok' => true,
+                'members' => $members,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Không tải được danh sách: ' . $e->getMessage()],
+            ]);
+        }
+    }
+
+    public function removeMember($fid = null, $pid = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $familyId = (int) ($fid ?? 0);
+        $personId = (int) ($pid ?? 0);
+        if ($familyId <= 0 || $personId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'ok' => false,
+                'errors' => ['input' => 'Dữ liệu không hợp lệ.'],
+            ]);
+        }
+        $db = \Config\Database::connect();
+        try {
+            $affected = $db->table('person_family')->where(['FID' => $familyId, 'PID' => $personId])->delete();
+            if (!$affected) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'ok' => false,
+                    'errors' => ['notfound' => 'Không tìm thấy liên kết thành viên trong gia đình.'],
+                ]);
+            }
+            return $this->response->setJSON(['ok' => true, 'message' => 'Đã xoá thành viên khỏi gia đình.']);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Xoá thất bại: ' . $e->getMessage()],
+            ]);
+        }
+    }
+
+    public function searchPeople($fid = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $familyId = (int) ($fid ?? 0);
+        $q = trim((string) ($this->request->getGet('q') ?? ''));
+        if ($q === '') {
+            return $this->response->setJSON(['ok' => true, 'results' => []]);
+        }
+        $db = \Config\Database::connect();
+        try {
+            // Exclude persons already in this family (if familyId provided)
+            $excludePIDs = [];
+            if ($familyId > 0) {
+                $rows = $db->table('person_family')->select('PID')->where('FID', $familyId)->get()->getResultArray();
+                foreach ($rows as $r) { $excludePIDs[] = (int) $r['PID']; }
+            }
+            $builder = $db->table('person');
+            $builder->select('PID, holy_name, first_name, last_name, phone, gender, date_of_birth');
+            $builder->groupStart()
+                ->like('first_name', $q)
+                ->orLike('last_name', $q)
+                ->orLike('holy_name', $q)
+            ->groupEnd();
+            if (!empty($excludePIDs)) { $builder->whereNotIn('PID', $excludePIDs); }
+            $builder->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC')->limit(10);
+            $res = $builder->get()->getResultArray();
+            $out = [];
+            foreach ($res as $p) {
+                $name = trim(implode(' ', array_filter([
+                    $p['holy_name'] ?? null,
+                    $p['last_name'] ?? null,
+                    $p['first_name'] ?? null,
+                ])));
+                $out[] = [
+                    'pid' => (int) $p['PID'],
+                    'name' => $name !== '' ? $name : ('#' . (int) $p['PID']),
+                    'phone' => (string) ($p['phone'] ?? ''),
+                    'gender' => (string) ($p['gender'] ?? ''),
+                    'birth' => (string) ($p['date_of_birth'] ?? ''),
+                ];
+            }
+            return $this->response->setJSON(['ok' => true, 'results' => $out]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Không thể tìm kiếm: ' . $e->getMessage()],
+            ]);
+        }
+    }
+
+    public function addMember($fid = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $familyId = (int) ($fid ?? 0);
+        $pid = (int) ($this->request->getPost('pid') ?? 0);
+        $relationship = trim((string) ($this->request->getPost('relationship') ?? ''));
+        if ($familyId <= 0 || $pid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'ok' => false,
+                'errors' => ['input' => 'Dữ liệu không hợp lệ.'],
+            ]);
+        }
+        $db = \Config\Database::connect();
+        try {
+            // prevent duplicates
+            $exists = $db->table('person_family')->where(['FID' => $familyId, 'PID' => $pid])->countAllResults();
+            if ($exists > 0) {
+                return $this->response->setStatusCode(409)->setJSON([
+                    'ok' => false,
+                    'errors' => ['conflict' => 'Thành viên đã thuộc gia đình.'],
+                ]);
+            }
+            $db->table('person_family')->insert([
+                'FID' => $familyId,
+                'PID' => $pid,
+                'relationship' => $relationship !== '' ? $relationship : null,
+            ]);
+            // fetch minimal person info to return
+            $p = $db->table('person')->select('PID, holy_name, first_name, last_name, phone, gender, date_of_birth')->where('PID', $pid)->get()->getRowArray();
+            if (!$p) {
+                return $this->response->setJSON(['ok' => true, 'message' => 'Đã thêm thành viên.']);
+            }
+            $name = trim(implode(' ', array_filter([
+                $p['holy_name'] ?? null,
+                $p['last_name'] ?? null,
+                $p['first_name'] ?? null,
+            ])));
+            return $this->response->setJSON([
+                'ok' => true,
+                'message' => 'Đã thêm thành viên.',
+                'member' => [
+                    'pid' => (int) $p['PID'],
+                    'name' => $name !== '' ? $name : ('#' . (int) $p['PID']),
+                    'phone' => (string) ($p['phone'] ?? ''),
+                    'gender' => (string) ($p['gender'] ?? ''),
+                    'birth' => (string) ($p['date_of_birth'] ?? ''),
+                    'relationship' => $relationship,
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok' => false,
+                'errors' => ['server' => 'Không thể thêm: ' . $e->getMessage()],
+            ]);
+        }
     }
 }

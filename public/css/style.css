@@ -418,6 +418,45 @@
     gap: 0.75rem;
 }
 
+/* -- Modal z-index fixes --
+   Ensure Bootstrap modal appears above any custom overlays/dropdowns
+   that may have very high z-index values (e.g., dropdown-menu: 9999). */
+.modal {
+    z-index: 11000 !important;
+}
+.modal-backdrop {
+    z-index: 10990 !important;
+}
+
+/* Family members modal: limit height and allow scroll (~6 items visible) */
+.family-members-scroll {
+    max-height: 300px; /* tighter cap (~5-6 items depending on spacing) */
+    overflow-y: auto;
+}
+
+/* Scrollable live search results for add-member (~6 items) */
+.family-results-scroll {
+    max-height: 300px; /* tighter cap to keep modal short */
+    overflow-y: auto;
+}
+
+/* Neutral style for sensitive remove-member action */
+.btn-remove-member {
+    border-color: rgba(0,0,0,0.15);
+    color: #495057;
+    background-color: #fff;
+}
+.btn-remove-member:hover {
+    background-color: #f8f9fa;
+    border-color: rgba(0,0,0,0.2);
+    color: #212529;
+}
+.btn-remove-member:active {
+    background-color: #f1f3f5;
+    color: #212529;
+}
+.btn-remove-member i { opacity: .85; }
+
 .person-avatar {
     flex-shrink: 0;
 }

@@ -52,4 +52,5 @@
             </section>
         </section>
     </div>
+    <?= $this->renderSection('modals') ?>
 <?= $this->include('partials/footer') ?>
