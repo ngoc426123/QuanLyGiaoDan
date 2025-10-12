@@ -148,10 +148,10 @@
                                         Thao tác
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="#"><i class="fa-regular fa-eye me-2"></i>Xem</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fa-regular fa-pen-to-square me-2"></i>Sửa</a></li>
+                                        <li><a class="dropdown-item action-view-person" href="#" data-person-id="<?= (int)($p['id'] ?? 0) ?>"><i class="fa-regular fa-eye me-2"></i>Xem</a></li>
+                                        <li><a class="dropdown-item action-edit-person" href="#" data-person-id="<?= (int)($p['id'] ?? 0) ?>"><i class="fa-regular fa-pen-to-square me-2"></i>Sửa</a></li>
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#"><i class="fa-regular fa-trash-can me-2"></i>Xoá</a></li>
+                                        <li><a class="dropdown-item text-danger action-delete-person" href="#" data-person-id="<?= (int)($p['id'] ?? 0) ?>" data-person-name="<?= esc($p['name'] ?? '') ?>"><i class="fa-regular fa-trash-can me-2"></i>Xoá</a></li>
                                     </ul>
                                 </div>
                             </td>
@@ -345,6 +345,41 @@
         </div>
     </div>
         </div>
+<!-- Modal: Person Detail -->
+<div class="modal fade" id="modalPersonDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-regular fa-user me-2"></i>Thông tin giáo dân</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="personDetailBody" class="text-muted">Đang tải...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+    </div>
+<!-- Modal: Confirm Delete -->
+<div class="modal fade" id="modalConfirmDeletePerson" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fa-regular fa-trash-can me-2"></i>Xoá giáo dân</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn xoá giáo dân: <strong id="deletePersonName">—</strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeletePerson" data-person-id="">Xoá</button>
+            </div>
+        </div>
+    </div>
+    </div>
 <script>
     // Elevate table row z-index when any dropdown/dropup in that row is opened
     (function() {

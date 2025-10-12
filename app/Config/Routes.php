@@ -10,6 +10,8 @@ $routes->get('/family', 'Family::index');
 $routes->get('/person', 'Person::index');
 $routes->post('/person/create', 'Person::create');
 $routes->get('/person/families', 'Person::families');
+$routes->get('/person/(:num)', 'Person::detail/$1');
+$routes->post('/person/(:num)/delete', 'Person::delete/$1');
 
 $routes->get('/zone', 'Zone::index');
 

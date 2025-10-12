@@ -334,6 +334,198 @@
     initYearPickers(document);
     initPersonForm(document);
     initOverviewCharts();
+
+    // Action: View Person
+    document.body.addEventListener('click', function(e){
+      var a = e.target.closest && e.target.closest('a.action-view-person');
+      if (!a) return;
+      e.preventDefault();
+      var pid = a.getAttribute('data-person-id');
+      if (!pid) return;
+      var body = document.getElementById('personDetailBody');
+      if (body) body.innerHTML = 'Đang tải...';
+      fetch('/person/' + encodeURIComponent(pid), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+        .then(function(res){ return res.json(); })
+        .then(function(json){
+          if (!json || !json.ok) throw new Error('Load failed');
+          var p = json.person || {};
+          var fams = json.families || [];
+          var zones = json.zones || [];
+          var fullName = (p.full_name || [p.holy_name, p.last_name, p.first_name].filter(Boolean).join(' ')) || ('#' + (p.PID || ''));
+          // Dynamic title
+          var titleEl = document.querySelector('#modalPersonDetail .modal-title');
+          if (titleEl) {
+            titleEl.innerHTML = '<i class="fa-regular fa-user me-2"></i>' + fullName;
+          }
+          // Avatar/icon by gender
+          var gstr = ((p.gender_label || p.gender || '') + '').toLowerCase();
+          var icon = (gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+          var base = (window.BASE_URL || '/');
+
+          // Build professional layout using template literals
+          var deceasedBlock = p.date_Dead_fmt ? `
+            <div class="col-md-6">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                  <div class="text-muted small mb-1"><i class="fa-regular fa-circle-xmark me-1 text-secondary"></i>Qua đời</div>
+                  <div class="fs-6"><span class="badge bg-secondary"><i class="fa-regular fa-calendar me-1"></i>${p.date_Dead_fmt}</span></div>
+                </div>
+              </div>
+            </div>` : '';
+
+          var familyList = fams.length ? `
+            <ul class="list-group list-group-flush">
+              ${fams.map(function(f){
+                var rel = f.relationship ? `<span class="badge bg-light text-dark ms-2">${f.relationship}</span>` : '';
+                var addr = f.family_address ? `<div class="small text-muted"><i class="fa-regular fa-map me-1"></i>${f.family_address}</div>` : '';
+                return `<li class="list-group-item d-flex justify-content-between align-items-start">
+                  <div class="ms-2 me-auto">
+                    <div class="fw-semibold">${(f.family_name || '—')}${rel ? ' ' + rel : ''}</div>${addr}
+                  </div>
+                </li>`;
+              }).join('')}
+            </ul>` : '<div class="text-muted">—</div>';
+
+          var zoneList = zones.length ? `
+            <ul class="list-group list-group-flush">
+              ${zones.map(function(z){
+                var holy = z.zone_holy_name ? `<span class=\"badge bg-light text-dark ms-2\">${z.zone_holy_name}</span>` : '';
+                return `<li class="list-group-item"><span class="fw-semibold">${(z.zone_name || '—')}</span> ${holy}</li>`;
+              }).join('')}
+            </ul>` : '<div class="text-muted">—</div>';
+
+          var isFemale = (gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f');
+          var genderBadgeClass = isFemale ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary';
+          var genderLabelText = p.gender_label || p.gender || '-';
+
+          var html = `
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="d-flex align-items-center gap-3">
+                  <img src="${base}${icon}" alt="avatar" style="width:56px;height:56px;object-fit:contain">
+                  <div>
+                    <div class="fs-5 mb-1">${fullName}</div>
+                    <div class="small text-muted">
+                      <span class="badge ${genderBadgeClass} me-2"><i class="fa-solid fa-venus-mars me-1"></i>${genderLabelText}</span>
+                      <span class="badge bg-info-subtle text-info"><i class="fa-regular fa-id-card me-1"></i>Tuổi: ${(p.age != null ? p.age : '-')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="text-muted small mb-1"><i class="fa-regular fa-user me-1 text-secondary"></i>Thông tin cơ bản</div>
+                    <div class="mb-2"><i class="fa-regular fa-calendar me-2 text-secondary"></i><strong>Ngày sinh:</strong> ${(p.date_of_birth_fmt || '-')}</div>
+                    <div><i class="fa-solid fa-phone me-2 text-secondary"></i><strong>Điện thoại:</strong> ${(p.phone || '-')}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="text-muted small mb-1"><i class="fa-solid fa-church me-1 text-secondary"></i>Các bí tích</div>
+                    <div class="row g-2">
+                      <div class="col-12 col-sm-6"><i class="fa-solid fa-water me-2 text-primary"></i><strong>Rửa tội:</strong> ${(p.date_RT_fmt || '-')}</div>
+                      <div class="col-12 col-sm-6"><i class="fa-solid fa-bread-slice me-2 text-info"></i><strong>Rước lễ:</strong> ${(p.date_RL_fmt || '-')}</div>
+                      <div class="col-12 col-sm-6"><i class="fa-solid fa-dove me-2 text-purple"></i><strong>Thêm sức:</strong> ${(p.date_TS_fmt || '-')}</div>
+                      <div class="col-12 col-sm-6"><i class="fa-solid fa-ring me-2 text-danger"></i><strong>Hôn phối:</strong> ${(p.date_HP_fmt || '-')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ${deceasedBlock}
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="text-muted small mb-1"><i class="fa-solid fa-house me-1 text-secondary"></i>Gia đình</div>
+                    ${familyList}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="text-muted small mb-1"><i class="fa-solid fa-church me-1 text-secondary"></i>Giáo khu</div>
+                    ${zoneList}
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                  <div class="card-body">
+                    <div class="text-muted small mb-1"><i class="fa-regular fa-note-sticky me-1 text-secondary"></i>Ghi chú</div>
+                    <div>${(p.note || '<span class="text-muted">—</span>')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          if (body) body.innerHTML = html;
+          var modalEl = document.getElementById('modalPersonDetail');
+          if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+        }).catch(function(){
+          if (body) body.innerHTML = '<span class="text-danger">Không tải được dữ liệu.</span>';
+        });
+    });
+
+    // Action: Delete Person
+    document.body.addEventListener('click', function(e){
+      var a = e.target.closest && e.target.closest('a.action-delete-person');
+      if (!a) return;
+      e.preventDefault();
+      var pid = a.getAttribute('data-person-id');
+      var name = a.getAttribute('data-person-name') || '';
+      var nameEl = document.getElementById('deletePersonName');
+      if (nameEl) nameEl.textContent = name;
+      var btn = document.getElementById('btnConfirmDeletePerson');
+      if (btn) btn.setAttribute('data-person-id', pid || '');
+      var modalEl = document.getElementById('modalConfirmDeletePerson');
+      if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+    });
+
+    var btnDel = document.getElementById('btnConfirmDeletePerson');
+    if (btnDel && !btnDel.dataset.boundDel){
+      btnDel.addEventListener('click', function(){
+        var pid = this.getAttribute('data-person-id');
+        if (!pid) return;
+        this.disabled = true;
+        var self = this;
+        fetch('/person/' + encodeURIComponent(pid) + '/delete', { method: 'POST', headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+          .then(function(res){ return res.json(); })
+          .then(function(json){
+            if (!json || !json.ok) throw new Error('Delete failed');
+            // remove row from table
+            var row = document.querySelector('.person-table tbody tr');
+            // Prefer removing row matching id in "Mã: #ID" cell
+            var rows = document.querySelectorAll('.person-table tbody tr');
+            rows.forEach(function(tr){
+              var code = tr.querySelector('td:nth-child(3) .text-muted');
+              if (code && code.textContent && code.textContent.indexOf('#'+pid) !== -1){ tr.parentNode.removeChild(tr); }
+            });
+            var modalEl = document.getElementById('modalConfirmDeletePerson');
+            if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+            // show success alert
+            var alertPlaceholder = document.createElement('div');
+            alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
+            alertPlaceholder.setAttribute('role', 'alert');
+            alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã xoá giáo dân.' +
+              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            var mount = document.querySelector('.web-body') || document.body;
+            mount.prepend(alertPlaceholder);
+            setTimeout(function(){ if (window.bootstrap){ var bs = bootstrap.Alert.getOrCreateInstance(alertPlaceholder); bs.close(); } }, 5000);
+          }).catch(function(){
+            // show error alert
+            var alertPlaceholder = document.createElement('div');
+            alertPlaceholder.className = 'alert alert-danger alert-dismissible fade show m-3';
+            alertPlaceholder.setAttribute('role', 'alert');
+            alertPlaceholder.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>Không thể xoá.' +
+              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            var mount = document.querySelector('.web-body') || document.body;
+            mount.prepend(alertPlaceholder);
+          }).finally(function(){ self.disabled = false; });
+      });
+      btnDel.dataset.boundDel = '1';
+    }
   });
 
   // Initialize pickers for elements inside a shown modal

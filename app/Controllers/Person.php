@@ -494,4 +494,105 @@ class Person extends BaseController
             }, $rows ?: []),
         ]);
     }
+
+    // GET /person/{id} - detail
+    public function detail($id)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $pid = (int) $id;
+        if ($pid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'error' => 'Invalid ID']);
+        }
+
+        $db = \Config\Database::connect();
+        $person = $db->table('person')->where('PID', $pid)->get()->getRowArray();
+        if (!$person) {
+            return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'error' => 'Not found']);
+        }
+
+        // Format dates as d/m/Y when valid
+        $fmt = function($date){
+            if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') return null;
+            try { $dt = new \DateTime($date); return $dt->format('d/m/Y'); } catch (\Throwable $e) { return null; }
+        };
+        $age = null;
+        if (!empty($person['date_of_birth']) && $person['date_of_birth'] !== '0000-00-00'){
+            try { $age = (new \DateTime())->diff(new \DateTime($person['date_of_birth']))->y; } catch (\Throwable $e) { $age = null; }
+        }
+
+        $families = $db->table('person_family pf')
+            ->select('pf.FID, f.name as family_name, f.address as family_address, pf.relationship')
+            ->join('family f', 'f.FID = pf.FID', 'left')
+            ->where('pf.PID', $pid)
+            ->get()->getResultArray();
+        $zones = $db->table('person_zone pz')
+            ->select('pz.ZID, z.name as zone_name, z.holy_name as zone_holy_name, z.LPID')
+            ->join('zone z', 'z.ZID = pz.ZID', 'left')
+            ->where('pz.PID', $pid)
+            ->get()->getResultArray();
+
+        // Normalize gender for display
+        $genderRaw = $person['gender'] ?? null;
+        if ($genderRaw === 1 || $genderRaw === '1') {
+            $genderLabel = 'Nam';
+        } elseif ($genderRaw === 0 || $genderRaw === '0') {
+            $genderLabel = 'Nữ';
+        } else {
+            $genderLabel = (is_string($genderRaw) && $genderRaw !== '') ? (string)$genderRaw : '-';
+        }
+
+        $payload = [
+            'ok' => true,
+            'person' => array_merge($person, [
+                'date_of_birth_fmt' => $fmt($person['date_of_birth'] ?? null),
+                'date_RT_fmt' => $fmt($person['date_RT'] ?? null),
+                'date_RL_fmt' => $fmt($person['date_RL'] ?? null),
+                'date_TS_fmt' => $fmt($person['date_TS'] ?? null),
+                'date_HP_fmt' => $fmt($person['date_HP'] ?? null),
+                'date_Dead_fmt' => $fmt($person['date_Dead'] ?? null),
+                'age' => $age,
+                'gender_label' => $genderLabel,
+                'full_name' => trim(implode(' ', array_filter([
+                    $person['holy_name'] ?? null,
+                    $person['last_name'] ?? null,
+                    $person['first_name'] ?? null,
+                ]))),
+            ]),
+            'families' => $families,
+            'zones' => $zones,
+        ];
+
+        return $this->response->setJSON($payload);
+    }
+
+    // POST /person/{id}/delete - delete person and relations
+    public function delete($id)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $pid = (int) $id;
+        if ($pid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'error' => 'Invalid ID']);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            // Ensure exists
+            $exists = $db->table('person')->select('PID')->where('PID', $pid)->get()->getRowArray();
+            if (!$exists) {
+                $db->transRollback();
+                return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'error' => 'Not found']);
+            }
+            // Delete links
+            $db->table('person_family')->where('PID', $pid)->delete();
+            $db->table('person_zone')->where('PID', $pid)->delete();
+            // Delete person
+            $db->table('person')->where('PID', $pid)->delete();
+            $db->transCommit();
+            return $this->response->setJSON(['ok' => true]);
+        } catch (\Throwable $e) {
+            if ($db->transStatus() !== false) $db->transRollback();
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'error' => 'Delete failed: '.$e->getMessage()]);
+        }
+    }
 }
