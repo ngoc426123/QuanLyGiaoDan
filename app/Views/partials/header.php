@@ -25,18 +25,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?= base_url('css/style.css') ?>">
-    <link rel="stylesheet" href="<?= base_url('css/app.css') ?>">
-    <script>
-        // Apply saved theme ASAP to avoid flash
-        (function() {
-            try {
-                var t = localStorage.getItem('theme') || 'light';
-                if (t === 'dark') {
-                    document.documentElement.classList.add('theme-dark');
-                }
-            } catch (e) {}
-        })();
-    </script>
     <script>window.BASE_URL = <?= json_encode(rtrim(base_url('/'), '/').'/') ?>;</script>
 </head>
 <body style="background-color: #f6f8fa;">
