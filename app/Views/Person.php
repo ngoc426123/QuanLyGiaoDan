@@ -2,8 +2,9 @@
 
 <?= $this->section('content') ?>
 <style>
-/* Elevate row when its dropdown/dropup is open to avoid clipping */
-.person-table tr.row-elevated { position: relative; z-index: 1100; }
+/* Elevate row when its dropdown/dropup is open to avoid clipping
+    Keep below Bootstrap modal/backdrop (1050/1055) */
+.person-table tr.row-elevated { position: relative; z-index: 1040; }
 </style>
 <!-- Person Management Header -->
 <div class="person-header d-flex justify-content-between align-items-center mb-4">
@@ -79,7 +80,7 @@
             <tbody>
                 <?php if (!empty($peopleRows ?? [])): ?>
                     <?php foreach (($peopleRows ?? []) as $idx => $p): ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)($p['id'] ?? 0) ?>">
                             <td class="text-center"><input type="checkbox" class="form-check-input"></td>
                             <td>
                                 <div class="person-info">
@@ -361,8 +362,7 @@
             </div>
         </div>
     </div>
-    </div>
-<!-- Modal: Confirm Delete -->
+    <!-- Modal: Confirm Delete -->
 <div class="modal fade" id="modalConfirmDeletePerson" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -379,7 +379,156 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal: Edit Person (mirrors Create) -->
+<div class="modal fade" id="modalEditPerson" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-regular fa-pen-to-square me-2"></i>Chỉnh sửa giáo dân</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="personEditForm" method="post" action="#" novalidate>
+                <?= csrf_field() ?>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="modal-section-title">Thông tin cơ bản</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" name="holy_name" id="editHolyNameInput" class="form-control" placeholder="Tên thánh">
+                                        <label for="editHolyNameInput">Tên thánh</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" name="full_name" id="editFullNameInput" class="form-control" placeholder="Họ và tên" required>
+                                        <label for="editFullNameInput">Họ và tên <span class="text-danger">*</span></label>
+                                        <div class="invalid-feedback">Vui lòng nhập họ và tên.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+                                        <select class="form-select" name="gender" aria-label="Giới tính">
+                                            <option value="Nam">Nam</option>
+                                            <option value="Nữ">Nữ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                                        <input type="text" name="birth_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Ngày sinh">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
+                                        <input type="tel" name="phone" class="form-control" placeholder="Số điện thoại (VD: 0901234567)" aria-label="Số điện thoại">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="modal-section-title">Liên kết</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-church"></i></span>
+                                        <select class="form-select" name="zone_id" aria-label="Giáo khu">
+                                            <option value="">-- Chọn giáo khu --</option>
+                                            <?php foreach (($zones ?? []) as $z): ?>
+                                                <option value="<?= (int)$z['ZID'] ?>"><?= esc($z['name'] ?: ('#' . (int)$z['ZID'])) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-house"></i></span>
+                                        <select class="form-select" name="family_id" aria-label="Gia đình">
+                                            <option value="">-- Chọn gia đình --</option>
+                                            <?php foreach (($families ?? []) as $f): ?>
+                                                <option value="<?= (int)$f['FID'] ?>"><?= esc($f['name'] ?: ('#' . (int)$f['FID'])) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-none" id="editRelationshipWrap">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-people-roof"></i></span>
+                                        <input type="text" class="form-control" name="relationship" list="relationshipOptions" placeholder="Quan hệ trong gia đình (VD: Chủ hộ, Vợ/chồng, Con, Cha, Mẹ, ...)">
+                                    </div>
+                                    <div class="form-text">Bạn có thể chọn từ gợi ý hoặc tự nhập.</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <textarea name="notes" rows="6" class="form-control" placeholder="Ghi chú thêm (nếu có)" aria-label="Ghi chú" style="height: 110px"></textarea>
+                                        <label>Ghi chú</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-divider"></div>
+                            <div class="modal-section-title">Các bí tích</div>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Rửa tội</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-water"></i></span>
+                                        <input type="text" name="baptism_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Rửa tội (ngày/tháng/năm)">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Rước lễ</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-bread-slice"></i></span>
+                                        <input type="text" name="communion_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Rước lễ (ngày/tháng/năm)">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Thêm sức</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-dove"></i></span>
+                                        <input type="text" name="confirmation_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Thêm sức (ngày/tháng/năm)">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm-6 col-lg-3">
+                                    <label class="form-label mb-1">Hôn phối</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-ring"></i></span>
+                                        <input type="text" name="marriage_year" class="form-control yearpicker" placeholder="dd/mm/yyyy" autocomplete="off" aria-label="Hôn phối (ngày/tháng/năm)">
+                                    </div>
+                                </div>
+                                <div class="form-divider"></div>
+                                <div class="col-12 text-end deceased-block">
+                                    <div class="form-check form-switch d-inline-flex align-items-center gap-2">
+                                        <input class="form-check-input" type="checkbox" id="editIsDeceasedSwitch" name="is_deceased">
+                                        <label class="form-check-label mb-0 small text-muted" for="editIsDeceasedSwitch">Đã qua đời</label>
+                                    </div>
+                                    <div class="mt-2 d-none" id="editDeceasedYearWrap" style="max-width: 200px; margin-left: auto;">
+                                        <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="dd/mm/yyyy" autocomplete="off">
+                                        <div class="invalid-feedback text-end">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-3"><span class="text-danger">*</span> Thông tin bắt buộc</small>
+                    <div class="text-muted small mt-1">Thông tin sẽ được lưu và có thể chỉnh sửa sau.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 <script>
     // Elevate table row z-index when any dropdown/dropup in that row is opened
     (function() {

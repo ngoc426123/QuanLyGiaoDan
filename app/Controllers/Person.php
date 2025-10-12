@@ -3,9 +3,31 @@
 namespace App\Controllers;
 
 use App\Models\PersonModel;
+use App\Models\HistoryModel;
 
 class Person extends BaseController
 {
+    /**
+     * Ghi nhật ký thao tác vào bảng history (không làm hỏng luồng chính nếu lỗi)
+     * @param string $type   Phân loại (ví dụ: person)
+     * @param string $name   Hành động (create|update|delete)
+     * @param array  $content Dữ liệu nội dung (sẽ json_encode)
+     */
+    private function historyLog(string $type, string $name, array $content): void
+    {
+        try {
+            $model = new HistoryModel();
+            $payload = [
+                'type'    => mb_substr($type, 0, 10),
+                'name'    => mb_substr($name, 0, 25),
+                'content' => json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'time'    => date('Y-m-d H:i:s'),
+            ];
+            $model->insert($payload);
+        } catch (\Throwable $e) {
+            // ignore logging errors silently
+        }
+    }
     public function index(): string
     {
         // Server-side pagination + DB integration + Filters
@@ -395,6 +417,24 @@ class Person extends BaseController
 
             // Continue to build response with real ID
             $realId = $newId;
+
+            // Audit log
+            $actor = [
+                'ip' => (string) $this->request->getIPAddress(),
+                'ua' => (string) ($this->request->getUserAgent() ? $this->request->getUserAgent()->getAgentString() : ''),
+                'user_id' => null,
+            ];
+            $this->historyLog('person', 'create', [
+                'entity' => 'person',
+                'pid' => $realId,
+                'after' => [
+                    'person' => $personData,
+                    'zone_id' => $zid ?? null,
+                    'family_id' => $fid ?? null,
+                    'relationship' => isset($rel) ? $rel : null,
+                ],
+                'by' => $actor,
+            ]);
         } catch (\Throwable $e) {
             if ($db->transStatus() !== false) {
                 $db->transRollback();
@@ -578,21 +618,222 @@ class Person extends BaseController
         $db->transBegin();
         try {
             // Ensure exists
-            $exists = $db->table('person')->select('PID')->where('PID', $pid)->get()->getRowArray();
+            $exists = $db->table('person')->where('PID', $pid)->get()->getRowArray();
             if (!$exists) {
                 $db->transRollback();
                 return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'error' => 'Not found']);
             }
+            // Snapshot before
+            $before = $exists;
+            $before['families'] = $db->table('person_family')->where('PID', $pid)->get()->getResultArray();
+            $before['zones']    = $db->table('person_zone')->where('PID', $pid)->get()->getResultArray();
             // Delete links
             $db->table('person_family')->where('PID', $pid)->delete();
             $db->table('person_zone')->where('PID', $pid)->delete();
             // Delete person
             $db->table('person')->where('PID', $pid)->delete();
             $db->transCommit();
+
+            // Audit log
+            $actor = [
+                'ip' => (string) $this->request->getIPAddress(),
+                'ua' => (string) ($this->request->getUserAgent() ? $this->request->getUserAgent()->getAgentString() : ''),
+                'user_id' => null,
+            ];
+            $this->historyLog('person', 'delete', [
+                'entity' => 'person',
+                'pid' => $pid,
+                'before' => $before,
+                'after' => null,
+                'by' => $actor,
+            ]);
             return $this->response->setJSON(['ok' => true]);
         } catch (\Throwable $e) {
             if ($db->transStatus() !== false) $db->transRollback();
             return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'error' => 'Delete failed: '.$e->getMessage()]);
+        }
+    }
+
+    // POST /person/{id}/update - update basic info and sacraments, zone and family
+    public function update($id)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $pid = (int) $id;
+        if ($pid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Invalid ID']]);
+        }
+
+        $rules = [
+            'full_name'         => 'required|min_length[2]|max_length[100]',
+            'holy_name'         => 'permit_empty|max_length[100]',
+            'gender'            => 'permit_empty|in_list[Nam,Nữ,nam,nữ,Nam ,Nữ ]',
+            'birth_year'        => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'baptism_year'      => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'communion_year'    => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'confirmation_year' => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'marriage_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'deceased_year'     => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
+            'phone'             => 'permit_empty|max_length[20]',
+            'zone_id'           => 'permit_empty|integer',
+            'family_id'         => 'permit_empty|integer',
+            'relationship'      => 'permit_empty|max_length[100]',
+            'notes'             => 'permit_empty|max_length[1000]',
+        ];
+        if (! $this->validate($rules)) {
+            return $this->response->setStatusCode(422)->setJSON(['ok' => false, 'errors' => $this->validator->getErrors()]);
+        }
+
+        $data = [
+            'name'   => trim((string) $this->request->getPost('full_name')),
+            'holy_name' => trim((string) $this->request->getPost('holy_name')),
+            'gender' => (string) $this->request->getPost('gender'),
+            'birth'  => (string) $this->request->getPost('birth_year'),
+            'phone'  => (string) $this->request->getPost('phone'),
+            'zone'   => (string) $this->request->getPost('zone_id'),
+            'family' => (string) $this->request->getPost('family_id'),
+            'relationship' => (string) $this->request->getPost('relationship'),
+            'notes'  => (string) $this->request->getPost('notes'),
+            'sacraments' => [
+                'baptism'      => (string) $this->request->getPost('baptism_year'),
+                'communion'    => (string) $this->request->getPost('communion_year'),
+                'confirmation' => (string) $this->request->getPost('confirmation_year'),
+                'marriage'     => (string) $this->request->getPost('marriage_year'),
+                'deceased'     => (string) $this->request->getPost('deceased_year'),
+            ],
+        ];
+
+        // Helper: extract year from yyyy or dd/mm/yyyy
+        $extractYear = function (?string $val) {
+            $s = trim((string) $val);
+            if ($s === '') return null;
+            if (preg_match('/^\d{4}$/', $s)) return (int) $s;
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $s, $m)) return (int) $m[3];
+            return null;
+        };
+        $by = $extractYear($data['birth']);
+        $dy = $extractYear($data['sacraments']['deceased'] ?? '');
+        if ($by !== null && $dy !== null && $dy < $by) {
+            return $this->response->setStatusCode(422)->setJSON(['ok' => false, 'errors' => ['deceased_year' => 'Năm mất phải lớn hơn hoặc bằng năm sinh.']]);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transBegin();
+
+        $parseName = function(string $full) {
+            $full = trim(preg_replace('/\s+/', ' ', $full));
+            if ($full === '') return ['last_name' => '', 'first_name' => ''];
+            $parts = explode(' ', $full);
+            $first = array_pop($parts);
+            $last  = trim(implode(' ', $parts));
+            return ['last_name' => $last, 'first_name' => $first];
+        };
+        $toDate = function (?string $val) {
+            $s = trim((string) $val);
+            if ($s === '') return null;
+            if (preg_match('/^\d{4}$/', $s)) { return $s . '-01-01'; }
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $s, $m)) {
+                $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                $M = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+                $Y = $m[3];
+                return "$Y-$M-$d";
+            }
+            return null;
+        };
+
+        try {
+            // Ensure exists
+            $exists = $db->table('person')->where('PID', $pid)->get()->getRowArray();
+            if (!$exists) {
+                $db->transRollback();
+                return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'errors' => ['id' => 'Not found']]);
+            }
+            // Snapshot before
+            $before = $exists;
+            $before['families'] = $db->table('person_family')->where('PID', $pid)->get()->getResultArray();
+            $before['zones']    = $db->table('person_zone')->where('PID', $pid)->get()->getResultArray();
+
+            $nameParts = $parseName($data['name']);
+            $personData = [
+                'holy_name'    => $data['holy_name'] ?: null,
+                'first_name'   => $nameParts['first_name'] ?: null,
+                'last_name'    => $nameParts['last_name'] ?: null,
+                'gender'       => $data['gender'] ?: null,
+                'date_of_birth'=> $toDate($data['birth']),
+                'date_RT'      => $toDate($data['sacraments']['baptism'] ?? ''),
+                'date_RL'      => $toDate($data['sacraments']['communion'] ?? ''),
+                'date_TS'      => $toDate($data['sacraments']['confirmation'] ?? ''),
+                'date_HP'      => $toDate($data['sacraments']['marriage'] ?? ''),
+                'date_Dead'    => $toDate($data['sacraments']['deceased'] ?? ''),
+                'phone'        => $data['phone'] ?: null,
+                'note'         => $data['notes'] ?: null,
+                'UpdatedAt'    => date('Y-m-d H:i:s'),
+            ];
+            $db->table('person')->where('PID', $pid)->update($personData);
+
+            // Update zone link (replace simple)
+            $zid = (int) ($data['zone'] ?: 0);
+            $db->table('person_zone')->where('PID', $pid)->delete();
+            if ($zid > 0) { $db->table('person_zone')->insert(['PID' => $pid, 'ZID' => $zid]); }
+
+            // Update family link
+            $fid = (int) ($data['family'] ?: 0);
+            $db->table('person_family')->where('PID', $pid)->delete();
+            if ($fid > 0) {
+                $rel = trim((string) $data['relationship']);
+                $db->table('person_family')->insert(['PID' => $pid, 'FID' => $fid, 'relationship' => $rel !== '' ? $rel : null]);
+            }
+
+            $db->transCommit();
+
+            // Snapshot after
+            $afterPerson = $db->table('person')->where('PID', $pid)->get()->getRowArray();
+            $after = $afterPerson ?: [];
+            $after['families'] = $db->table('person_family')->where('PID', $pid)->get()->getResultArray();
+            $after['zones']    = $db->table('person_zone')->where('PID', $pid)->get()->getResultArray();
+
+            // Audit log
+            $actor = [
+                'ip' => (string) $this->request->getIPAddress(),
+                'ua' => (string) ($this->request->getUserAgent() ? $this->request->getUserAgent()->getAgentString() : ''),
+                'user_id' => null,
+            ];
+            $this->historyLog('person', 'update', [
+                'entity' => 'person',
+                'pid' => $pid,
+                'before' => $before,
+                'after' => $after,
+                'by' => $actor,
+            ]);
+
+            // Build minimal row info to update UI
+            $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
+            $newRow = [
+                'id' => $pid,
+                'name' => $displayName,
+                'gender' => $data['gender'] ?: 'Nam',
+                'birth' => $data['birth'] ?: '-',
+                'baptismDate' => $data['sacraments']['baptism'] ?: null,
+                'communionDate' => $data['sacraments']['communion'] ?: null,
+                'confirmationDate' => $data['sacraments']['confirmation'] ?: null,
+                'marriageDate' => $data['sacraments']['marriage'] ?: null,
+                'family' => null,
+                'zones' => null,
+            ];
+
+            // Fetch names for immediate UI display
+            if ($zid > 0) {
+                $zrow = $db->table('zone')->select('name')->where('ZID', $zid)->get()->getRowArray();
+                $newRow['zones'] = (string) ($zrow['name'] ?? '');
+            }
+            if ($fid > 0) {
+                $frow = $db->table('family')->select('name')->where('FID', $fid)->get()->getRowArray();
+                $newRow['family'] = (string) ($frow['name'] ?? '');
+            }
+
+            return $this->response->setJSON(['ok' => true, 'message' => 'Cập nhật thành công.', 'row' => $newRow]);
+        } catch (\Throwable $e) {
+            if ($db->transStatus() !== false) $db->transRollback();
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'errors' => ['server' => 'Lỗi khi cập nhật: ' . $e->getMessage()]]);
         }
     }
 }

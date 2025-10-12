@@ -165,6 +165,7 @@
                   }
                 } catch(_) {}
                   var tr = document.createElement('tr');
+                  if (row.id) { try { tr.setAttribute('data-row-id', String(row.id)); } catch(_) {} }
                   var base = (window.BASE_URL || '/');
                   tr.innerHTML = `
                     <td class="text-center"><input type="checkbox" class="form-check-input"></td>
@@ -197,10 +198,10 @@
                       <div class="dropdown">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Thao tác</button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                          <li><a class="dropdown-item" href="#"><i class="fa-regular fa-eye me-2"></i>Xem</a></li>
-                          <li><a class="dropdown-item" href="#"><i class="fa-regular fa-pen-to-square me-2"></i>Sửa</a></li>
+                          <li><a class="dropdown-item action-view-person" href="#" data-person-id="${row.id}"><i class="fa-regular fa-eye me-2"></i>Xem</a></li>
+                          <li><a class="dropdown-item action-edit-person" href="#" data-person-id="${row.id}"><i class="fa-regular fa-pen-to-square me-2"></i>Sửa</a></li>
                           <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item text-danger" href="#"><i class="fa-regular fa-trash-can me-2"></i>Xoá</a></li>
+                          <li><a class="dropdown-item text-danger action-delete-person" href="#" data-person-id="${row.id}" data-person-name="${row.name || ''}"><i class="fa-regular fa-trash-can me-2"></i>Xoá</a></li>
                         </ul>
                       </div>
                     </td>`;
@@ -331,6 +332,16 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
+    // Đảm bảo các modal không bị kẹt trong stacking context: chuyển lên body
+    (function(){
+      ['modalEditPerson', 'modalConfirmDeletePerson', 'modalPersonDetail'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el && el.parentNode && el.parentNode !== document.body){
+          try { document.body.appendChild(el); } catch(_) {}
+        }
+      });
+    })();
+
     initYearPickers(document);
     initPersonForm(document);
     initOverviewCharts();
@@ -468,6 +479,78 @@
         });
     });
 
+    // Action: Edit Person
+    document.body.addEventListener('click', function(e){
+      var a = e.target.closest && e.target.closest('a.action-edit-person');
+      if (!a) return;
+      e.preventDefault();
+      var pid = a.getAttribute('data-person-id');
+      if (!pid) return;
+      var modalEl = document.getElementById('modalEditPerson');
+      var form = modalEl ? modalEl.querySelector('#personEditForm') : null;
+      if (!modalEl || !form) return;
+      // reset form state
+      form.reset();
+      form.classList.remove('was-validated');
+      var deceasedWrap = modalEl.querySelector('#editDeceasedYearWrap');
+      if (deceasedWrap) deceasedWrap.classList.add('d-none');
+      var relWrap = modalEl.querySelector('#editRelationshipWrap');
+      if (relWrap) relWrap.classList.add('d-none');
+
+      fetch('/person/' + encodeURIComponent(pid), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+        .then(function(res){ return res.json(); })
+        .then(function(json){
+          if (!json || !json.ok) throw new Error('Load failed');
+          var p = json.person || {};
+          var fams = json.families || [];
+          var zones = json.zones || [];
+
+          // Fill fields
+          var full = p.full_name || [p.holy_name, p.last_name, p.first_name].filter(Boolean).join(' ');
+          form.setAttribute('data-person-id', String(p.PID || pid));
+          var holy = form.querySelector('[name="holy_name"]'); if (holy) holy.value = p.holy_name || '';
+          var fn = form.querySelector('[name="full_name"]'); if (fn) fn.value = full || '';
+          var gsel = form.querySelector('[name="gender"]'); if (gsel) gsel.value = (p.gender_label || p.gender || 'Nam');
+          var b = form.querySelector('[name="birth_year"]'); if (b) b.value = p.date_of_birth_fmt || '';
+          var phone = form.querySelector('[name="phone"]'); if (phone) phone.value = p.phone || '';
+          var notes = form.querySelector('[name="notes"]'); if (notes) notes.value = p.note || '';
+          var bap = form.querySelector('[name="baptism_year"]'); if (bap) bap.value = p.date_RT_fmt || '';
+          var com = form.querySelector('[name="communion_year"]'); if (com) com.value = p.date_RL_fmt || '';
+          var con = form.querySelector('[name="confirmation_year"]'); if (con) con.value = p.date_TS_fmt || '';
+          var mar = form.querySelector('[name="marriage_year"]'); if (mar) mar.value = p.date_HP_fmt || '';
+          var dec = form.querySelector('[name="deceased_year"]'); if (dec) dec.value = p.date_Dead_fmt || '';
+          var decSwitch = form.querySelector('#editIsDeceasedSwitch');
+          if (decSwitch) {
+            decSwitch.checked = !!p.date_Dead_fmt;
+            if (deceasedWrap) deceasedWrap.classList.toggle('d-none', !decSwitch.checked);
+          }
+          var zoneSel = form.querySelector('[name="zone_id"]'); if (zoneSel) zoneSel.value = zones[0] && zones[0].ZID ? String(zones[0].ZID) : '';
+          var famSel = form.querySelector('[name="family_id"]'); if (famSel) famSel.value = fams[0] && fams[0].FID ? String(fams[0].FID) : '';
+          var relInput = form.querySelector('[name="relationship"]'); if (relInput) relInput.value = fams[0] && fams[0].relationship ? fams[0].relationship : '';
+          if (relWrap) relWrap.classList.toggle('d-none', !(famSel && famSel.value));
+
+          // Show modal
+          if (window.bootstrap && bootstrap.Modal) {
+            var inst = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true });
+            inst.show();
+          } else if (modalEl && modalEl.classList){
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+          }
+        })
+        .catch(function(){
+          // fallback error alert
+          var alertPlaceholder = document.createElement('div');
+          alertPlaceholder.className = 'alert alert-danger alert-dismissible fade show m-3';
+          alertPlaceholder.setAttribute('role', 'alert');
+          alertPlaceholder.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>Không thể tải dữ liệu.' +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+          var mount = document.querySelector('.web-body') || document.body;
+          mount.prepend(alertPlaceholder);
+        });
+    });
+
     // Action: Delete Person
     document.body.addEventListener('click', function(e){
       var a = e.target.closest && e.target.closest('a.action-delete-person');
@@ -480,7 +563,13 @@
       var btn = document.getElementById('btnConfirmDeletePerson');
       if (btn) btn.setAttribute('data-person-id', pid || '');
       var modalEl = document.getElementById('modalConfirmDeletePerson');
-      if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+      if (modalEl && window.bootstrap && bootstrap.Modal){
+        bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true }).show();
+      } else if (modalEl && modalEl.classList){
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.removeAttribute('aria-hidden');
+      }
     });
 
     var btnDel = document.getElementById('btnConfirmDeletePerson');
@@ -527,6 +616,118 @@
       btnDel.dataset.boundDel = '1';
     }
   });
+
+  // Toggle relationship field visibility in Edit modal
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.matches('#modalEditPerson select[name="family_id"]')){
+      var wrap = document.getElementById('editRelationshipWrap');
+      if (wrap) wrap.classList.toggle('d-none', !(e.target.value && e.target.value.trim() !== ''));
+    }
+  });
+
+  // Toggle deceased input in Edit modal
+  (function(){
+    var sw = document.getElementById('editIsDeceasedSwitch');
+    var wrap = document.getElementById('editDeceasedYearWrap');
+    if (sw && wrap && !sw.dataset.boundToggle){
+      sw.addEventListener('change', function(){
+        if (this.checked){ wrap.classList.remove('d-none'); }
+        else { wrap.classList.add('d-none'); var i = wrap.querySelector('input[name="deceased_year"]'); if (i) i.value=''; }
+      });
+      sw.dataset.boundToggle = '1';
+    }
+  })();
+
+  // Edit form submit handler
+  (function(){
+    var form = document.getElementById('personEditForm');
+    if (!form || form.dataset.boundSubmit) return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if (!form.checkValidity()) { form.classList.add('was-validated'); return; }
+
+      // validate deceased >= birth
+      function extractYear(val){
+        if (!val) return NaN;
+        var s = (val || '').trim();
+        var m = s.match(/^\d{4}$/);
+        if (m) return parseInt(s,10);
+        var parts = s.split(/[\/\-]/);
+        if (parts.length === 3){ var yi = parseInt(parts[2],10); if (!isNaN(yi)) return yi; }
+        return NaN;
+      }
+      var byEl = form.querySelector('input[name="birth_year"]');
+      var dyEl = form.querySelector('input[name="deceased_year"]');
+      if (byEl && dyEl && dyEl.value){
+        var by = extractYear(byEl.value);
+        var dy = extractYear(dyEl.value);
+        if (!isNaN(by) && !isNaN(dy) && dy < by){ dyEl.classList.add('is-invalid'); return; } else { dyEl.classList.remove('is-invalid'); }
+      }
+
+      var pid = form.getAttribute('data-person-id');
+      if (!pid) return;
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var original = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang lưu...'; }
+      var fd = new FormData(form);
+      fetch('/person/' + encodeURIComponent(pid) + '/update', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+        .then(function(res){ return res.json(); })
+        .then(function(json){
+          if (!json || !json.ok) throw new Error((json && json.errors && (json.errors.server || Object.values(json.errors)[0])) || 'Lưu thất bại');
+          // Update row in table
+          var pidStr = String(json.row && json.row.id ? json.row.id : pid);
+          var tr = document.querySelector('.person-table tbody tr[data-row-id="' + pidStr + '"]');
+          if (!tr){
+            // Fallback: scan by code cell content "Mã: #ID"
+            var rows = document.querySelectorAll('.person-table tbody tr');
+            rows.forEach(function(r){
+              var code = r.querySelector('td:nth-child(3) .text-muted');
+              if (code && code.textContent && code.textContent.indexOf('#'+pidStr) !== -1){ tr = r; }
+            });
+          }
+          if (tr){
+            try { tr.setAttribute('data-row-id', pidStr); } catch(_) {}
+            var base = (window.BASE_URL || '/');
+            var g = (json.row.gender || '').toString().toLowerCase();
+            var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+            var nameEl = tr.querySelector('.person-name'); if (nameEl) nameEl.textContent = json.row.name || nameEl.textContent;
+            var avatar = tr.querySelector('.person-avatar-img'); if (avatar) avatar.setAttribute('src', base + icon);
+            var meta = tr.querySelector('.person-meta'); if (meta) meta.innerHTML = '<span class="me-2"><i class="fa-solid fa-venus-mars me-1"></i>' + (json.row.gender || '-') + '</span><span><i class="fa-regular fa-calendar me-1"></i>' + (json.row.birth || '-') + '</span>';
+            var linkTd = tr.querySelector('td:nth-child(4) .text-sm.text-muted');
+            if (linkTd) linkTd.innerHTML = 'Gia đình: <span class="text-dark">' + (json.row.family || '—') + '</span><br>Giáo khu: <span class="text-dark">' + (json.row.zones || '—') + '</span>';
+            var tdBap = tr.querySelector('td:nth-child(5)'); if (tdBap) tdBap.innerHTML = json.row.baptismDate ? ('<span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i><span class="text-primary">' + json.row.baptismDate + '</span></span>') : '<span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>';
+            var tdCom = tr.querySelector('td:nth-child(6)'); if (tdCom) tdCom.innerHTML = json.row.communionDate ? ('<span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i><span class="text-info">' + json.row.communionDate + '</span></span>') : '<span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>';
+            var tdCon = tr.querySelector('td:nth-child(7)'); if (tdCon) tdCon.innerHTML = json.row.confirmationDate ? ('<span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i><span class="text-purple">' + json.row.confirmationDate + '</span></span>') : '<span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>';
+            var tdMar = tr.querySelector('td:nth-child(8)'); if (tdMar) tdMar.innerHTML = json.row.marriageDate ? ('<span class="marriage-date"><i class="fa-solid fa-ring me-1 text-danger"></i><span class="text-danger">' + json.row.marriageDate + '</span></span>') : '<span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>';
+          }
+
+          // Hide modal and show success alert
+          var modalEl = document.getElementById('modalEditPerson');
+          if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+          var alertPlaceholder = document.createElement('div');
+          alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
+          alertPlaceholder.setAttribute('role', 'alert');
+          alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã cập nhật thông tin giáo dân.' +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+          var mount = document.querySelector('.web-body') || document.body;
+          mount.prepend(alertPlaceholder);
+          setTimeout(function(){ if (window.bootstrap){ var bs = bootstrap.Alert.getOrCreateInstance(alertPlaceholder); bs.close(); } }, 5000);
+        })
+        .catch(function(err){
+          var msg = (err && err.message) ? err.message : 'Không thể lưu thay đổi.';
+          var alertPlaceholder = document.createElement('div');
+          alertPlaceholder.className = 'alert alert-danger alert-dismissible fade show m-3';
+          alertPlaceholder.setAttribute('role', 'alert');
+          alertPlaceholder.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + msg +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+          var mount = document.querySelector('.web-body') || document.body;
+          mount.prepend(alertPlaceholder);
+        })
+        .finally(function(){ if (submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = original; } });
+    });
+    form.dataset.boundSubmit = '1';
+  })();
 
   // Initialize pickers for elements inside a shown modal
   document.addEventListener('shown.bs.modal', function(e){
