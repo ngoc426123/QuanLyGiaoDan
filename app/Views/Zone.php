@@ -9,7 +9,7 @@
 <div class="row g-3">
     <!-- Left: Zone list -->
     <div class="col-lg-3">
-    <div style="max-height: 70vh; overflow:auto;">
+    <div class="scroll-area-70vh">
             <div class="mb-2 text-end">
                 <button class="btn btn-primary btn-sm" type="button">
                     <i class="fas fa-plus me-1"></i>Thêm giáo khu mới

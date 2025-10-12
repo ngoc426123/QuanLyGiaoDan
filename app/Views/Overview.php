@@ -6,7 +6,7 @@
         <div>
             <h2 class="mb-1"><?= esc($church_name ?? church_name('Giáo xứ')) ?></h2>
             <?php if (!empty($church_addr ?? '')): ?>
-                <div class="text-muted" style="max-width: 720px;"><?= esc($church_addr) ?></div>
+                <div class="text-muted maxw-720"><?= esc($church_addr) ?></div>
             <?php endif; ?>
         </div>
         <div class="text-muted small">
@@ -74,15 +74,15 @@
 
 <div class="row g-4 mb-4">
     <div class="col-md-6">
-    <div class="border rounded p-2 bg-white w-100" style="margin:auto;">
+    <div class="border rounded p-2 bg-white w-100 m-auto">
             <h5 class="mb-2 text-center">Tỷ lệ Nam/Nữ</h5>
             <div class="d-flex justify-content-center">
-                <canvas id="genderPie" width="180" height="350" style="display:block;max-height:350px;"></canvas>
+                <canvas id="genderPie" width="180" height="350" class="d-block maxh-350"></canvas>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="border rounded p-2 bg-white w-100" style="min-width:220px;">
+    <div class="border rounded p-2 bg-white w-100 minw-220">
             <h5 class="mb-2 text-center">Giáo dân theo giáo khu</h5>
             <div class="d-flex justify-content-center">
                 <canvas id="zoneBar" height="120"></canvas>

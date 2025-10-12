@@ -2,11 +2,6 @@
 
 <?= $this->section('content') ?>
 <?php helper('lists'); ?>
-<style>
-/* Elevate row when its dropdown/dropup is open to avoid clipping
-    Keep below Bootstrap modal/backdrop (1050/1055) */
-.person-table tr.row-elevated { position: relative; z-index: 1040; }
-</style>
 <!-- Person Management Header -->
 <div class="person-header d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -67,7 +62,7 @@
         <table class="table person-table mb-0">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 60px;"><input type="checkbox" class="form-check-input"></th>
+                    <th class="text-center w-60"><input type="checkbox" class="form-check-input"></th>
                     <th>Giáo dân</th>
                     <th>Thông tin cá nhân</th>
                     <th>Gia đình & Giáo khu</th>
@@ -75,7 +70,7 @@
                     <th>Ngày rước lễ</th>
                     <th>Thêm sức</th>
                     <th>Hôn phối</th>
-                    <th class="text-center" style="width: 120px;">Thao tác</th>
+                    <th class="text-center w-120">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -273,7 +268,7 @@
                                 </div>
                                 <div class="col-12">
                                     <div class="form-floating">
-                                        <textarea name="notes" id="notesInput" rows="6" class="form-control" placeholder="Ghi chú thêm (nếu có)" aria-label="Ghi chú" style="height: 110px"></textarea>
+                                        <textarea name="notes" id="notesInput" rows="6" class="form-control h-110" placeholder="Ghi chú thêm (nếu có)" aria-label="Ghi chú"></textarea>
                                         <label for="notesInput">Ghi chú</label>
                                     </div>
                                 </div>
@@ -320,7 +315,7 @@
                                         <input class="form-check-input" type="checkbox" id="isDeceasedSwitch" name="is_deceased">
                                         <label class="form-check-label mb-0 small text-muted" for="isDeceasedSwitch">Đã qua đời</label>
                                     </div>
-                                    <div class="mt-2 d-none" id="deceasedYearWrap" style="max-width: 200px; margin-left: auto;">
+                                    <div class="mt-2 d-none maxw-200 ms-auto" id="deceasedYearWrap">
                                         <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="dd/mm/yyyy" autocomplete="off">
                                         <div class="invalid-feedback text-end">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
                                     </div>
@@ -465,7 +460,7 @@
                                 </div>
                                 <div class="col-12">
                                     <div class="form-floating">
-                                        <textarea name="notes" rows="6" class="form-control" placeholder="Ghi chú thêm (nếu có)" aria-label="Ghi chú" style="height: 110px"></textarea>
+                                        <textarea name="notes" rows="6" class="form-control h-110" placeholder="Ghi chú thêm (nếu có)" aria-label="Ghi chú"></textarea>
                                         <label>Ghi chú</label>
                                     </div>
                                 </div>
@@ -509,7 +504,7 @@
                                         <input class="form-check-input" type="checkbox" id="editIsDeceasedSwitch" name="is_deceased">
                                         <label class="form-check-label mb-0 small text-muted" for="editIsDeceasedSwitch">Đã qua đời</label>
                                     </div>
-                                    <div class="mt-2 d-none" id="editDeceasedYearWrap" style="max-width: 200px; margin-left: auto;">
+                                    <div class="mt-2 d-none maxw-200 ms-auto" id="editDeceasedYearWrap">
                                         <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="dd/mm/yyyy" autocomplete="off">
                                         <div class="invalid-feedback text-end">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
                                     </div>

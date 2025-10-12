@@ -1,0 +1,229 @@
+/*
+  Vista Theme for QuanLyGiaoDan
+  Subtle Aero-inspired look with glossy gradients, soft shadows, and Segoe UI.
+  Scoped under .vista-theme so it can be toggled or removed safely.
+*/
+
+/* Base and typography */
+body.vista-theme {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #1d2b3a;
+  /* Soft blue-green wallpaper vibe */
+  background: radial-gradient(1200px 600px at 20% 0%, #eaf6ff 0%, #dbeeff 40%, #cfe7fa 60%, #cde7e0 100%);
+}
+
+body.vista-theme a {
+  color: #1b5e9e;
+}
+body.vista-theme a:hover {
+  color: #0e4c86;
+}
+
+/* Global containers */
+.vista-theme .container-fluid {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* Window-like section with glass effect */
+.vista-theme .web-section {
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* Title bar */
+.vista-theme .section-header .window-title {
+  background: linear-gradient(180deg, #cae4fb 0%, #91b9df 55%, #6393c1 100%);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.vista-theme .section-header .window-title h1.section-title {
+  color: #ffffff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 0 8px rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Menu bar (nav pills) */
+.vista-theme .web-menu-section {
+  background: transparent;
+}
+
+.vista-theme .web-menu {
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.vista-theme .web-menu .nav-link {
+  color: #143a5d !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 50%, #dfeffc 100%) !important;
+  border: 1px solid rgba(55, 108, 160, 0.25) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 6px rgba(0, 0, 0, 0.06);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, filter 120ms ease;
+}
+
+.vista-theme .web-menu .nav-link:hover {
+  filter: brightness(1.02) saturate(1.06);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.vista-theme .web-menu .nav-link.active {
+  color: #0f2f4a !important;
+  background: linear-gradient(180deg, #cfe7fa 0%, #8fb6d8 48%, #6aa1d0 52%, #3e7caf 100%) !important;
+  border: 1px solid rgba(31, 86, 136, 0.6) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.vista-theme .web-menu img {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.15));
+}
+
+/* Content area */
+.vista-theme .web-body {
+  padding: 1rem 1.25rem 1.25rem 1.25rem;
+}
+
+/* Cards/panels inside body */
+.vista-theme .card, .vista-theme .panel, .vista-theme .table-container, .vista-theme .bg-white.rounded.shadow-sm {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Buttons */
+.vista-theme .btn {
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.08);
+  transition: transform 100ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.vista-theme .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 16px rgba(0,0,0,0.12);
+}
+
+.vista-theme .btn:active {
+  transform: translateY(0);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.vista-theme .btn-primary {
+  color: #fff;
+  background: linear-gradient(180deg, #6fb3e8 0%, #3f88c7 45%, #2f73b3 100%);
+  border-color: #24639e;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.vista-theme .btn-secondary {
+  color: #fff;
+  background: linear-gradient(180deg, #9db7c7 0%, #6f8b9d 100%);
+  border-color: #5f7889;
+}
+
+.vista-theme .btn-success {
+  color: #fff;
+  background: linear-gradient(180deg, #8ed68a 0%, #55b456 100%);
+  border-color: #3c9e3f;
+}
+
+.vista-theme .btn-danger {
+  color: #fff;
+  background: linear-gradient(180deg, #f29b9b 0%, #d35b5b 100%);
+  border-color: #b64a4a;
+}
+
+/* Forms */
+.vista-theme .form-control, .vista-theme .form-select {
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: linear-gradient(180deg, #ffffff, #f3f6fb);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.vista-theme .form-control:focus, .vista-theme .form-select:focus {
+  border-color: #4a93cf;
+  box-shadow: 0 0 0 3px rgba(71, 138, 204, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Tables */
+.vista-theme table.table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.vista-theme table.table thead th {
+  background: linear-gradient(180deg, #eaf3fc 0%, #d5e6f7 100%);
+  color: #1e3a57;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.vista-theme table.table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.vista-theme table.table tbody tr:hover {
+  background-color: rgba(207, 231, 250, 0.25);
+}
+
+/* Badges/labels */
+.vista-theme .badge {
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #eaf3fc);
+  color: #204666;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Pagination */
+.vista-theme .page-link {
+  border-radius: 10px !important;
+  color: #1b5e9e;
+}
+
+.vista-theme .page-item.active .page-link {
+  background: linear-gradient(180deg, #cfe7fa 0%, #6aa1d0 100%);
+  border-color: #3e7caf;
+}
+
+/* Utility: subtle separators */
+.vista-theme .divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.12), transparent);
+}
+
+/* Override any inline background on body if present */
+body.vista-theme[style] {
+  background: radial-gradient(1200px 600px at 20% 0%, #eaf6ff 0%, #dbeeff 40%, #cfe7fa 60%, #cde7e0 100%) !important;
+}
+
+/* === Utilities used to replace inline styles === */
+.vista-theme .mb-xxl-4 { margin-bottom: 2rem !important; }
+.vista-theme .nav-icon-60 { height: 60px !important; }
+.vista-theme .w-60 { width: 60px !important; }
+.vista-theme .w-120 { width: 120px !important; }
+.vista-theme .h-110 { height: 110px !important; }
+.vista-theme .maxw-200 { max-width: 200px !important; }
+.vista-theme .maxw-720 { max-width: 720px !important; }
+.vista-theme .maxh-350 { max-height: 350px !important; }
+.vista-theme .minw-220 { min-width: 220px !important; }
+.vista-theme .m-auto { margin: auto !important; }
+
+/* Scroll area for lists */
+.vista-theme .scroll-area-70vh { max-height: 70vh; overflow: auto; }
+
+/* Nav link base color/weight previously inline */
+.vista-theme .nav-link-vista { color: #222 !important; font-weight: 300 !important; }
+
+/* Elevation utility for table row when dropdown open (moved from inline <style>) */
+.vista-theme .person-table tr.row-elevated { position: relative; z-index: 1040; }
