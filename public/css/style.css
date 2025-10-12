@@ -493,6 +493,11 @@
     color: white;
 }
 
+/* Pink text utility (for female counters, etc.) */
+.text-pink {
+    color: #e91e63 !important;
+}
+
 .text-sm {
     font-size: 0.85rem;
     line-height: 1.4;
