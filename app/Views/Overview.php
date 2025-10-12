@@ -1,22 +1,24 @@
 <?= $this->extend('layout') ?>
 
 <?= $this->section('content') ?>
-<div class="overview-header mb-4 p-3 border rounded bg-white">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-            <h2 class="mb-1"><?= esc($church_name ?? church_name('Giáo xứ')) ?></h2>
-            <?php if (!empty($church_addr ?? '')): ?>
-                <div class="text-muted maxw-720"><?= esc($church_addr) ?></div>
-            <?php endif; ?>
-        </div>
-        <div class="text-muted small">
-            Định dạng ngày: <?= esc(date_format_option()) ?>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h2 class="mb-1"><?= esc($church_name ?? church_name('Giáo xứ')) ?></h2>
+                <?php if (!empty($church_addr ?? '')): ?>
+                    <div class="text-muted maxw-720"><?= esc($church_addr) ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="text-muted small">
+                Định dạng ngày: <?= esc(date_format_option()) ?>
+            </div>
         </div>
     </div>
-</div>
+    </div>
 <div class="row g-4 mb-4 d-flex">
     <div class="col">
-        <div class="dashboard-card bg-gradient-person">
+        <div class="dashboard-card bg-gradient-person shadow-sm">
             <div class="dashboard-card-row">
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-users"></i></span></div>
                 <div class="card-info-box">
@@ -27,7 +29,7 @@
         </div>
     </div>
     <div class="col">
-        <div class="dashboard-card bg-gradient-male">
+        <div class="dashboard-card bg-gradient-male shadow-sm">
             <div class="dashboard-card-row">
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-mars"></i></span></div>
                 <div class="card-info-box">
@@ -38,7 +40,7 @@
         </div>
     </div>
     <div class="col">
-        <div class="dashboard-card bg-gradient-female">
+        <div class="dashboard-card bg-gradient-female shadow-sm">
             <div class="dashboard-card-row">
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-venus"></i></span></div>
                 <div class="card-info-box">
@@ -49,7 +51,7 @@
         </div>
     </div>
     <div class="col">
-        <div class="dashboard-card bg-gradient-family">
+        <div class="dashboard-card bg-gradient-family shadow-sm">
             <div class="dashboard-card-row">
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-home"></i></span></div>
                 <div class="card-info-box">
@@ -60,7 +62,7 @@
         </div>
     </div>
     <div class="col">
-        <div class="dashboard-card bg-gradient-zone">
+        <div class="dashboard-card bg-gradient-zone shadow-sm">
             <div class="dashboard-card-row">
                 <div class="card-icon-box"><span class="card-icon"><i class="fas fa-church"></i></span></div>
                 <div class="card-info-box">
@@ -74,17 +76,17 @@
 
 <div class="row g-4 mb-4">
     <div class="col-md-6">
-    <div class="border rounded p-2 bg-white w-100 m-auto">
-            <h5 class="mb-2 text-center">Tỷ lệ Nam/Nữ</h5>
-            <div class="d-flex justify-content-center">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 text-center pt-3 pb-0"><h5 class="mb-2">Tỷ lệ Nam/Nữ</h5></div>
+            <div class="card-body d-flex align-items-center justify-content-center">
                 <canvas id="genderPie" width="180" height="350" class="d-block maxh-350"></canvas>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-    <div class="border rounded p-2 bg-white w-100 minw-220">
-            <h5 class="mb-2 text-center">Giáo dân theo giáo khu</h5>
-            <div class="d-flex justify-content-center">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 text-center pt-3 pb-0"><h5 class="mb-2">Giáo dân theo giáo khu</h5></div>
+            <div class="card-body d-flex align-items-center justify-content-center">
                 <canvas id="zoneBar" height="120"></canvas>
             </div>
         </div>
@@ -93,10 +95,11 @@
 
 <div class="row g-4 mb-4">
     <div class="col-md-6">
-        <div class="border rounded p-3 bg-white">
-            <h5 class="mb-2">Top giáo khu</h5>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-0"><h5 class="mb-2">Top giáo khu</h5></div>
+            <div class="card-body">
             <?php if (!empty($zone_labels ?? []) && !empty($zone_values ?? [])): ?>
-                <ul class="list-group">
+                <ul class="list-group list-group-flush">
                     <?php foreach (($zone_labels ?? []) as $i => $label): $val = $zone_values[$i] ?? 0; ?>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <?= esc($label) ?>
@@ -107,13 +110,15 @@
             <?php else: ?>
                 <div class="text-muted">Chưa có dữ liệu.</div>
             <?php endif; ?>
+            </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="border rounded p-3 bg-white">
-            <h5 class="mb-2">Top hộ gia đình</h5>
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-3 pb-0"><h5 class="mb-2">Top hộ gia đình</h5></div>
+            <div class="card-body">
             <?php if (!empty($top_families ?? [])): ?>
-                <ul class="list-group">
+                <ul class="list-group list-group-flush">
                     <?php foreach (($top_families ?? []) as $row): ?>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <?= esc($row['family_name'] ?: 'Gia đình') ?>
@@ -124,16 +129,17 @@
             <?php else: ?>
                 <div class="text-muted">Chưa có dữ liệu.</div>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="overview-notes mb-4">
-    <h5 class="mb-2">Ghi chú tổng quan</h5>
-    <div class="border rounded p-3 bg-white text-muted">
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-0"><h5 class="mb-2">Ghi chú tổng quan</h5></div>
+    <div class="card-body text-muted">
         <?= esc($notes ?? '') ?>
     </div>
-</div>
+    </div>
 
 <?php
     $zl = json_encode($zone_labels ?? []);
