@@ -79,9 +79,25 @@ body.vista-theme a:hover {
 
 .vista-theme .web-menu .nav-link.active {
   color: #0f2f4a !important;
-  background: linear-gradient(180deg, #cfe7fa 0%, #8fb6d8 48%, #6aa1d0 52%, #3e7caf 100%) !important;
-  border: 1px solid rgba(31, 86, 136, 0.6) !important;
+  /* Reverse gradient: darker to lighter; slightly lightened start color for better readability */
+  background: linear-gradient(180deg, #4f8fc0 0%, #6aa1d0 48%, #8fb6d8 52%, #cfe7fa 100%) !important;
+  border: 1px solid rgba(31, 86, 136, 0.38) !important;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* Vista style for selected Zone item in left list */
+.vista-theme #zoneList .list-group-item.active {
+  background: linear-gradient(180deg, #3e7caf 0%, #6aa1d0 55%, #8fb6d8 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(31, 86, 136, 0.38) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+.vista-theme #zoneList .list-group-item.active .fw-semibold { color: #ffffff !important; text-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+.vista-theme #zoneList .list-group-item.active .small { color: rgba(255,255,255,0.85) !important; }
+.vista-theme #zoneList .list-group-item.active .badge {
+  background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12));
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.35);
 }
 
 .vista-theme .web-menu img {
