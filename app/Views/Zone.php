@@ -24,7 +24,10 @@
                             <div class="fw-semibold"><?= esc($zone['name']) ?></div>
                             <div class="small <?= $active ? 'text-white-50' : 'text-muted' ?>">Trưởng khu: <?= esc($zone['leader']) ?></div>
                         </div>
-                        <span class="badge bg-secondary rounded-pill ms-auto"><?= esc($zone['families_count']) ?></span>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-secondary border" title="Số gia đình"><i class="fas fa-home me-1"></i><?= esc($zone['families_count']) ?></span>
+                            <span class="badge bg-light text-secondary border" title="Số thành viên"><i class="fas fa-users me-1"></i><?= esc($zone['members_count']) ?></span>
+                        </div>
                         <a href="#" class="stretched-link action-zone-select" data-zone-id="<?= (int)$zone['id'] ?>" aria-label="Xem <?= esc($zone['name']) ?>"></a>
                     </li>
                 <?php endforeach; ?>
@@ -43,8 +46,6 @@
                         <i class="fas fa-user me-1"></i>Trưởng khu: <?= esc($selected_zone['leader']) ?>
                         <span class="mx-2">|</span>
                         <i class="fas fa-phone me-1"></i><?= esc($selected_zone['phone']) ?>
-                        <span class="mx-2">|</span>
-                        <i class="fas fa-location-dot me-1"></i><?= esc($selected_zone['address']) ?>
                     </div>
                 </div>
                 <div>
@@ -59,6 +60,9 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-families" data-bs-toggle="tab" data-bs-target="#pane-families" type="button" role="tab">Gia đình</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-members" data-bs-toggle="tab" data-bs-target="#pane-members" type="button" role="tab">Thành viên</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-notes" data-bs-toggle="tab" data-bs-target="#pane-notes" type="button" role="tab">Ghi chú</button>
@@ -130,6 +134,69 @@
                     </div>
                 </div>
 
+                <!-- Members -->
+                <div class="tab-pane fade" id="pane-members" role="tabpanel">
+                    <div class="person-table-container">
+                        <div class="table-responsive">
+                            <table class="table person-table mb-0" id="zoneMembersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Giáo dân</th>
+                                        <th>Giới tính</th>
+                                        <th>Điện thoại</th>
+                                        <th>Gia đình</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($details['members'])): ?>
+                                        <?php foreach (($details['members'] ?? []) as $m): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="person-info">
+                                                        <div class="person-avatar">
+                                                            <?php 
+                                                                $g = strtolower(trim((string)($m['gender'] ?? '')));
+                                                                $icon = ($g === 'nữ' || $g === 'nu' || $g === 'female' || $g === 'f') 
+                                                                    ? 'images/icons/icon_female.png' 
+                                                                    : 'images/icons/icon_male.png';
+                                                            ?>
+                                                            <img class="person-avatar-img" src="<?= base_url($icon) ?>" alt="avatar">
+                                                        </div>
+                                                        <div class="person-details">
+                                                            <div class="person-name"><?= esc($m['name'] ?? '') ?></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><?= esc($m['gender'] ?? '') ?></td>
+                                                <td><?= esc($m['phone'] ?? '') ?></td>
+                                                <td><?= esc($m['family'] ?? '') ?></td>
+                                                <td class="text-end">
+                                                    <a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="<?= (int)($m['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr><td colspan="5" class="text-center text-muted py-4">Chưa có thành viên.</td></tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="person-pagination d-flex justify-content-between align-items-center p-3 bg-light" id="zoneMembersPagination">
+                            <div class="pagination-info text-muted">
+                                Hiển thị <strong id="zmDisplayFrom">0</strong>-<strong id="zmDisplayTo">0</strong> trong tổng số <strong id="zmTotal">0</strong> thành viên
+                            </div>
+                            <nav aria-label="Phân trang thành viên">
+                                <ul class="pagination pagination-sm mb-0" id="zmPager">
+                                    <li class="page-item disabled"><a class="page-link zone-members-prev" href="#" tabindex="-1">Trước</a></li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item disabled"><a class="page-link zone-members-next" href="#">Sau</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Notes -->
                 <div class="tab-pane fade" id="pane-notes" role="tabpanel">
                     <div class="mb-2 text-muted small">Ghi chú</div>
@@ -147,6 +214,9 @@
 (function(){
     var currentZoneId = <?= (int)($selected_id ?? 0) ?>;
     var zoneCache = null; // last loaded detail json for prefill
+    var membersFull = []; // full list for pagination
+    var membersPage = 1;
+    var membersPerPage = 15;
     function renderFamilies(rows){
         if (!rows || !rows.length){
             return '<tr><td colspan="6" class="text-center text-muted">Chưa có gia đình nào.</td></tr>';
@@ -162,6 +232,83 @@
             '</tr>';
         }).join('');
     }
+
+    function renderMembers(rows){
+        if (!rows || !rows.length){
+            return '<tr><td colspan="5" class="text-center text-muted py-4">Chưa có thành viên.</td></tr>';
+        }
+        return rows.map(function(m){
+            var g = (String(m.gender||'').toLowerCase());
+            var isFemale = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f');
+            var icon = isFemale ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+            return '<tr>'+
+                '<td>'+
+                    '<div class="person-info">'+
+                        '<div class="person-avatar"><img class="person-avatar-img" src="' + (window.BASE_URL ? (window.BASE_URL + icon) : ('/' + icon)) + '" alt="avatar"></div>'+
+                        '<div class="person-details"><div class="person-name">' + (m.name || '') + '</div></div>'+
+                    '</div>'+
+                '</td>'+
+                '<td>' + (m.gender || '') + '</td>'+
+                '<td>' + (m.phone || '') + '</td>'+
+                '<td>' + (m.family || '') + '</td>'+
+                '<td class="text-end"><a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="' + (m.id || '') + '" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a></td>'+
+            '</tr>';
+        }).join('');
+    }
+
+    function updateMembersPaginationUI(total, page){
+        var totalEl = document.getElementById('zmTotal'); if (totalEl) totalEl.textContent = total;
+        var from = total === 0 ? 0 : ((page - 1) * membersPerPage + 1);
+        var to = Math.min(page * membersPerPage, total);
+        var fromEl = document.getElementById('zmDisplayFrom'); if (fromEl) fromEl.textContent = from;
+        var toEl = document.getElementById('zmDisplayTo'); if (toEl) toEl.textContent = to;
+        var pager = document.getElementById('zmPager');
+        if (pager){
+            var totalPages = Math.max(1, Math.ceil(total / membersPerPage));
+            var html = '';
+            // prev
+            html += '<li class="page-item'+(page<=1?' disabled':'')+'"><a class="page-link zone-members-prev" href="#">Trước</a></li>';
+            // simple numbered pages (limit to first 5 for brevity)
+            var maxPages = Math.min(5, totalPages);
+            var start = Math.max(1, Math.min(page - 2, totalPages - maxPages + 1));
+            var end = Math.min(totalPages, start + maxPages - 1);
+            for (var i=start;i<=end;i++){
+                html += '<li class="page-item'+(i===page?' active':'')+'"><a class="page-link zone-members-page" href="#" data-page="'+i+'">'+i+'</a></li>';
+            }
+            // next
+            html += '<li class="page-item'+(page>=totalPages?' disabled':'')+'"><a class="page-link zone-members-next" href="#">Sau</a></li>';
+            pager.innerHTML = html;
+        }
+    }
+
+    function paginateMembers(fullList, page){
+        var total = fullList ? fullList.length : 0;
+        var startIdx = (page - 1) * membersPerPage;
+        var slice = (total > 0) ? fullList.slice(startIdx, startIdx + membersPerPage) : [];
+        var mtbody = document.querySelector('#zoneMembersTable tbody');
+        if (mtbody){ mtbody.innerHTML = renderMembers(slice); }
+        updateMembersPaginationUI(total, page);
+    }
+
+    // Pagination click handlers
+    document.body.addEventListener('click', function(e){
+        var prev = e.target.closest && e.target.closest('a.zone-members-prev');
+        var next = e.target.closest && e.target.closest('a.zone-members-next');
+        var pageLink = e.target.closest && e.target.closest('a.zone-members-page');
+        if (!prev && !next && !pageLink) return;
+        e.preventDefault();
+        var total = membersFull ? membersFull.length : 0;
+        var totalPages = Math.max(1, Math.ceil(total / membersPerPage));
+        if (pageLink){
+            var p = parseInt(pageLink.getAttribute('data-page')||'1', 10) || 1;
+            membersPage = Math.min(Math.max(1, p), totalPages);
+        } else if (prev){
+            membersPage = Math.max(1, membersPage - 1);
+        } else if (next){
+            membersPage = Math.min(totalPages, membersPage + 1);
+        }
+        paginateMembers(membersFull, membersPage);
+    }, { passive: false });
 
         document.body.addEventListener('click', function(e){
         var a = e.target.closest && e.target.closest('a.action-zone-select');
@@ -180,9 +327,8 @@
             if (right){
                 var headerTitle = right.querySelector('h4'); if (headerTitle) headerTitle.textContent = json.zone.name || '';
                 var small = right.querySelector('.text-muted.small');
-                if (small){ small.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (json.zone.leader||'') +
-                  '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (json.zone.phone||'') +
-                  '<span class="mx-2">|</span><i class="fas fa-location-dot me-1"></i>' + (json.zone.address||''); }
+                                if (small){ small.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (json.zone.leader||'') +
+                                    '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (json.zone.phone||''); }
             }
             // Overview numbers
             var ov = json.details.overview || {}; 
@@ -193,6 +339,10 @@
             // Families table
             var tbody = document.querySelector('#zoneFamiliesTable tbody');
             if (tbody){ tbody.innerHTML = renderFamilies(json.details.families || []); }
+            // Members table with pagination
+            membersFull = json.details.members || [];
+            membersPage = 1;
+            paginateMembers(membersFull, membersPage);
             // Notes
             var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = json.details.notes || 'Chưa có ghi chú.'; }
             // Update active in list
@@ -267,8 +417,7 @@
                     var headerTitle = right.querySelector('h4'); if (headerTitle) headerTitle.textContent = json.zone.name || '';
                     var small = right.querySelector('.text-muted.small');
                     if (small){ small.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (json.zone.leader||'') +
-                        '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (json.zone.phone||'') +
-                        '<span class="mx-2">|</span><i class="fas fa-location-dot me-1"></i>' + (json.zone.address||''); }
+                        '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (json.zone.phone||''); }
                 }
                 // Overview numbers
                 var ov = json.details && json.details.overview ? json.details.overview : {};
@@ -279,6 +428,10 @@
                 // Families table
                 var tbody = document.querySelector('#zoneFamiliesTable tbody');
                 if (tbody){ tbody.innerHTML = renderFamilies((json.details && json.details.families) || []); }
+                // Members table with pagination
+                membersFull = (json.details && json.details.members) || [];
+                membersPage = 1;
+                paginateMembers(membersFull, membersPage);
                 // Notes
                 var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = (json.details && json.details.notes) || 'Chưa có ghi chú.'; }
                 // Update left leader subtitle for the selected item if exists and ensure active state
@@ -304,6 +457,24 @@
     }
 })();
 </script>
+
+<!-- Modal: Person Detail (for viewing member details from Zone tab) -->
+<div class="modal fade" id="modalPersonDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-regular fa-user me-2"></i>Thông tin giáo dân</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="personDetailBody" class="text-muted">Đang tải...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: Family Detail -->
 <div class="modal fade" id="modalFamilyDetail" tabindex="-1" aria-labelledby="modalFamilyDetailLabel" aria-hidden="true">
@@ -533,7 +704,10 @@
                             <div class="fw-semibold">' + (row.name || '') + '</div>\
                             <div class="small text-muted">Trưởng khu: ' + (row.leader || '') + '</div>\
                         </div>\
-                        <span class="badge bg-secondary rounded-pill ms-auto">' + (row.families_count || 0) + '</span>\
+                        <div class="ms-auto d-flex align-items-center gap-2">\
+                            <span class="badge bg-light text-secondary border" title="Số gia đình"><i class="fas fa-home me-1"></i>' + (row.families_count || 0) + '</span>\
+                            <span class="badge bg-light text-secondary border" title="Số thành viên"><i class="fas fa-users me-1"></i>' + (row.members_count || 0) + '</span>\
+                        </div>\
                         <a href="#" class="stretched-link action-zone-select" data-zone-id="' + (row.id || '') + '" aria-label="Xem ' + (row.name || '') + '"></a>';
                     ul.prepend(li);
                 }
@@ -643,8 +817,7 @@
                                 // Update header small (leader/phone/address)
                                 var headerSmall = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3 .text-muted.small');
                                 if (headerSmall){ headerSmall.innerHTML = '<i class="fas fa-user me-1"></i>Trưởng khu: ' + (res.json.row.leader||'') +
-                                    '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (res.json.row.phone||'') +
-                                    '<span class="mx-2">|</span><i class="fas fa-location-dot me-1"></i>' + '';
+                                    '<span class="mx-2">|</span><i class="fas fa-phone me-1"></i>' + (res.json.row.phone||'');
                                 }
                 // Update notes panel
                 var notes = document.getElementById('zoneNotes'); if (notes){ notes.textContent = note || 'Chưa có ghi chú.'; }

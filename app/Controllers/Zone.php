@@ -221,7 +221,7 @@ class Zone extends BaseController
 
         // Build details for selected zone
         $selectedZone = $zonesMap[$selectedId] ?? null;
-        $details = [ 'overview' => [], 'families' => [], 'events' => [], 'notes' => '' ];
+        $details = [ 'overview' => [], 'families' => [], 'members' => [], 'events' => [], 'notes' => '' ];
         if ($selectedZone) {
             $zid = $selectedZone['id'];
             // Gender breakdown
@@ -295,6 +295,33 @@ class Zone extends BaseController
                     'address' => (string) ($f['address'] ?? ''),
                 ];
             }, $families ?? []);
+
+            // Members table for this zone
+            $memberRows = $db->table('person_family pf')
+                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name AS family')
+                ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+                ->join('person p', 'p.PID = pf.PID', 'inner')
+                ->join('family f', 'f.FID = pf.FID', 'inner')
+                ->where('fz.ZID', $zid)
+                ->groupBy('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name')
+                ->orderBy('p.last_name', 'ASC')
+                ->orderBy('p.first_name', 'ASC')
+                ->get()->getResultArray();
+            $details['members'] = array_map(function($r){
+                $vnName = trim(implode(' ', array_filter([
+                    (string)($r['holy_name'] ?? ''),
+                    (string)($r['last_name'] ?? ''),
+                    (string)($r['first_name'] ?? ''),
+                ])));
+                $genderLabel = ((string)($r['gender'] ?? '') === '1' || (int)($r['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+                return [
+                    'id' => (int)($r['PID'] ?? 0),
+                    'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),
+                    'gender' => $genderLabel,
+                    'phone' => (string)($r['phone'] ?? ''),
+                    'family' => (string)($r['family'] ?? ''),
+                ];
+            }, $memberRows ?? []);
 
             // Notes: from zone.note
             $details['notes'] = (string) ($zonesMap[$zid]['note'] ?? '');
@@ -418,6 +445,33 @@ class Zone extends BaseController
             ];
         }, $families ?? []);
 
+        // Members for this zone
+        $memberRows = $db->table('person_family pf')
+            ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name AS family')
+            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
+            ->join('person p', 'p.PID = pf.PID', 'inner')
+            ->join('family f', 'f.FID = pf.FID', 'inner')
+            ->where('fz.ZID', $zoneId)
+            ->groupBy('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name')
+            ->orderBy('p.last_name', 'ASC')
+            ->orderBy('p.first_name', 'ASC')
+            ->get()->getResultArray();
+        $membersTbl = array_map(function($r){
+            $vnName = trim(implode(' ', array_filter([
+                (string)($r['holy_name'] ?? ''),
+                (string)($r['last_name'] ?? ''),
+                (string)($r['first_name'] ?? ''),
+            ])));
+            $genderLabel = ((string)($r['gender'] ?? '') === '1' || (int)($r['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+            return [
+                'id' => (int)($r['PID'] ?? 0),
+                'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),
+                'gender' => $genderLabel,
+                'phone' => (string)($r['phone'] ?? ''),
+                'family' => (string)($r['family'] ?? ''),
+            ];
+        }, $memberRows ?? []);
+
         $zonePayload = [
             'id' => (int) $zr['ZID'],
             'name' => (string) ($zr['name'] ?? ('#'.$zoneId)),
@@ -441,6 +495,7 @@ class Zone extends BaseController
                     'female' => (int)($gc['female'] ?? 0),
                 ],
                 'families' => $familiesTbl,
+                'members' => $membersTbl,
                 'notes' => (string) ($zr['note'] ?? ''),
             ],
         ]);
