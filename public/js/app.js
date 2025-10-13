@@ -419,6 +419,18 @@
                 selectedFamily = null;
                 if (familySearchResults) familySearchResults.innerHTML = '';
                 familySearchInput.value = '';
+                // Update overview and left-list badges from returned zoneJson if available
+                try {
+                  var famCount = (zoneJson && zoneJson.details && zoneJson.details.overview && (zoneJson.details.overview.families_count != null)) ? parseInt(zoneJson.details.overview.families_count, 10) : null;
+                  if (famCount != null && !isNaN(famCount)){
+                    var ovEl = document.getElementById('ovFamiliesCount'); if (ovEl) ovEl.textContent = famCount;
+                    var li = document.querySelector('#zoneList .list-group-item.active'); if (li){ var badge = li.querySelector('span[title="Số gia đình"]'); if (badge) badge.innerHTML = '<i class="fas fa-home me-1"></i>' + famCount; }
+                  } else {
+                    // Fallback: increment current displayed values
+                    try { var ovEl2 = document.getElementById('ovFamiliesCount'); if (ovEl2){ var cur = parseInt(ovEl2.textContent||'0',10)||0; ovEl2.textContent = cur + 1; } } catch(_){}
+                    try { var li2 = document.querySelector('#zoneList .list-group-item.active'); if (li2){ var badge2 = li2.querySelector('span[title="Số gia đình"]'); if (badge2){ var t = parseInt((badge2.textContent||'0').replace(/\D+/g,'')||'0',10)||0; badge2.innerHTML = '<i class="fas fa-home me-1"></i>' + (t + 1); } } } catch(_){}
+                  }
+                } catch(_){}
                 // Success alert
                 var alertPlaceholder = document.createElement('div');
                 alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
@@ -575,6 +587,17 @@
                 var searchResultsEl = document.getElementById('zoneMemberSearchResults');
                 if (searchResultsEl) searchResultsEl.innerHTML = '';
                 document.getElementById('zoneMemberSearchInput').value = '';
+                // Update overview and left-list members count from zoneJson when available
+                try {
+                  var memCount = (zoneJson && zoneJson.details && zoneJson.details.overview && (zoneJson.details.overview.members_count != null)) ? parseInt(zoneJson.details.overview.members_count, 10) : null;
+                  if (memCount != null && !isNaN(memCount)){
+                    var ovMem = document.getElementById('ovMembersCount'); if (ovMem) ovMem.textContent = memCount;
+                    var li3 = document.querySelector('#zoneList .list-group-item.active'); if (li3){ var badge3 = li3.querySelector('span[title="Số thành viên"]'); if (badge3) badge3.innerHTML = '<i class="fas fa-users me-1"></i>' + memCount; }
+                  } else {
+                    try { var ovMem2 = document.getElementById('ovMembersCount'); if (ovMem2){ var curm = parseInt(ovMem2.textContent||'0',10)||0; ovMem2.textContent = curm + 1; } } catch(_){}
+                    try { var li4 = document.querySelector('#zoneList .list-group-item.active'); if (li4){ var badge4 = li4.querySelector('span[title="Số thành viên"]'); if (badge4){ var tm = parseInt((badge4.textContent||'0').replace(/\D+/g,'')||'0',10)||0; badge4.innerHTML = '<i class="fas fa-users me-1"></i>' + (tm + 1); } } } catch(_){}
+                  }
+                } catch(_){}
                 // Success alert
                 var alertPlaceholder = document.createElement('div');
                 alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';

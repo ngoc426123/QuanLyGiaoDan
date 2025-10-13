@@ -183,6 +183,26 @@ class Family extends BaseController
         ]);
     }
 
+    /**
+     * POST /family/{id}/remove-zone
+     * Gỡ gia đình khỏi mọi liên kết giáo khu
+     */
+    public function removeZone($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $fid = (int) ($id ?? 0);
+        if ($fid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã gia đình.']]);
+        }
+        $db = \Config\Database::connect();
+        try {
+            $db->table('family_zone')->where('FID', $fid)->delete();
+            return $this->response->setJSON(['ok' => true, 'message' => 'Đã gỡ gia đình khỏi giáo khu.']);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'errors' => ['server' => 'Không thể gỡ: ' . $e->getMessage()]]);
+        }
+    }
+
     public function detail($id = null)
     {
         $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');

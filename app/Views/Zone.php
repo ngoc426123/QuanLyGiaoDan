@@ -139,7 +139,12 @@
                                     <td><?= (int)($f['members'] ?? 0) ?></td>
                                     <td><?= esc($f['phone']) ?></td>
                                     <td><?= esc($f['address']) ?></td>
-                                    <td class="text-end"><button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="<?= (int)($f['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fas fa-eye"></i></button></td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="<?= (int)($f['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
+                                            <button class="btn btn-sm btn-outline-warning action-zone-remove-family" data-fid="<?= (int)($f['id'] ?? 0) ?>" data-fname="<?= esc($f['name']) ?>" title="Gỡ khỏi giáo khu"><i class="fa-solid fa-link-slash"></i></button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <?php if (empty($details['families'])): ?>
@@ -245,6 +250,7 @@
 <script>
 (function(){
     var currentZoneId = <?= (int)($selected_id ?? 0) ?>;
+    try { window.currentZoneId = currentZoneId; } catch(_){}
     var zoneCache = null; // last loaded detail json for prefill
     var membersFull = []; // full list for pagination
     var membersPage = 1;
@@ -260,7 +266,12 @@
                 '<td>' + (f.members || 0) + '</td>'+
                 '<td>' + (f.phone || '') + '</td>'+
                 '<td>' + (f.address || '') + '</td>'+
-                '<td class="text-end"><button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="' + (f.id || '') + '" title="Xem chi tiết"><i class="fas fa-eye"></i></button></td>'+
+                '<td class="text-end">' +
+                    '<div class="btn-group" role="group">' +
+                        '<button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="' + (f.id || '') + '" title="Xem chi tiết"><i class="fas fa-eye"></i></button>' +
+                        '<button class="btn btn-sm btn-outline-warning action-zone-remove-family" data-fid="' + (f.id || '') + '" data-fname="' + ((f.name||'').replace(/"/g,'&quot;')) + '" title="Gỡ khỏi giáo khu"><i class="fa-solid fa-link-slash"></i></button>' +
+                    '</div>' +
+                '</td>'+
             '</tr>';
         }).join('');
     }
@@ -283,7 +294,10 @@
                 '<td>' + (m.gender || '') + '</td>'+
                 '<td>' + (m.phone || '') + '</td>'+
                 '<td>' + (m.family || '') + '</td>'+
-                '<td class="text-end"><a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="' + (m.id || '') + '" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a></td>'+
+                '<td class="text-end">'
+                    + '<a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="' + (m.id || '') + '" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a>'
+                    + ' <button class="btn btn-sm btn-outline-danger action-zone-remove-member" data-pid="' + (m.id || '') + '" data-name="' + ((m.name||'').replace(/"/g,'&quot;')) + '" title="Gỡ khỏi khu"><i class="fa-solid fa-user-minus"></i></button>'
+                + '</td>'+
             '</tr>';
         }).join('');
     }
@@ -353,6 +367,7 @@
           .then(function(json){
             if (!json || !json.ok) return;
                         currentZoneId = json.zone && json.zone.id ? json.zone.id : parseInt(zid, 10);
+                        try { window.currentZoneId = currentZoneId; } catch(_){}
                         zoneCache = json;
             // Header
             var right = document.querySelector('.col-lg-9 .bg-white.border.rounded.p-3');
@@ -487,6 +502,168 @@
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(initialSync, 0);
     }
+})();
+</script>
+
+<!-- Modal: Confirm Remove Member from Zone -->
+<div class="modal fade" id="modalConfirmRemoveMemberFromZone" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="fa-solid fa-user-minus me-2"></i>Gỡ thành viên khỏi giáo khu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn gỡ giáo dân <strong id="rmMemberName">—</strong> khỏi giáo khu này?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmRemoveMemberFromZone" data-pid="">Gỡ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Remove member from zone handlers
+(function(){
+    document.body.addEventListener('click', function(e){
+        var btn = e.target.closest && e.target.closest('button.action-zone-remove-member');
+        if (!btn) return;
+        e.preventDefault();
+        var pid = btn.getAttribute('data-pid');
+        var pname = btn.getAttribute('data-name') || '';
+        var nameEl = document.getElementById('rmMemberName'); if (nameEl) nameEl.textContent = pname;
+        var confirmBtn = document.getElementById('btnConfirmRemoveMemberFromZone'); if (confirmBtn) confirmBtn.setAttribute('data-pid', pid || '');
+        var modalEl = document.getElementById('modalConfirmRemoveMemberFromZone'); if (modalEl && window.bootstrap) { bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+    }, { passive: false });
+
+    var confirmBtn = document.getElementById('btnConfirmRemoveMemberFromZone');
+    if (confirmBtn && !confirmBtn.dataset.bound){
+        confirmBtn.addEventListener('click', function(){
+            var pid = this.getAttribute('data-pid'); if (!pid) return; var self = this; self.disabled = true;
+            var zid = (typeof window !== 'undefined' && window.currentZoneId) ? window.currentZoneId : <?= (int)($selected_id ?? 0) ?>;
+            fetch('/zone/' + encodeURIComponent(zid) + '/remove-member/' + encodeURIComponent(pid), {
+                method: 'POST', headers: { 'Accept': 'application/json' }, credentials: 'same-origin'
+            }).then(function(res){ return res.json().then(function(j){ return { ok: res.ok, json: j }; }); })
+            .then(function(res){
+                if (!res.ok || !res.json || !res.json.ok){ throw new Error((res.json && res.json.message) || 'Gỡ thất bại'); }
+                // hide modal
+                var modalEl = document.getElementById('modalConfirmRemoveMemberFromZone'); if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+                // remove row from members table
+                var rowBtn = document.querySelector('#zoneMembersTable tbody tr td .action-zone-remove-member[data-pid="' + pid + '"]');
+                if (rowBtn){ var tr = rowBtn.closest('tr'); if (tr && tr.parentNode) tr.parentNode.removeChild(tr); }
+                // decrement overview members count
+                try { var memEl = document.getElementById('ovMembersCount'); if (memEl){ var cur = parseInt(memEl.textContent||'0',10)||0; memEl.textContent = Math.max(0, cur-1); } } catch(_){}
+                // decrement left zone members badge and preserve icon
+                try { var listItem = document.querySelector('#zoneList .list-group-item.active'); if (listItem){ var badge = listItem.querySelector('span[title="Số thành viên"]'); if (badge){ var t = parseInt((badge.textContent || '').replace(/\D+/g,'')||'0',10)||0; var newVal = Math.max(0, t-1); badge.innerHTML = '<i class="fas fa-users me-1"></i>' + newVal; } } } catch(_){}
+                // show success
+                var alertEl = document.createElement('div'); alertEl.className = 'alert alert-success alert-dismissible fade show m-3'; alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + (res.json.message || 'Đã gỡ giáo dân khỏi khu.') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                (document.querySelector('.web-body') || document.body).prepend(alertEl);
+                setTimeout(function(){ try{ if (window.bootstrap){ bootstrap.Alert.getOrCreateInstance(alertEl).close(); } } catch(_){} }, 5000);
+            })
+            .catch(function(err){ var alertEl = document.createElement('div'); alertEl.className = 'alert alert-danger alert-dismissible fade show m-3'; alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + ((err && err.message) || 'Gỡ thất bại') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'; (document.querySelector('.web-body') || document.body).prepend(alertEl); })
+            .finally(function(){ self.disabled = false; });
+        });
+        confirmBtn.dataset.bound = '1';
+    }
+})();
+</script>
+
+<script>
+// Ensure remove-member modal is appended to body so it appears above overlays
+(function(){
+    var mm = document.getElementById('modalConfirmRemoveMemberFromZone');
+    if (mm){ mm.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(mm); } catch(e){} }); }
+})();
+</script>
+<!-- Modal: Confirm Remove Family from Zone -->
+<div class="modal fade" id="modalConfirmRemoveFamilyFromZone" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning"><i class="fa-solid fa-link-slash me-2"></i>Gỡ gia đình khỏi giáo khu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn gỡ gia đình <strong id="rmZoneFamilyName">—</strong> khỏi giáo khu này?</p>
+                <div class="text-muted small">Hành động này sẽ chỉ xóa liên kết gia đình - giáo khu.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmRemoveFamilyFromZone" data-fid="">Gỡ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Remove family from zone handlers
+(function(){
+    document.body.addEventListener('click', function(e){
+        var btn = e.target.closest && e.target.closest('button.action-zone-remove-family');
+        if (!btn) return;
+        e.preventDefault();
+        var fid = btn.getAttribute('data-fid');
+        var fname = btn.getAttribute('data-fname') || '';
+        var nameEl = document.getElementById('rmZoneFamilyName'); if (nameEl) nameEl.textContent = fname;
+        var confirmBtn = document.getElementById('btnConfirmRemoveFamilyFromZone'); if (confirmBtn) confirmBtn.setAttribute('data-fid', fid || '');
+        var modalEl = document.getElementById('modalConfirmRemoveFamilyFromZone'); if (modalEl && window.bootstrap) { bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+    }, { passive: false });
+
+    var confirmBtn = document.getElementById('btnConfirmRemoveFamilyFromZone');
+    if (confirmBtn && !confirmBtn.dataset.bound){
+        confirmBtn.addEventListener('click', function(){
+            var fid = this.getAttribute('data-fid');
+            if (!fid) return;
+            var self = this; self.disabled = true;
+            // Use window.currentZoneId (may change when selecting a zone via AJAX)
+            fetch('/zone/' + encodeURIComponent((typeof window !== 'undefined' && window.currentZoneId) ? window.currentZoneId : <?= (int)($selected_id ?? 0) ?>) + '/remove-family', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: 'family_id=' + encodeURIComponent(fid)
+            }).then(function(res){ return res.json().then(function(j){ return { ok: res.ok, json: j }; }); })
+            .then(function(res){
+                if (!res.ok || !res.json || !res.json.ok){ throw new Error((res.json && res.json.message) || 'Gỡ thất bại'); }
+                // hide modal
+                var modalEl = document.getElementById('modalConfirmRemoveFamilyFromZone'); if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+                // remove row from table
+                var rowBtn = document.querySelector('#zoneFamiliesTable tbody tr td .action-zone-remove-family[data-fid="' + fid + '"]');
+                if (rowBtn){ var tr = rowBtn.closest('tr'); if (tr && tr.parentNode) tr.parentNode.removeChild(tr); }
+                // decrement overview families count if present
+                try {
+                    var ovEl = document.getElementById('ovFamiliesCount');
+                    if (ovEl){ var cur = parseInt(ovEl.textContent||'0',10)||0; ovEl.textContent = Math.max(0, cur-1); }
+                } catch(_){ }
+                // decrement left list badge for current zone and preserve icon
+                try {
+                    var listItem = document.querySelector('#zoneList .list-group-item.active');
+                    if (listItem){ var badge = listItem.querySelector('span[title="Số gia đình"]'); if (badge){ var t = parseInt((badge.textContent || '').replace(/\D+/g,'')||'0',10)||0; var newVal = Math.max(0, t-1); badge.innerHTML = '<i class="fas fa-home me-1"></i>' + newVal; } }
+                } catch(_){ }
+                // show alert
+                var alertEl = document.createElement('div'); alertEl.className = 'alert alert-success alert-dismissible fade show m-3';
+                alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + (res.json.message || 'Đã gỡ gia đình khỏi khu.') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                (document.querySelector('.web-body') || document.body).prepend(alertEl);
+                setTimeout(function(){ try{ if (window.bootstrap){ bootstrap.Alert.getOrCreateInstance(alertEl).close(); } } catch(_){} }, 5000);
+            })
+            .catch(function(err){
+                var alertEl = document.createElement('div'); alertEl.className = 'alert alert-danger alert-dismissible fade show m-3';
+                alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + ((err && err.message) || 'Gỡ thất bại') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                (document.querySelector('.web-body') || document.body).prepend(alertEl);
+            })
+            .finally(function(){ self.disabled = false; });
+        });
+        confirmBtn.dataset.bound = '1';
+    }
+})();
+</script>
+
+<script>
+// Ensure our confirm modal appears above any overlays/backdrops by moving it to document.body when shown
+(function(){
+    var modal = document.getElementById('modalConfirmRemoveFamilyFromZone');
+    if (modal){ modal.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(modal); } catch(e){} }); }
 })();
 </script>
 

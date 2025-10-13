@@ -216,6 +216,56 @@ class Zone extends BaseController
             ],
         ]);
     }
+    /**
+     * POST /zone/{id}/remove-family
+     * Gỡ gia đình khỏi giáo khu (xóa bản ghi family_zone)
+     */
+    public function removeFamily($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zid = (int) ($id ?? 0);
+        if ($zid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã giáo khu.']);
+        }
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'message' => 'Phương thức không hợp lệ.']);
+        }
+        $familyId = (int) ($this->request->getPost('family_id') ?? $this->request->getJSON()->family_id ?? 0);
+        if ($familyId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã gia đình.']);
+        }
+        $db = db_connect();
+        try {
+            $db->table('family_zone')->where(['FID' => $familyId, 'ZID' => $zid])->delete();
+            return $this->response->setJSON(['ok' => true, 'message' => 'Đã gỡ gia đình khỏi khu.']);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'Không thể gỡ: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * POST /zone/{id}/remove-member/{pid}
+     * Gỡ giáo dân khỏi giáo khu
+     */
+    public function removeMember($id = null, $pid = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zid = (int) ($id ?? 0);
+        $personId = (int) ($pid ?? 0);
+        if ($zid <= 0 || $personId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã giáo khu hoặc mã giáo dân.']);
+        }
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'message' => 'Phương thức không hợp lệ.']);
+        }
+        $db = db_connect();
+        try {
+            $db->table('person_zone')->where(['PID' => $personId, 'ZID' => $zid])->delete();
+            return $this->response->setJSON(['ok' => true, 'message' => 'Đã gỡ giáo dân khỏi khu.']);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'Không thể gỡ: ' . $e->getMessage()]);
+        }
+    }
     public function index()
     {
         $db = db_connect();

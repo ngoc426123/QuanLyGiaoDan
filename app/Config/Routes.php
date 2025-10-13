@@ -17,6 +17,8 @@ $routes->post('/family/(:num)/remove-member/(:num)', 'Family::removeMember/$1/$2
 $routes->get('/family/(:num)/search-people', 'Family::searchPeople/$1');
 $routes->post('/family/(:num)/add-member', 'Family::addMember/$1');
 $routes->get('/family/search', 'Family::search');
+// Remove family from its zone
+$routes->post('/family/(:num)/remove-zone', 'Family::removeZone/$1');
 
 $routes->get('/person', 'Person::index');
 $routes->get('/person/search', 'Person::search');
@@ -33,6 +35,10 @@ $routes->post('/zone/create', 'Zone::create');
 $routes->post('/zone/(:num)/update', 'Zone::update/$1');
 $routes->post('/zone/(:num)/add-member', 'Zone::addMember/$1');
 $routes->post('/zone/(:num)/add-family', 'Zone::addFamily/$1');
+// Remove member from zone
+$routes->post('/zone/(:num)/remove-member/(:num)', 'Zone::removeMember/$1/$2');
+// Remove family from zone
+$routes->post('/zone/(:num)/remove-family', 'Zone::removeFamily/$1');
 
 $routes->get('/overview', 'Overview::index');
 $routes->get('/import-export', 'ImportExport::index');

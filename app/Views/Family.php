@@ -70,6 +70,11 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item action-view-family-members" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>"><i class="fas fa-users me-2"></i>Thành viên</a></li>
                                 <li><a class="dropdown-item action-edit-family" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>"><i class="fas fa-edit me-2"></i>Chỉnh sửa</a></li>
+                                <?php if (!empty($family['parish_zone'])): ?>
+                                <li><a class="dropdown-item text-warning action-remove-zone-family" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>" data-zone-name="<?= esc($family['parish_zone']) ?>">
+                                    <i class="fas fa-link-slash me-2"></i>Gỡ khỏi giáo khu
+                                </a></li>
+                                <?php endif; ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger action-delete-family" href="#" data-family-id="<?= (int)($family['id'] ?? 0) ?>" data-family-name="<?= esc($family['name'] ?? '') ?>">
                                     <i class="fas fa-trash me-2"></i>Xoá gia đình
@@ -940,4 +945,82 @@
     });
 })();
 </script>
+<?= $this->endSection() ?>
+
+<?= $this->section('modals') ?>
+<!-- Modal: Confirm Remove Family from Zone -->
+<div class="modal fade" id="modalConfirmRemoveFamilyZone" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning"><i class="fa-solid fa-link-slash me-2"></i>Gỡ gia đình khỏi giáo khu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn gỡ gia đình <strong id="modalRemoveFamilyName">—</strong> khỏi giáo khu <strong id="modalRemoveZoneName">—</strong>?</p>
+                <div class="text-muted small">Hành động này sẽ xóa liên kết gia đình - giáo khu nhưng không xoá gia đình.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmRemoveFamilyZone" data-family-id="">Gỡ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Remove family from zone handlers (from Family list)
+(function(){
+    document.body.addEventListener('click', function(e){
+        var a = e.target.closest && e.target.closest('a.action-remove-zone-family');
+        if (!a) return;
+        e.preventDefault();
+        var fid = a.getAttribute('data-family-id');
+        var fname = a.getAttribute('data-family-name') || '';
+        var zname = a.getAttribute('data-zone-name') || '';
+        var nameEl = document.getElementById('modalRemoveFamilyName'); if (nameEl) nameEl.textContent = fname;
+        var zoneEl = document.getElementById('modalRemoveZoneName'); if (zoneEl) zoneEl.textContent = zname;
+        var btn = document.getElementById('btnConfirmRemoveFamilyZone'); if (btn) btn.setAttribute('data-family-id', fid || '');
+        var modalEl = document.getElementById('modalConfirmRemoveFamilyZone'); if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).show(); }
+    }, { passive: false });
+
+    var btn = document.getElementById('btnConfirmRemoveFamilyZone');
+    if (btn && !btn.dataset.bound){
+        btn.addEventListener('click', function(){
+            var fid = this.getAttribute('data-family-id'); if (!fid) return; var self = this; self.disabled = true;
+            fetch('/family/' + encodeURIComponent(fid) + '/remove-zone', { method: 'POST', headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function(res){ return res.json().then(function(j){ return { ok: res.ok, json: j }; }); })
+            .then(function(res){
+                if (!res.ok || !res.json || !res.json.ok){ throw new Error((res.json && (res.json.message || Object.values(res.json.errors || {})[0])) || 'Gỡ thất bại'); }
+                // hide modal
+                var modalEl = document.getElementById('modalConfirmRemoveFamilyZone'); if (modalEl && window.bootstrap){ bootstrap.Modal.getOrCreateInstance(modalEl).hide(); }
+                // update card UI: hide parish badge and remove menu item
+                var card = document.querySelector('.family-card[data-family-id="' + fid + '"]');
+                if (card){ var badge = card.querySelector('.family-zone'); if (badge){ badge.textContent = ''; badge.classList.add('d-none'); } var removeLink = card.querySelector('a.action-remove-zone-family'); if (removeLink && removeLink.parentNode){ removeLink.parentNode.style.display = 'none'; } }
+                // decrement totals on family listing if visible
+                try {
+                    var tf = document.querySelector('.family-header p strong');
+                    if (tf){ var n = parseInt(tf.textContent||'0',10)||0; tf.textContent = Math.max(0, n-1); }
+                } catch(_){}
+                // show success
+                var alertEl = document.createElement('div'); alertEl.className = 'alert alert-success alert-dismissible fade show m-3'; alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + (res.json.message || 'Đã gỡ gia đình khỏi giáo khu.') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                (document.querySelector('.web-body') || document.body).prepend(alertEl);
+                setTimeout(function(){ try{ if (window.bootstrap){ bootstrap.Alert.getOrCreateInstance(alertEl).close(); } } catch(_){} }, 5000);
+            })
+            .catch(function(err){ var alertEl = document.createElement('div'); alertEl.className = 'alert alert-danger alert-dismissible fade show m-3'; alertEl.setAttribute('role','alert'); alertEl.innerHTML = '<i class="fas fa-triangle-exclamation me-2"></i>' + ((err && err.message) || 'Gỡ thất bại') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'; (document.querySelector('.web-body') || document.body).prepend(alertEl); })
+            .finally(function(){ self.disabled = false; });
+        });
+        btn.dataset.bound = '1';
+    }
+})();
+</script>
+
+<script>
+// Ensure family list confirm modal is appended to body to avoid being covered by overlays
+(function(){
+    var m = document.getElementById('modalConfirmRemoveFamilyZone');
+    if (m){ m.addEventListener('show.bs.modal', function(){ try { document.body.appendChild(m); } catch(e){} }); }
+})();
+</script>
+
 <?= $this->endSection() ?>
