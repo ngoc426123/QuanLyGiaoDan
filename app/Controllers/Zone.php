@@ -4,6 +4,41 @@ namespace App\Controllers;
 
 class Zone extends BaseController
 {
+    // POST /zone/{id}/add-family
+    public function addFamily($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zid = (int)($id ?? 0);
+        if ($zid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã giáo khu.']);
+        }
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'message' => 'Phương thức không hợp lệ.']);
+        }
+        $familyId = (int)($this->request->getPost('family_id') ?? $this->request->getJSON()->family_id ?? 0);
+        if ($familyId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã gia đình.']);
+        }
+        $db = db_connect();
+        // Kiểm tra trùng
+        $exists = $db->table('family_zone')->where(['FID' => $familyId, 'ZID' => $zid])->get()->getRowArray();
+        if ($exists) {
+            return $this->response->setStatusCode(409)->setJSON(['ok' => false, 'message' => 'Gia đình đã thuộc khu này.']);
+        }
+        // Thêm vào bảng family_zone
+        $db->table('family_zone')->insert(['FID' => $familyId, 'ZID' => $zid]);
+        // Lấy thông tin chi tiết gia đình vừa thêm
+        $family = $db->table('family')->where('FID', $familyId)->get()->getRowArray();
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Đã thêm gia đình vào khu.',
+            'family' => [
+                'id' => (int)($family['FID'] ?? 0),
+                'name' => (string)($family['name'] ?? ''),
+                'address' => (string)($family['address'] ?? ''),
+            ]
+        ]);
+    }
     // POST /zone/{id}/add-member
     public function addMember($id = null)
     {

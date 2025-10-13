@@ -4,6 +4,31 @@ namespace App\Controllers;
 
 class Family extends BaseController
 {
+    // GET /family/search?q=...
+    public function search()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $q = trim((string) $this->request->getGet('q'));
+        if ($q === '') {
+            return $this->response->setJSON(['ok' => true, 'results' => []]);
+        }
+        $model = new \App\Models\FamilyModel();
+        $model = $model->select(['FID', 'name', 'address']);
+        $model = $model->groupStart()
+            ->like('name', $q)
+            ->orLike('address', $q)
+            ->groupEnd();
+        $rows = $model->orderBy('name', 'ASC')->limit(20)->get()->getResultArray();
+        $results = [];
+        foreach ($rows as $r) {
+            $results[] = [
+                'id' => (int)($r['FID'] ?? 0),
+                'name' => $r['name'] ?? '',
+                'address' => $r['address'] ?? '',
+            ];
+        }
+        return $this->response->setJSON(['ok' => true, 'results' => $results]);
+    }
     public function index()
     {
         // Pagination size suggestion: 12 cards/page (3 columns x 4 rows on desktop)

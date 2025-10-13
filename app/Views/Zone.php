@@ -103,6 +103,22 @@
 
                 <!-- Families -->
                 <div class="tab-pane fade" id="pane-families" role="tabpanel">
+                    <!-- Section tìm kiếm và thêm gia đình vào khu -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" id="zoneFamilySearchInput" placeholder="Tìm kiếm gia đình để thêm vào khu...">
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-success" id="zoneAddFamilyBtn" disabled><i class="fas fa-home me-1"></i>Thêm mới gia đình</button>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <div id="zoneFamilySearchResults" class="list-group" style="max-height: 260px; overflow-y: auto;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive" id="zoneFamiliesWrap">
                         <table class="table align-middle" id="zoneFamiliesTable">
                             <thead>

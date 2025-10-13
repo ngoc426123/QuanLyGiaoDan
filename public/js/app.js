@@ -332,6 +332,110 @@
   }
 
   document.addEventListener('DOMContentLoaded', function(){
+    // --- Zone Family Search & Add ---
+    var familySearchInput = document.getElementById('zoneFamilySearchInput');
+    var familySearchResults = document.getElementById('zoneFamilySearchResults');
+    var addFamilyBtn = document.getElementById('zoneAddFamilyBtn');
+    var selectedFamily = null;
+    function getCurrentFamilyIds() {
+      var ids = [];
+      var rows = document.querySelectorAll('#zoneFamiliesTable tbody tr');
+      rows.forEach(function(tr){
+        var fid = tr.querySelector('button.action-family-view');
+        if (fid && fid.dataset.fid) ids.push(parseInt(fid.dataset.fid, 10));
+      });
+      return ids;
+    }
+    if (familySearchInput && familySearchResults && addFamilyBtn) {
+      familySearchInput.addEventListener('input', function(){
+        var q = this.value.trim();
+        familySearchResults.innerHTML = '';
+        addFamilyBtn.disabled = true;
+        selectedFamily = null;
+        if (q.length < 2) return;
+        fetch('/family/search?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+          .then(function(res){ return res.json(); })
+          .then(function(json){
+            familySearchResults.innerHTML = '';
+            var families = getCurrentFamilyIds();
+            var results = (json.results || []).filter(function(f){ return families.indexOf(f.id) === -1; });
+            if (!results.length) {
+              familySearchResults.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy hoặc đã là gia đình trong khu.</div>';
+              return;
+            }
+            results.forEach(function(f){
+              var item = document.createElement('div');
+              item.className = 'list-group-item list-group-item-action d-flex align-items-center py-2 px-2';
+              item.style.cursor = 'pointer';
+              item.dataset.familyId = f.id;
+              item.innerHTML = `<span class="fw-semibold">${f.name}</span> <span class="text-muted ms-2">${f.address || ''}</span>`;
+              item.addEventListener('click', function(){
+                selectedFamily = f;
+                addFamilyBtn.disabled = false;
+                Array.from(familySearchResults.children).forEach(function(c){ c.classList.remove('active'); });
+                item.classList.add('active');
+                item.scrollIntoView({block:'nearest',behavior:'smooth'});
+              });
+              familySearchResults.appendChild(item);
+            });
+          });
+      });
+      addFamilyBtn.addEventListener('click', function(){
+        if (!selectedFamily || !currentZoneId) return;
+        addFamilyBtn.disabled = true;
+        fetch('/zone/' + currentZoneId + '/add-family', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ family_id: selectedFamily.id })
+        })
+        .then(function(res){ return res.json(); })
+        .then(function(json){
+          if (json.ok && json.family) {
+            // Sau khi thêm gia đình, reload lại danh sách gia đình
+            fetch('/zone/' + currentZoneId, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+              .then(function(res){ return res.json(); })
+              .then(function(zoneJson){
+                if (zoneJson.ok && zoneJson.details && Array.isArray(zoneJson.details.families)) {
+                  var tbody = document.querySelector('#zoneFamiliesTable tbody');
+                  if (tbody) {
+                    tbody.innerHTML = '';
+                    zoneJson.details.families.forEach(function(f){
+                      var tr = document.createElement('tr');
+                      tr.innerHTML = `
+                        <td class="fw-semibold"><i class="fas fa-home text-info me-1"></i>${f.name}</td>
+                        <td>${f.head}</td>
+                        <td>${f.members}</td>
+                        <td>${f.phone}</td>
+                        <td>${f.address}</td>
+                        <td class="text-end"><button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="${f.id}" title="Xem chi tiết"><i class="fas fa-eye"></i></button></td>
+                      `;
+                      tbody.appendChild(tr);
+                    });
+                  }
+                }
+                // Reset chọn
+                addFamilyBtn.disabled = true;
+                selectedFamily = null;
+                if (familySearchResults) familySearchResults.innerHTML = '';
+                familySearchInput.value = '';
+                // Success alert
+                var alertPlaceholder = document.createElement('div');
+                alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
+                alertPlaceholder.setAttribute('role', 'alert');
+                alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã thêm gia đình vào khu.' +
+                  '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                var mount = document.querySelector('.web-body') || document.body;
+                mount.prepend(alertPlaceholder);
+                setTimeout(function(){ if (window.bootstrap){ var bs = bootstrap.Alert.getOrCreateInstance(alertPlaceholder); bs.close(); } }, 4000);
+              });
+          } else {
+            alert(json.message || 'Không thể thêm gia đình.');
+          }
+        })
+        .catch(function(){ alert('Lỗi khi thêm gia đình.'); });
+      });
+    }
     // Đảm bảo các modal không bị kẹt trong stacking context: chuyển lên body
     (function(){
       ['modalEditPerson', 'modalConfirmDeletePerson', 'modalPersonDetail', 'modalCreatePerson'].forEach(function(id){
