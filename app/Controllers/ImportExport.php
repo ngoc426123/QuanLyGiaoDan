@@ -122,7 +122,8 @@ class ImportExport extends BaseController
 
             if ($target === 'all') {
                 // Create one sheet per zone only
-                $zones = $db->table('zone')->select('ZID, name')->orderBy('ZID','ASC')->get()->getResultArray();
+                // include holy_name and note so we can display zone details in the sheet header
+                $zones = $db->table('zone')->select('ZID, name, holy_name, note')->orderBy('ZID','ASC')->get()->getResultArray();
                 $usedSheetNames = [];
                 $first = true;
                 foreach ($zones as $z) {
@@ -149,18 +150,56 @@ class ImportExport extends BaseController
                         $zsheet = $spreadsheet->createSheet();
                     }
                     $zsheet->setTitle(mb_substr($sheetName, 0, 31));
+                    // Zone info block (professional header): zone title, saint, leader/note
                     $rno = 1;
-                    // header (member-only columns) in Vietnamese
-                    $zsheet->setCellValue('A' . $rno, 'Tên thánh');
-                    $zsheet->setCellValue('B' . $rno, 'Họ và tên');
-                    $zsheet->setCellValue('C' . $rno, 'Quan hệ');
-                    $zsheet->setCellValue('D' . $rno, 'Ngày sinh');
-                    $zsheet->setCellValue('E' . $rno, 'Ngày rửa tội');
-                    $zsheet->setCellValue('F' . $rno, 'Ngày thêm sức');
-                    $zsheet->setCellValue('G' . $rno, 'Ngày rước lễ');
-                    $zsheet->setCellValue('H' . $rno, 'Ngày hôn phối');
-                    $zsheet->setCellValue('I' . $rno, 'Ghi chú');
+                    $zoneName = trim((string)($z['name'] ?? ''));
+                    $zoneSaint = trim((string)($z['holy_name'] ?? ''));
+                    $zoneNote = trim((string)($z['note'] ?? ''));
+                    // try to parse a leader name from the note (formats like "Trưởng khu: Name" or "Leader: Name")
+                    $leader = '';
+                    if (preg_match('/(?:Trưởng\s*khu|Truong\s*khu|Leader)[:\-]\s*(.+)/iu', $zoneNote, $m)) {
+                        $leader = trim($m[1]);
+                        // remove leader line from note to avoid duplication
+                        $zoneNote = trim(preg_replace('/(?:Trưởng\s*khu|Truong\s*khu|Leader)[:\-].*/iu', '', $zoneNote));
+                    }
+                    // Row 1: Zone title
+                    $zsheet->setCellValue('A' . $rno, 'KHU: ' . ($zoneName !== '' ? $zoneName : ('Zone ' . $zid)));
+                    $zsheet->mergeCells('A' . $rno . ':I' . $rno);
+                    $zsheet->getStyle('A' . $rno)->getFont()->setBold(true)->setSize(14);
+                    $zsheet->getStyle('A' . $rno)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                    $zsheet->getStyle('A' . $rno)->getFill()->applyFromArray(['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6F0FA']]);
                     $rno++;
+                    // Row 2: saint + leader
+                    $line2 = [];
+                    if ($zoneSaint !== '') { $line2[] = 'Tên thánh: ' . $zoneSaint; }
+                    if ($leader !== '') { $line2[] = 'Trưởng khu: ' . $leader; }
+                    $zsheet->setCellValue('A' . $rno, implode('    |    ', $line2));
+                    $zsheet->mergeCells('A' . $rno . ':I' . $rno);
+                    $zsheet->getStyle('A' . $rno)->getFont()->setItalic(true)->setSize(11);
+                    $zsheet->getStyle('A' . $rno)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                    $rno++;
+                    // Row 3: optional note (smaller, dim)
+                    if ($zoneNote !== '') {
+                        $zsheet->setCellValue('A' . $rno, 'Ghi chú: ' . $zoneNote);
+                        $zsheet->mergeCells('A' . $rno . ':I' . $rno);
+                        $zsheet->getStyle('A' . $rno)->getFont()->setSize(10)->getColor()->setRGB('666666');
+                        $zsheet->getStyle('A' . $rno)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                        $rno++;
+                    }
+                    // small spacer row before table header
+                    $rno++;
+                    // header (member-only columns) in Vietnamese - dynamic header row
+                    $headerRow = $rno;
+                    $zsheet->setCellValue('A' . $headerRow, 'Tên thánh');
+                    $zsheet->setCellValue('B' . $headerRow, 'Họ và tên');
+                    $zsheet->setCellValue('C' . $headerRow, 'Quan hệ');
+                    $zsheet->setCellValue('D' . $headerRow, 'Ngày sinh');
+                    $zsheet->setCellValue('E' . $headerRow, 'Ngày rửa tội');
+                    $zsheet->setCellValue('F' . $headerRow, 'Ngày thêm sức');
+                    $zsheet->setCellValue('G' . $headerRow, 'Ngày rước lễ');
+                    $zsheet->setCellValue('H' . $headerRow, 'Ngày hôn phối');
+                    $zsheet->setCellValue('I' . $headerRow, 'Ghi chú');
+                    $rno = $headerRow + 1;
                     $familiesInZone = $db->table('family f')->select('f.FID, f.name, f.address')->join('family_zone fz','fz.FID=f.FID','inner')->where('fz.ZID',$zid)->orderBy('f.name','ASC')->get()->getResultArray();
                     $famIndex = 0;
                     foreach ($familiesInZone as $fam) {
@@ -265,8 +304,8 @@ class ImportExport extends BaseController
                     }
                     // --- Apply styling for this zone sheet ---
                     $lastRow = max(1, $rno - 1);
-                    // header now A..I (member columns)
-                    $headerRange = 'A1:I1';
+                    // header now A..I (member columns) located at $headerRow
+                    $headerRange = 'A' . $headerRow . ':I' . $headerRow;
                     // header style: bold, white on blue
                     $zsheet->getStyle($headerRange)->applyFromArray([
                         'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
@@ -274,17 +313,17 @@ class ImportExport extends BaseController
                         'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                     ]);
                     // wrap full name and note columns where appropriate
-                    $zsheet->getStyle('B1:B' . $lastRow)->getAlignment()->setWrapText(true);
-                    $zsheet->getStyle('I1:I' . $lastRow)->getAlignment()->setWrapText(true);
+                    $zsheet->getStyle('B' . $headerRow . ':B' . $lastRow)->getAlignment()->setWrapText(true);
+                    $zsheet->getStyle('I' . $headerRow . ':I' . $lastRow)->getAlignment()->setWrapText(true);
                     // autosize columns A..I
                     foreach (range('A', 'I') as $colLetter) {
                         $zsheet->getColumnDimension($colLetter)->setAutoSize(true);
                     }
-                    // Apply date format dd/mm/yyyy for date columns D..H (from row 2 to lastRow)
-                    $dateRange = 'D2:H' . $lastRow;
+                    // Apply date format dd/mm/yyyy for date columns D..H (from headerRow+1 to lastRow)
+                    $dateRange = 'D' . ($headerRow + 1) . ':H' . $lastRow;
                     $zsheet->getStyle($dateRange)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-                    // freeze header
-                    $zsheet->freezePane('A2');
+                    // freeze header (first row visible after the headerRow)
+                    $zsheet->freezePane('A' . ($headerRow + 1));
                 }
                 if ($first) {
                     $sheet = $spreadsheet->getActiveSheet();
