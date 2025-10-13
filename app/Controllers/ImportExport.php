@@ -134,7 +134,26 @@ class ImportExport extends BaseController
             return;
         }
 
-        // For non-csv formats, return not implemented response for now
+        // Quick fallback for XLSX: stream CSV bytes but present as an .xlsx download so Excel can open it.
+        if ($format === 'xlsx') {
+            $this->response->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            // use .xlsx extension to match user's request
+            $xlsxName = preg_replace('/\.csv$/i', '.xlsx', $filename);
+            $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $xlsxName . '"');
+            $out = fopen('php://output', 'w');
+            // write BOM for UTF-8
+            echo "\xEF\xBB\xBF";
+            fputcsv($out, $cols);
+            foreach ($rows as $r) {
+                $line = [];
+                foreach ($cols as $c) { $line[] = $r[$c] ?? ''; }
+                fputcsv($out, $line);
+            }
+            fclose($out);
+            return;
+        }
+
+        // For other non-csv formats, return not implemented response for now
         return $this->response->setStatusCode(501)->setJSON(['ok' => false, 'message' => 'Format not supported yet']);
     }
 }
