@@ -27,8 +27,6 @@
     <link rel="stylesheet" href="<?= base_url('css/style.css') ?>">
     <!-- Themes -->
     <link rel="stylesheet" href="<?= base_url('css/vista.css') ?>">
-    <!-- Optional Material theme (activate by using <body class="material-theme">) -->
-    <link rel="stylesheet" href="<?= base_url('css/material.css') ?>">
     <script>window.BASE_URL = <?= json_encode(rtrim(base_url('/'), '/').'/') ?>;</script>
 </head>
-<body class="material-theme">
+<body class="vista-theme">
