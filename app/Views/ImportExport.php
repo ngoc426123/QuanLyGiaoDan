@@ -8,18 +8,6 @@
 <div class="row g-4">
     <div class="col-md-6">
         <div class="border rounded p-4 bg-white h-100">
-            <h5 class="mb-3"><i class="fas fa-file-import me-2"></i>Nhập dữ liệu</h5>
-            <form id="formImport" method="post" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="importFile" class="form-label">Chọn file dữ liệu (Excel, CSV)</label>
-                    <input type="file" class="form-control" id="importFile" accept=".csv,.xls,.xlsx">
-                </div>
-                <button type="submit" class="btn btn-success" id="btnImport"><i class="fas fa-upload me-1"></i>Nhập dữ liệu</button>
-            </form>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="border rounded p-4 bg-white h-100">
             <h5 class="mb-3"><i class="fas fa-file-export me-2"></i>Xuất dữ liệu</h5>
             <form id="formExport" method="get">
                 <div class="mb-3">
@@ -28,6 +16,7 @@
                         <option value="person">Giáo dân</option>
                         <option value="family">Hộ gia đình</option>
                         <option value="zone">Giáo khu</option>
+                        <option value="all">Tất cả (Persons, Families, Zones)</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -38,6 +27,18 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" id="btnExport"><i class="fas fa-download me-1"></i>Xuất dữ liệu</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="border rounded p-4 bg-white h-100">
+            <h5 class="mb-3"><i class="fas fa-file-import me-2"></i>Nhập dữ liệu</h5>
+            <form id="formImport" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="importFile" class="form-label">Chọn file dữ liệu (Excel, CSV)</label>
+                    <input type="file" class="form-control" id="importFile" accept=".csv,.xls,.xlsx">
+                </div>
+                <button type="submit" class="btn btn-success" id="btnImport"><i class="fas fa-upload me-1"></i>Nhập dữ liệu</button>
             </form>
         </div>
     </div>
@@ -70,6 +71,9 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     const formExport = document.getElementById('formExport');
+    // default to all/xlsx
+    document.getElementById('exportType').value = 'all';
+    document.getElementById('exportFormat').value = 'xlsx';
     formExport.addEventListener('submit', function(e){
         e.preventDefault();
         const target = document.getElementById('exportType').value;
