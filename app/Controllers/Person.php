@@ -7,6 +7,54 @@ use App\Models\HistoryModel;
 
 class Person extends BaseController
 {
+    // GET /person/search?q=...
+    public function search()
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $q = trim((string) $this->request->getGet('q'));
+        if ($q === '') {
+            return $this->response->setJSON(['ok' => true, 'results' => []]);
+        }
+        $model = new \App\Models\PersonModel();
+        $db = \Config\Database::connect();
+        // Chỉ lấy các trường cần thiết
+        $model = $model->select(['PID', 'holy_name', 'first_name', 'last_name', 'gender', 'date_of_birth']);
+        // Tìm kiếm theo tên, họ, tên thánh, số điện thoại
+        $model = $model->groupStart()
+            ->like('first_name', $q)
+            ->orLike('last_name', $q)
+            ->orLike('holy_name', $q)
+            ->orLike('phone', $q)
+            ->groupEnd();
+        $rows = $model->orderBy('last_name', 'ASC')->orderBy('first_name', 'ASC')->limit(20)->get()->getResultArray();
+        // Lọc trùng: chỉ lấy 1 PID cho mỗi nhóm (họ tên, năm sinh, số điện thoại)
+        $unique = [];
+        $results = [];
+        foreach ($rows as $r) {
+            $fullName = trim(implode(' ', array_filter([
+                $r['holy_name'] ?? '',
+                $r['last_name'] ?? '',
+                $r['first_name'] ?? ''
+            ])));
+            $birthYear = null;
+            if (!empty($r['date_of_birth']) && $r['date_of_birth'] !== '0000-00-00') {
+                try {
+                    $birthYear = (new \DateTime($r['date_of_birth']))->format('Y');
+                } catch (\Throwable $e) { $birthYear = null; }
+            }
+            $key = strtolower($fullName) . '|' . ($birthYear ?: '') . '|' . ($r['phone'] ?? '');
+            if (!isset($unique[$key])) {
+                $unique[$key] = true;
+                $results[] = [
+                    'id' => (int)($r['PID'] ?? 0),
+                    'name' => $fullName ?: ('#' . (int)($r['PID'] ?? 0)),
+                    'gender' => $r['gender'] ?? '',
+                    'birth_year' => $birthYear,
+                ];
+            }
+        }
+        return $this->response->setJSON(['ok' => true, 'results' => $results]);
+    }
     /**
      * Ghi nhật ký thao tác vào bảng history (không làm hỏng luồng chính nếu lỗi)
      * @param string $type   Phân loại (ví dụ: person)

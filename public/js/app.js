@@ -346,6 +346,149 @@
     initPersonForm(document);
     initOverviewCharts();
 
+    // --- Zone Member Search & Add ---
+    var searchInput = document.getElementById('zoneMemberSearchInput');
+    var searchResults = document.getElementById('zoneMemberSearchResults');
+    var addBtn = document.getElementById('zoneAddMemberBtn');
+    var currentZoneId = null;
+    // Lấy zone hiện tại từ tab (dựa vào data hoặc URL)
+    var zoneDetailTabs = document.getElementById('zoneDetailTabs');
+    if (zoneDetailTabs && zoneDetailTabs.dataset.zoneId) {
+      currentZoneId = parseInt(zoneDetailTabs.dataset.zoneId, 10);
+    } else {
+      // fallback: lấy từ active tab hoặc URL
+      var active = document.querySelector('#zoneList .list-group-item.active a.action-zone-select');
+      if (active) currentZoneId = parseInt(active.getAttribute('data-zone-id')||'0', 10);
+    }
+
+    // Lấy danh sách thành viên đã có trong khu
+    function getCurrentMemberIds() {
+      var ids = [];
+      var rows = document.querySelectorAll('#zoneMembersTable tbody tr');
+      rows.forEach(function(tr){
+        var btn = tr.querySelector('.action-view-person');
+        if (btn && btn.dataset.personId) ids.push(parseInt(btn.dataset.personId, 10));
+      });
+      return ids;
+    }
+
+    var selectedPerson = null;
+    if (searchInput && searchResults && addBtn) {
+      searchInput.addEventListener('input', function(){
+        var q = this.value.trim();
+        // Luôn xóa kết quả cũ trước khi search
+        searchResults.innerHTML = '';
+        addBtn.disabled = true;
+        selectedPerson = null;
+        if (q.length < 2) return;
+        fetch('/person/search?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+          .then(function(res){ return res.json(); })
+          .then(function(json){
+            // Xóa kết quả cũ trước khi render mới
+            searchResults.innerHTML = '';
+            var members = getCurrentMemberIds();
+            var results = (json.results || []).filter(function(p){ return members.indexOf(p.id) === -1; });
+            if (!results.length) {
+              searchResults.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy hoặc đã là thành viên.</div>';
+              return;
+            }
+            results.forEach(function(p){
+              var g = (p.gender || '').toString().toLowerCase();
+              var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+              var item = document.createElement('div');
+              item.className = 'list-group-item list-group-item-action d-flex align-items-center py-2 px-2';
+              item.style.cursor = 'pointer';
+              item.dataset.personId = p.id;
+              item.innerHTML = `
+                <img src="${icon}" alt="avatar" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+                <div class="flex-grow-1">
+                  <span class="fw-semibold">${p.name}</span>
+                  ${p.birth_year ? `<span class="text-muted ms-2">(${p.birth_year})</span>` : ''}
+                </div>
+              `;
+              item.addEventListener('click', function(){
+                selectedPerson = p;
+                addBtn.disabled = false;
+                Array.from(searchResults.children).forEach(function(c){ c.classList.remove('active'); });
+                item.classList.add('active');
+                // Focus vào item vừa chọn
+                item.scrollIntoView({block:'nearest',behavior:'smooth'});
+              });
+              searchResults.appendChild(item);
+            });
+          });
+      });
+
+      addBtn.addEventListener('click', function(){
+        if (!selectedPerson || !currentZoneId) return;
+        addBtn.disabled = true;
+        fetch('/zone/' + currentZoneId + '/add-member', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ person_id: selectedPerson.id })
+        })
+        .then(function(res){ return res.json(); })
+        .then(function(json){
+          if (json.ok && json.member) {
+            // Sau khi thêm thành viên, gọi lại API lấy danh sách thành viên mới nhất
+            fetch('/zone/' + currentZoneId, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+              .then(function(res){ return res.json(); })
+              .then(function(zoneJson){
+                if (zoneJson.ok && zoneJson.details && Array.isArray(zoneJson.details.members)) {
+                  var tbody = document.querySelector('#zoneMembersTable tbody');
+                  if (tbody) {
+                    tbody.innerHTML = '';
+                    zoneJson.details.members.forEach(function(m){
+                      var g = (m.gender || '').toString().toLowerCase();
+                      var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                      var tr = document.createElement('tr');
+                      tr.innerHTML = `
+                        <td>
+                          <div class="person-info">
+                            <div class="person-avatar">
+                              <img class="person-avatar-img" src="${icon}" alt="avatar">
+                            </div>
+                            <div class="person-details">
+                              <div class="person-name">${m.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>${m.gender || ''}</td>
+                        <td>${m.phone || ''}</td>
+                        <td>${m.family || ''}</td>
+                        <td class="text-end">
+                          <a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="${m.id}" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a>
+                        </td>
+                      `;
+                      tbody.appendChild(tr);
+                    });
+                  }
+                }
+                // Reset chọn
+                addBtn.disabled = true;
+                selectedPerson = null;
+                var searchResultsEl = document.getElementById('zoneMemberSearchResults');
+                if (searchResultsEl) searchResultsEl.innerHTML = '';
+                document.getElementById('zoneMemberSearchInput').value = '';
+                // Success alert
+                var alertPlaceholder = document.createElement('div');
+                alertPlaceholder.className = 'alert alert-success alert-dismissible fade show m-3';
+                alertPlaceholder.setAttribute('role', 'alert');
+                alertPlaceholder.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã thêm giáo dân vào khu.' +
+                  '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                var mount = document.querySelector('.web-body') || document.body;
+                mount.prepend(alertPlaceholder);
+                setTimeout(function(){ if (window.bootstrap){ var bs = bootstrap.Alert.getOrCreateInstance(alertPlaceholder); bs.close(); } }, 4000);
+              });
+          } else {
+            alert(json.message || 'Không thể thêm thành viên.');
+          }
+        })
+        .catch(function(){ alert('Lỗi khi thêm thành viên.'); });
+      });
+    }
+
     // Action: View Person
     document.body.addEventListener('click', function(e){
       var a = e.target.closest && e.target.closest('a.action-view-person');

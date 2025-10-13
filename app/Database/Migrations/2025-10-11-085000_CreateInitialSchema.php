@@ -203,6 +203,14 @@ class CreateInitialSchema extends Migration
                 'type' => 'TEXT',
                 'null' => true,
             ],
+            'CreatedAt' => [
+                'type' => 'DATETIME',
+                'null' => true,
+            ],
+            'UpdatedAt' => [
+                'type' => 'DATETIME',
+                'null' => true,
+            ],
         ]);
         $this->forge->addKey(['PID', 'ZID'], true); // khóa chính kết hợp
         $this->forge->addForeignKey('PID', 'person', 'PID', 'CASCADE', 'CASCADE');

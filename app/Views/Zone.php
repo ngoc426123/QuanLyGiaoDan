@@ -136,6 +136,22 @@
 
                 <!-- Members -->
                 <div class="tab-pane fade" id="pane-members" role="tabpanel">
+                    <!-- Section tìm kiếm thành viên riêng -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" id="zoneMemberSearchInput" placeholder="Tìm kiếm giáo dân để thêm vào khu...">
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-success" id="zoneAddMemberBtn" disabled><i class="fas fa-user-plus me-1"></i>Thêm mới giáo dân</button>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <div id="zoneMemberSearchResults" class="list-group" style="max-height: 260px; overflow-y: auto;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="person-table-container">
                         <div class="table-responsive">
                             <table class="table person-table mb-0" id="zoneMembersTable">

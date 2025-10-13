@@ -4,6 +4,56 @@ namespace App\Controllers;
 
 class Zone extends BaseController
 {
+    // POST /zone/{id}/add-member
+    public function addMember($id = null)
+    {
+        $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $zid = (int)($id ?? 0);
+        if ($zid <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã giáo khu.']);
+        }
+        if (!$this->request->is('post')) {
+            return $this->response->setStatusCode(405)->setJSON(['ok' => false, 'message' => 'Phương thức không hợp lệ.']);
+        }
+        $personId = (int)($this->request->getPost('person_id') ?? $this->request->getJSON()->person_id ?? 0);
+        if ($personId <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Thiếu mã giáo dân.']);
+        }
+        $db = db_connect();
+        // Kiểm tra trùng
+        $exists = $db->table('person_zone')->where(['PID' => $personId, 'ZID' => $zid])->get()->getRowArray();
+        if ($exists) {
+            return $this->response->setStatusCode(409)->setJSON(['ok' => false, 'message' => 'Giáo dân đã là thành viên của khu này.']);
+        }
+        // Thêm vào bảng person_zone
+        $db->table('person_zone')->insert(['PID' => $personId, 'ZID' => $zid, 'relationship' => null]);
+        // Lấy thông tin chi tiết giáo dân vừa thêm
+        $person = $db->table('person')->where('PID', $personId)->get()->getRowArray();
+        $vnName = trim(implode(' ', array_filter([
+            (string)($person['holy_name'] ?? ''),
+            (string)($person['last_name'] ?? ''),
+            (string)($person['first_name'] ?? ''),
+        ])));
+        $genderLabel = ((string)($person['gender'] ?? '') === '1' || (int)($person['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+        // Lấy thông tin gia đình (nếu có)
+        $pf = $db->table('person_family pf')
+            ->select('f.name as family_name')
+            ->join('family f', 'f.FID = pf.FID', 'left')
+            ->where('pf.PID', $personId)
+            ->get()->getRowArray();
+        $familyName = (string)($pf['family_name'] ?? '');
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Đã thêm giáo dân vào khu.',
+            'member' => [
+                'id' => (int)($person['PID'] ?? 0),
+                'name' => $vnName !== '' ? $vnName : ('#' . (int)($person['PID'] ?? 0)),
+                'gender' => $genderLabel,
+                'phone' => (string)($person['phone'] ?? ''),
+                'family' => $familyName,
+            ]
+        ]);
+    }
     public function update($id = null)
     {
         $this->response->setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -149,14 +199,13 @@ class Zone extends BaseController
             foreach ($fc as $r) { $familiesByZone[(int)$r['ZID']] = (int) $r['c']; }
         }
 
-        // Members count (distinct persons in families of the zone)
+        // Members count: lấy từ person_zone
         $membersByZone = [];
         if (!empty($zids)) {
-            $mc = $db->table('person_family pf')
-                ->select('fz.ZID, COUNT(DISTINCT pf.PID) as c')
-                ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
-                ->whereIn('fz.ZID', $zids)
-                ->groupBy('fz.ZID')
+            $mc = $db->table('person_zone')
+                ->select('ZID, COUNT(DISTINCT PID) as c')
+                ->whereIn('ZID', $zids)
+                ->groupBy('ZID')
                 ->get()->getResultArray();
             foreach ($mc as $r) { $membersByZone[(int)$r['ZID']] = (int) $r['c']; }
         }
@@ -296,14 +345,11 @@ class Zone extends BaseController
                 ];
             }, $families ?? []);
 
-            // Members table for this zone
-            $memberRows = $db->table('person_family pf')
-                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name AS family')
-                ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
-                ->join('person p', 'p.PID = pf.PID', 'inner')
-                ->join('family f', 'f.FID = pf.FID', 'inner')
-                ->where('fz.ZID', $zid)
-                ->groupBy('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name')
+            // Members table for this zone: lấy tất cả giáo dân thuộc khu từ person_zone
+            $memberRows = $db->table('person_zone pz')
+                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone')
+                ->join('person p', 'p.PID = pz.PID', 'inner')
+                ->where('pz.ZID', $zid)
                 ->orderBy('p.last_name', 'ASC')
                 ->orderBy('p.first_name', 'ASC')
                 ->get()->getResultArray();
@@ -319,7 +365,7 @@ class Zone extends BaseController
                     'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),
                     'gender' => $genderLabel,
                     'phone' => (string)($r['phone'] ?? ''),
-                    'family' => (string)($r['family'] ?? ''),
+                    'family' => '', // Không lấy thông tin gia đình
                 ];
             }, $memberRows ?? []);
 
@@ -380,17 +426,17 @@ class Zone extends BaseController
         // Overview: families and members counts + gender
         $fc = $db->table('family_zone')->select('COUNT(*) as c')->where('ZID', $zoneId)->get()->getRowArray();
         $familiesCount = (int)($fc['c'] ?? 0);
-        $mc = $db->table('person_family pf')
-            ->select('COUNT(DISTINCT pf.PID) as c')
-            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
-            ->where('fz.ZID', $zoneId)
+        // Đếm số lượng giáo dân trực tiếp từ person_zone
+        $mc = $db->table('person_zone')
+            ->select('COUNT(DISTINCT PID) as c')
+            ->where('ZID', $zoneId)
             ->get()->getRowArray();
         $membersCount = (int)($mc['c'] ?? 0);
-        $gc = $db->table('person_family pf')
+        // Đếm nam/nữ trực tiếp từ thành viên person_zone
+        $gc = $db->table('person_zone pz')
             ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
-            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
-            ->join('person p', 'p.PID = pf.PID', 'inner')
-            ->where('fz.ZID', $zoneId)
+            ->join('person p', 'p.PID = pz.PID', 'inner')
+            ->where('pz.ZID', $zoneId)
             ->get()->getRowArray();
 
         // Families table
@@ -445,17 +491,29 @@ class Zone extends BaseController
             ];
         }, $families ?? []);
 
-        // Members for this zone
-        $memberRows = $db->table('person_family pf')
-            ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name AS family')
-            ->join('family_zone fz', 'fz.FID = pf.FID', 'inner')
-            ->join('person p', 'p.PID = pf.PID', 'inner')
-            ->join('family f', 'f.FID = pf.FID', 'inner')
-            ->where('fz.ZID', $zoneId)
-            ->groupBy('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, f.name')
-            ->orderBy('p.last_name', 'ASC')
-            ->orderBy('p.first_name', 'ASC')
-            ->get()->getResultArray();
+        // Members for this zone: lấy từ person_zone
+        // Sắp xếp theo người thêm mới nhất (giả sử có trường id tự tăng hoặc CreatedAt trong person_zone)
+        if ($db->getFieldNames('person_zone') && in_array('CreatedAt', $db->getFieldNames('person_zone'))) {
+            $memberRows = $db->table('person_zone pz')
+                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, pz.CreatedAt')
+                ->join('person p', 'p.PID = pz.PID', 'inner')
+                ->where('pz.ZID', $zoneId)
+                ->orderBy('pz.CreatedAt', 'DESC')
+                ->get()->getResultArray();
+        } else if ($db->getFieldNames('person_zone') && in_array('id', $db->getFieldNames('person_zone'))) {
+            $memberRows = $db->table('person_zone pz')
+                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone, pz.id')
+                ->join('person p', 'p.PID = pz.PID', 'inner')
+                ->where('pz.ZID', $zoneId)
+                ->orderBy('pz.id', 'DESC')
+                ->get()->getResultArray();
+        } else {
+            $memberRows = $db->table('person_zone pz')
+                ->select('p.PID, p.holy_name, p.first_name, p.last_name, p.gender, p.phone')
+                ->join('person p', 'p.PID = pz.PID', 'inner')
+                ->where('pz.ZID', $zoneId)
+                ->get()->getResultArray();
+        }
         $membersTbl = array_map(function($r){
             $vnName = trim(implode(' ', array_filter([
                 (string)($r['holy_name'] ?? ''),
@@ -468,7 +526,7 @@ class Zone extends BaseController
                 'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),
                 'gender' => $genderLabel,
                 'phone' => (string)($r['phone'] ?? ''),
-                'family' => (string)($r['family'] ?? ''),
+                'family' => '', // Không lấy thông tin gia đình
             ];
         }, $memberRows ?? []);
 
