@@ -42,6 +42,9 @@ $routes->post('/zone/(:num)/remove-family', 'Zone::removeFamily/$1');
 
 $routes->get('/overview', 'Overview::index');
 $routes->get('/import-export', 'ImportExport::index');
+// Import/Export endpoints
+$routes->post('/import-export/import', 'ImportExport::import');
+$routes->get('/import-export/export', 'ImportExport::export');
 
 // Setup (initial installation)
 $routes->get('setup', 'Setup::index');
