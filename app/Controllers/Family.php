@@ -194,9 +194,40 @@ class Family extends BaseController
         if ($fid <= 0) {
             return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'errors' => ['id' => 'Thiếu mã gia đình.']]);
         }
+        // (auth gate removed) allow operation without session check
+
         $db = \Config\Database::connect();
         try {
+            // Determine zones affected
+            $zones = [];
+            try {
+                $rows = $db->table('family_zone')->select('ZID')->where('FID', $fid)->get()->getResultArray();
+                foreach ($rows as $r) { $zones[] = (int)($r['ZID'] ?? 0); }
+            } catch (\Throwable $e) { /* ignore */ }
+
             $db->table('family_zone')->where('FID', $fid)->delete();
+
+            // If family belonged to a single zone, compute overview for that zone
+            if (count($zones) === 1 && $zones[0] > 0) {
+                $zid = $zones[0];
+                $fc = $db->table('family_zone')->select('COUNT(*) as c')->where('ZID', $zid)->get()->getRowArray();
+                $familiesCount = (int)($fc['c'] ?? 0);
+                $mc = $db->table('person_zone')->select('COUNT(DISTINCT PID) as c')->where('ZID', $zid)->get()->getRowArray();
+                $membersCount = (int)($mc['c'] ?? 0);
+                $gc = $db->table('person_zone pz')
+                    ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+                    ->join('person p', 'p.PID = pz.PID', 'inner')
+                    ->where('pz.ZID', $zid)
+                    ->get()->getRowArray();
+
+                return $this->response->setJSON(['ok' => true, 'message' => 'Đã gỡ gia đình khỏi giáo khu.', 'overview' => [
+                    'families_count' => $familiesCount,
+                    'members_count' => $membersCount,
+                    'male' => (int)($gc['male'] ?? 0),
+                    'female' => (int)($gc['female'] ?? 0),
+                ]]);
+            }
+
             return $this->response->setJSON(['ok' => true, 'message' => 'Đã gỡ gia đình khỏi giáo khu.']);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'errors' => ['server' => 'Không thể gỡ: ' . $e->getMessage()]]);
