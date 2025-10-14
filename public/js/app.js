@@ -790,7 +790,24 @@
           form.setAttribute('data-person-id', String(p.PID || pid));
           var holy = form.querySelector('[name="holy_name"]'); if (holy) holy.value = p.holy_name || '';
           var fn = form.querySelector('[name="full_name"]'); if (fn) fn.value = full || '';
-          var gsel = form.querySelector('[name="gender"]'); if (gsel) gsel.value = (p.gender_label || p.gender || 'Nam');
+          var gsel = form.querySelector('[name="gender"]');
+          if (gsel) {
+            // prefer raw numeric gender if present (1/0), otherwise map label to numeric
+            var genderVal = '';
+            if (typeof p.gender !== 'undefined' && p.gender !== null && p.gender !== '') {
+              genderVal = String(p.gender);
+            } else if (typeof p.gender_label === 'string' && p.gender_label !== '') {
+              var gl = p.gender_label.trim().toLowerCase();
+              if (gl === 'nữ' || gl === 'nu' || gl.indexOf('nữ') === 0 || gl.indexOf('nu') === 0) {
+                genderVal = '0';
+              } else {
+                genderVal = '1';
+              }
+            } else {
+              genderVal = '1';
+            }
+            try { gsel.value = genderVal; } catch (err) { /* ignore if invalid */ }
+          }
           var b = form.querySelector('[name="birth_year"]'); if (b) b.value = p.date_of_birth_fmt || '';
           var phone = form.querySelector('[name="phone"]'); if (phone) phone.value = p.phone || '';
           var notes = form.querySelector('[name="notes"]'); if (notes) notes.value = p.note || '';

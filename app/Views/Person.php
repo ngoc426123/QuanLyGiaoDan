@@ -205,8 +205,8 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
                                         <select class="form-select" name="gender" aria-label="Giới tính">
-                                            <option value="Nam">Nam</option>
-                                            <option value="Nữ">Nữ</option>
+                                            <option value="1">Nam</option>
+                                            <option value="0">Nữ</option>
                                         </select>
                                     </div>
                                 </div>
@@ -421,8 +421,8 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
                                         <select class="form-select" name="gender" aria-label="Giới tính">
-                                            <option value="Nam">Nam</option>
-                                            <option value="Nữ">Nữ</option>
+                                            <option value="1">Nam</option>
+                                            <option value="0">Nữ</option>
                                         </select>
                                     </div>
                                 </div>

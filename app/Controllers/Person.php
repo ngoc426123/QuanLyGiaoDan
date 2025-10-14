@@ -334,7 +334,8 @@ class Person extends BaseController
         $rules = [
             'full_name'         => 'required|min_length[2]|max_length[100]',
             'holy_name'         => 'permit_empty|max_length[100]',
-            'gender'            => 'permit_empty|in_list[Nam,Nữ,nam,nữ,Nam ,Nữ ]',
+            // Accept numeric 1/0 or Nam/Nữ (case-insensitive) or empty
+            'gender'            => 'permit_empty|regex_match[/^(?:\s*(?:1|0|Nam|Nữ|nam|nữ)\s*)?$/u]',
             // Chấp nhận yyyy hoặc dd/mm/yyyy (hoặc dd-mm-yyyy)
             'birth_year'        => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'baptism_year'      => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
@@ -359,7 +360,8 @@ class Person extends BaseController
         $data = [
             'name'   => trim((string) $this->request->getPost('full_name')),
             'holy_name' => trim((string) $this->request->getPost('holy_name')),
-            'gender' => (string) $this->request->getPost('gender'),
+            // raw gender input from form (may be '1'/'0' or 'Nam'/'Nữ')
+            'gender' => $this->request->getPost('gender'),
             'birth'  => (string) $this->request->getPost('birth_year'),
             'phone'  => (string) $this->request->getPost('phone'),
             'zone'   => (string) $this->request->getPost('zone_id'),
@@ -426,11 +428,27 @@ class Person extends BaseController
         };
 
         $nameParts = $parseName($data['name']);
+        // Normalize gender into integer 1 (Nam) or 0 (Nữ) or null
+        $normalizeGender = function ($g) {
+            if ($g === null || $g === '') return null;
+            // Accept integers, numeric strings, and Vietnamese labels
+            if (is_int($g)) {
+                return $g === 1 ? 1 : ($g === 0 ? 0 : null);
+            }
+            $gs = trim((string)$g);
+            if ($gs === '1' || $gs === 'true') return 1;
+            if ($gs === '0' || $gs === 'false') return 0;
+            $gl = mb_strtolower($gs);
+            if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 1;
+            if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 0;
+            return null;
+        };
+
         $personData = [
             'holy_name'    => $data['holy_name'] ?: null,
             'first_name'   => $nameParts['first_name'] ?: null,
             'last_name'    => $nameParts['last_name'] ?: null,
-            'gender'       => $data['gender'] ?: null,
+            'gender'       => $normalizeGender($data['gender']),
             'date_of_birth'=> $toDate($data['birth']),
             'date_RT'      => $toDate($data['sacraments']['baptism'] ?? ''),
             'date_RL'      => $toDate($data['sacraments']['communion'] ?? ''),
@@ -510,7 +528,7 @@ class Person extends BaseController
             ]);
         }
 
-        // Prepare a simple row payload to append on client
+    // Prepare a simple row payload to append on client
         // Tính tuổi từ ngày sinh (nếu có)
         $age = '-';
         $birthDisplay = '-';
@@ -541,10 +559,19 @@ class Person extends BaseController
 
         $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
 
+        // Map stored gender to display label for UI row
+        $normSavedGender = $normalizeGender($data['gender']);
+        $genderLabelForRow = 'Nam';
+        if ($normSavedGender === 1) {
+            $genderLabelForRow = 'Nam';
+        } elseif ($normSavedGender === 0) {
+            $genderLabelForRow = 'Nữ';
+        }
+
         $newRow = [
             'id' => $realId,
             'name' => $displayName,
-            'gender' => $data['gender'] ?: 'Nam',
+            'gender' => $genderLabelForRow,
             'birth' => $birthDisplay,
             'age' => $age,
             'baptismDate' => $data['sacraments']['baptism'] ?: null,
@@ -731,7 +758,7 @@ class Person extends BaseController
         $rules = [
             'full_name'         => 'required|min_length[2]|max_length[100]',
             'holy_name'         => 'permit_empty|max_length[100]',
-            'gender'            => 'permit_empty|in_list[Nam,Nữ,nam,nữ,Nam ,Nữ ]',
+            'gender'            => 'permit_empty|regex_match[/^(?:\s*(?:1|0|Nam|Nữ|nam|nữ)\s*)?$/u]',
             'birth_year'        => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'baptism_year'      => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
             'communion_year'    => 'permit_empty|regex_match[/^(\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})$/]',
@@ -820,11 +847,24 @@ class Person extends BaseController
             $before['zones']    = $db->table('person_zone')->where('PID', $pid)->get()->getResultArray();
 
             $nameParts = $parseName($data['name']);
+            // Normalize gender into integer 1/0 or null using same helper as create()
+            $normalizeGender = function ($g) {
+                if ($g === null || $g === '') return null;
+                if (is_int($g)) { return $g === 1 ? 1 : ($g === 0 ? 0 : null); }
+                $gs = trim((string)$g);
+                if ($gs === '1' || $gs === 'true') return 1;
+                if ($gs === '0' || $gs === 'false') return 0;
+                $gl = mb_strtolower($gs);
+                if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 1;
+                if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 0;
+                return null;
+            };
+
             $personData = [
                 'holy_name'    => $data['holy_name'] ?: null,
                 'first_name'   => $nameParts['first_name'] ?: null,
                 'last_name'    => $nameParts['last_name'] ?: null,
-                'gender'       => $data['gender'] ?: null,
+                'gender'       => $normalizeGender($data['gender']),
                 'date_of_birth'=> $toDate($data['birth']),
                 'date_RT'      => $toDate($data['sacraments']['baptism'] ?? ''),
                 'date_RL'      => $toDate($data['sacraments']['communion'] ?? ''),
@@ -877,10 +917,16 @@ class Person extends BaseController
 
             // Build minimal row info to update UI
             $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
+            // Determine gender label from normalized saved value
+            $savedGender = $normalizeGender($data['gender']);
+            $genderLabel = 'Nam';
+            if ($savedGender === 1) { $genderLabel = 'Nam'; }
+            elseif ($savedGender === 0) { $genderLabel = 'Nữ'; }
+
             $newRow = [
                 'id' => $pid,
                 'name' => $displayName,
-                'gender' => $data['gender'] ?: 'Nam',
+                'gender' => $genderLabel,
                 'birth' => $data['birth'] ?: '-',
                 'baptismDate' => $data['sacraments']['baptism'] ?: null,
                 'communionDate' => $data['sacraments']['communion'] ?: null,
