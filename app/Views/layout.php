@@ -40,7 +40,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link d-flex flex-column align-items-center nav-link-vista">
+                    <a href="<?= site_url('custom-menu') ?>" class="nav-link <?= ($activeTab === 'custom-menu') ? 'active' : '' ?> d-flex flex-column align-items-center nav-link-vista">
                         <img src="<?= base_url('images/icons/icon_setting.png') ?>" alt="Tuỳ chỉnh" class="mb-1 nav-icon-60">
                         <span class="fw-light">Tuỳ chỉnh</span>
                     </a>

@@ -46,6 +46,10 @@ $routes->get('/import-export', 'ImportExport::index');
 $routes->post('/import-export/import', 'ImportExport::import');
 $routes->get('/import-export/export', 'ImportExport::export');
 
+// Custom menu / Tuỳ chỉnh
+$routes->get('/custom-menu', 'CustomMenu::index');
+$routes->post('/custom-menu/save', 'CustomMenu::save');
+
 // Setup (initial installation)
 $routes->get('setup', 'Setup::index');
 $routes->post('setup/install', 'Setup::install');
