@@ -1,6 +1,1 @@
 vendor
-# Ignore writable by default, but allow committing options lists
-writable
-!writable/options/
-!writable/options/lists.json
-!writable/options/.gitkeep

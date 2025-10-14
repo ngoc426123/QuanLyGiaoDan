@@ -51,4 +51,4 @@ $routes->get('setup', 'Setup::index');
 $routes->post('setup/install', 'Setup::install');
 
 // Dev-only reset endpoint (development environment only)
-$routes->get('dev/reset-setup', 'DevReset::index');
+// Removed: previously $routes->get('dev/reset-setup', 'DevReset::index');
