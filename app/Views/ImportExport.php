@@ -26,7 +26,9 @@
                         <option value="xlsx">Excel (.xlsx)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary" id="btnExport"><i class="fas fa-download me-1"></i>Xuất dữ liệu</button>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary" id="btnExport"><i class="fas fa-download me-1"></i>Xuất dữ liệu</button>
+                </div>
             </form>
         </div>
     </div>
@@ -38,9 +40,9 @@
                     <label for="importFile" class="form-label">Chọn file dữ liệu (Excel, CSV)</label>
                     <input type="file" class="form-control" id="importFile" accept=".csv,.xls,.xlsx">
                 </div>
-                <div class="d-flex gap-2 align-items-center">
+                <div class="d-flex justify-content-end gap-2 align-items-center">
                     <button type="submit" class="btn btn-success" id="btnImport"><i class="fas fa-upload me-1"></i>Nhập dữ liệu</button>
-                    <a class="btn btn-outline-secondary" href="/download/person_template.xls" download="person_template.xls"><i class="fas fa-file-download me-1"></i>Tải file mẫu</a>
+                    <a class="btn btn-outline-secondary" href="/downloads/person_template.xls" download="person_template.xls"><i class="fas fa-file-download me-1"></i>Tải file mẫu</a>
                 </div>
                 <div class="form-text mt-2 text-muted">Chú ý: chức năng này <strong>sẽ thêm mới</strong> các dòng dữ liệu từ file (append). Nó <strong>không</strong> xóa hoặc thay thế toàn bộ dữ liệu hiện có.</div>
             </form>
