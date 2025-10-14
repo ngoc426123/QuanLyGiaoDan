@@ -14,13 +14,6 @@ class CreateInitialSchema extends Migration
 
     public function up()
     {
-        // Adjust table attributes for different drivers. SQLite does not support
-        // ENGINE/CHARSET/COLLATE table options, so clear them when using SQLite3.
-        $dbDriver = $this->db->getPlatform();
-        if ($dbDriver === 'SQLite3') {
-            $this->tableAttributes = [];
-        }
-
         // person
         $this->forge->addField([
             'PID' => [
