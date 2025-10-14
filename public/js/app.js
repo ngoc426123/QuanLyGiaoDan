@@ -144,7 +144,8 @@
                 var empty = tbody.querySelector('tr td[colspan]');
                 if (empty && tbody.children.length === 1) tbody.removeChild(empty.parentElement);
                 var g = (row.gender || '').toString().toLowerCase();
-                var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                // Accept either textual label or numeric encoding. New convention: '0' => male, '1' => female
+                var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
                 // Determine family/zone display with fallback to selected options
                 var famText = row.family || '';
                 var zoneText = row.zones || '';
@@ -510,7 +511,7 @@
             }
             results.forEach(function(p){
               var g = (p.gender || '').toString().toLowerCase();
-              var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+              var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
               var item = document.createElement('div');
               item.className = 'list-group-item list-group-item-action d-flex align-items-center py-2 px-2';
               item.style.cursor = 'pointer';
@@ -557,7 +558,7 @@
                     tbody.innerHTML = '';
                     zoneJson.details.members.forEach(function(m){
                       var g = (m.gender || '').toString().toLowerCase();
-                      var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                      var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
                       var tr = document.createElement('tr');
                       tr.innerHTML = `
                         <td>
@@ -640,7 +641,7 @@
           }
           // Avatar/icon by gender
           var gstr = ((p.gender_label || p.gender || '') + '').toLowerCase();
-          var icon = (gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+          var icon = (gstr === '1' || gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
           var base = (window.BASE_URL || '/');
 
           // Build professional layout using template literals
@@ -675,7 +676,7 @@
               }).join('')}
             </ul>` : '<div class="text-muted">—</div>';
 
-          var isFemale = (gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f');
+            var isFemale = (gstr === '1' || gstr === 'nữ' || gstr === 'nu' || gstr === 'female' || gstr === 'f');
           var genderBadgeClass = isFemale ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary';
           var genderLabelText = p.gender_label || p.gender || '-';
 
@@ -795,16 +796,18 @@
             // prefer raw numeric gender if present (1/0), otherwise map label to numeric
             var genderVal = '';
             if (typeof p.gender !== 'undefined' && p.gender !== null && p.gender !== '') {
+              // prefer numeric coding if provided
               genderVal = String(p.gender);
             } else if (typeof p.gender_label === 'string' && p.gender_label !== '') {
               var gl = p.gender_label.trim().toLowerCase();
+              // Map textual label to numeric: male -> '0', female -> '1'
               if (gl === 'nữ' || gl === 'nu' || gl.indexOf('nữ') === 0 || gl.indexOf('nu') === 0) {
-                genderVal = '0';
-              } else {
                 genderVal = '1';
+              } else {
+                genderVal = '0';
               }
             } else {
-              genderVal = '1';
+              genderVal = '0';
             }
             try { gsel.value = genderVal; } catch (err) { /* ignore if invalid */ }
           }
@@ -992,7 +995,8 @@
             try { tr.setAttribute('data-row-id', pidStr); } catch(_) {}
             var base = (window.BASE_URL || '/');
             var g = (json.row.gender || '').toString().toLowerCase();
-            var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+            // female when numeric '1' or textual female labels
+            var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
             var nameEl = tr.querySelector('.person-name'); if (nameEl) nameEl.textContent = json.row.name || nameEl.textContent;
             var avatar = tr.querySelector('.person-avatar-img'); if (avatar) avatar.setAttribute('src', base + icon);
             var meta = tr.querySelector('.person-meta'); if (meta) meta.innerHTML = '<span class="me-2"><i class="fa-solid fa-venus-mars me-1"></i>' + (json.row.gender || '-') + '</span><span><i class="fa-regular fa-calendar me-1"></i>' + (json.row.birth || '-') + '</span>';

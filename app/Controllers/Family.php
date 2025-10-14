@@ -214,8 +214,9 @@ class Family extends BaseController
                 $familiesCount = (int)($fc['c'] ?? 0);
                 $mc = $db->table('person_zone')->select('COUNT(DISTINCT PID) as c')->where('ZID', $zid)->get()->getRowArray();
                 $membersCount = (int)($mc['c'] ?? 0);
+                // gender mapping: male = 0, female = 1
                 $gc = $db->table('person_zone pz')
-                    ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+                    ->select("SUM(CASE WHEN p.gender = 0 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 0 THEN 1 ELSE 0 END) as female", false)
                     ->join('person p', 'p.PID = pz.PID', 'inner')
                     ->where('pz.ZID', $zid)
                     ->get()->getRowArray();

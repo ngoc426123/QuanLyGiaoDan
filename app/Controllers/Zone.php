@@ -37,8 +37,9 @@ class Zone extends BaseController
         $familiesCount = (int)($fc['c'] ?? 0);
         $mc = $db->table('person_zone')->select('COUNT(DISTINCT PID) as c')->where('ZID', $zid)->get()->getRowArray();
         $membersCount = (int)($mc['c'] ?? 0);
+        // gender mapping: male = 0, female = 1
         $gc = $db->table('person_zone pz')
-            ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+            ->select("SUM(CASE WHEN p.gender = 0 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 0 THEN 1 ELSE 0 END) as female", false)
             ->join('person p', 'p.PID = pz.PID', 'inner')
             ->where('pz.ZID', $zid)
             ->get()->getRowArray();
@@ -92,7 +93,7 @@ class Zone extends BaseController
             (string)($person['last_name'] ?? ''),
             (string)($person['first_name'] ?? ''),
         ])));
-        $genderLabel = ((string)($person['gender'] ?? '') === '1' || (int)($person['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+    $genderLabel = ((string)($person['gender'] ?? '') === '0' || (int)($person['gender'] ?? 0) === 0) ? 'Nam' : 'Nữ';
         // Lấy thông tin gia đình (nếu có)
         $pf = $db->table('person_family pf')
             ->select('f.name as family_name')
@@ -106,8 +107,8 @@ class Zone extends BaseController
         $familiesCount = (int)($fc['c'] ?? 0);
         $mc = $db->table('person_zone')->select('COUNT(DISTINCT PID) as c')->where('ZID', $zid)->get()->getRowArray();
         $membersCount = (int)($mc['c'] ?? 0);
-        $gc = $db->table('person_zone pz')
-            ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+            $gc = $db->table('person_zone pz')
+            ->select("SUM(CASE WHEN p.gender = 0 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 0 THEN 1 ELSE 0 END) as female", false)
             ->join('person p', 'p.PID = pz.PID', 'inner')
             ->where('pz.ZID', $zid)
             ->get()->getRowArray();
@@ -527,7 +528,8 @@ class Zone extends BaseController
                     (string)($r['last_name'] ?? ''),
                     (string)($r['first_name'] ?? ''),
                 ])));
-                $genderLabel = ((string)($r['gender'] ?? '') === '1' || (int)($r['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+                // gender label: 0 => Nam, 1 => Nữ
+                $genderLabel = ((string)($r['gender'] ?? '') === '0' || (int)($r['gender'] ?? 0) === 0) ? 'Nam' : 'Nữ';
                 return [
                     'id' => (int)($r['PID'] ?? 0),
                     'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),
@@ -601,8 +603,9 @@ class Zone extends BaseController
             ->get()->getRowArray();
         $membersCount = (int)($mc['c'] ?? 0);
         // Đếm nam/nữ trực tiếp từ thành viên person_zone
+        // New convention: p.gender = 0 => male, p.gender = 1 => female
         $gc = $db->table('person_zone pz')
-            ->select("SUM(CASE WHEN p.gender = 1 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 1 THEN 1 ELSE 0 END) as female", false)
+            ->select("SUM(CASE WHEN p.gender = 0 THEN 1 ELSE 0 END) as male, SUM(CASE WHEN p.gender IS NOT NULL AND p.gender <> 0 THEN 1 ELSE 0 END) as female", false)
             ->join('person p', 'p.PID = pz.PID', 'inner')
             ->where('pz.ZID', $zoneId)
             ->get()->getRowArray();
@@ -688,7 +691,8 @@ class Zone extends BaseController
                 (string)($r['last_name'] ?? ''),
                 (string)($r['first_name'] ?? ''),
             ])));
-            $genderLabel = ((string)($r['gender'] ?? '') === '1' || (int)($r['gender'] ?? 0) === 1) ? 'Nam' : 'Nữ';
+            // gender label: 0 => Nam, 1 => Nữ
+            $genderLabel = ((string)($r['gender'] ?? '') === '0' || (int)($r['gender'] ?? 0) === 0) ? 'Nam' : 'Nữ';
             return [
                 'id' => (int)($r['PID'] ?? 0),
                 'name' => $vnName !== '' ? $vnName : ('#' . (int)($r['PID'] ?? 0)),

@@ -273,9 +273,10 @@ class Person extends BaseController
             $displayName = trim(implode(' ', $fullNameParts));
 
             $genderRaw = $r['gender'] ?? null;
-            if ($genderRaw === 1 || $genderRaw === '1') {
+            // New convention: 0 => Nam, 1 => Nữ
+            if ($genderRaw === 0 || $genderRaw === '0') {
                 $genderLabel = 'Nam';
-            } elseif ($genderRaw === 0 || $genderRaw === '0') {
+            } elseif ($genderRaw === 1 || $genderRaw === '1') {
                 $genderLabel = 'Nữ';
             } else {
                 $genderLabel = is_string($genderRaw) && $genderRaw !== '' ? $genderRaw : '-';
@@ -428,19 +429,19 @@ class Person extends BaseController
         };
 
         $nameParts = $parseName($data['name']);
-        // Normalize gender into integer 1 (Nam) or 0 (Nữ) or null
+        // Normalize gender into integer 0 (Nam) or 1 (Nữ) or null — new convention: male=0, female=1
         $normalizeGender = function ($g) {
             if ($g === null || $g === '') return null;
             // Accept integers, numeric strings, and Vietnamese labels
             if (is_int($g)) {
-                return $g === 1 ? 1 : ($g === 0 ? 0 : null);
+                return $g === 0 ? 0 : ($g === 1 ? 1 : null);
             }
             $gs = trim((string)$g);
-            if ($gs === '1' || $gs === 'true') return 1;
             if ($gs === '0' || $gs === 'false') return 0;
+            if ($gs === '1' || $gs === 'true') return 1;
             $gl = mb_strtolower($gs);
-            if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 1;
-            if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 0;
+            if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 0;
+            if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 1;
             return null;
         };
 
@@ -561,10 +562,11 @@ class Person extends BaseController
 
         // Map stored gender to display label for UI row
         $normSavedGender = $normalizeGender($data['gender']);
+        // male=0, female=1
         $genderLabelForRow = 'Nam';
-        if ($normSavedGender === 1) {
+        if ($normSavedGender === 0) {
             $genderLabelForRow = 'Nam';
-        } elseif ($normSavedGender === 0) {
+        } elseif ($normSavedGender === 1) {
             $genderLabelForRow = 'Nữ';
         }
 
@@ -663,11 +665,11 @@ class Person extends BaseController
             ->where('pz.PID', $pid)
             ->get()->getResultArray();
 
-        // Normalize gender for display
+        // Normalize gender for display — new convention: 0 => Nam, 1 => Nữ
         $genderRaw = $person['gender'] ?? null;
-        if ($genderRaw === 1 || $genderRaw === '1') {
+        if ($genderRaw === 0 || $genderRaw === '0') {
             $genderLabel = 'Nam';
-        } elseif ($genderRaw === 0 || $genderRaw === '0') {
+        } elseif ($genderRaw === 1 || $genderRaw === '1') {
             $genderLabel = 'Nữ';
         } else {
             $genderLabel = (is_string($genderRaw) && $genderRaw !== '') ? (string)$genderRaw : '-';
@@ -847,16 +849,16 @@ class Person extends BaseController
             $before['zones']    = $db->table('person_zone')->where('PID', $pid)->get()->getResultArray();
 
             $nameParts = $parseName($data['name']);
-            // Normalize gender into integer 1/0 or null using same helper as create()
+            // Normalize gender into integer 0/1 or null using same helper as create() — male=0, female=1
             $normalizeGender = function ($g) {
                 if ($g === null || $g === '') return null;
-                if (is_int($g)) { return $g === 1 ? 1 : ($g === 0 ? 0 : null); }
+                if (is_int($g)) { return $g === 0 ? 0 : ($g === 1 ? 1 : null); }
                 $gs = trim((string)$g);
-                if ($gs === '1' || $gs === 'true') return 1;
                 if ($gs === '0' || $gs === 'false') return 0;
+                if ($gs === '1' || $gs === 'true') return 1;
                 $gl = mb_strtolower($gs);
-                if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 1;
-                if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 0;
+                if ($gl === 'nam' || $gl === 'n' || $gl === 'male' || $gl === 'm') return 0;
+                if ($gl === 'nữ' || $gl === 'nu' || $gl === 'female' || $gl === 'f') return 1;
                 return null;
             };
 
@@ -917,11 +919,11 @@ class Person extends BaseController
 
             // Build minimal row info to update UI
             $displayName = trim(($data['holy_name'] ? ($data['holy_name'] . ' ') : '') . $data['name']);
-            // Determine gender label from normalized saved value
+            // Determine gender label from normalized saved value (male=0, female=1)
             $savedGender = $normalizeGender($data['gender']);
             $genderLabel = 'Nam';
-            if ($savedGender === 1) { $genderLabel = 'Nam'; }
-            elseif ($savedGender === 0) { $genderLabel = 'Nữ'; }
+            if ($savedGender === 0) { $genderLabel = 'Nam'; }
+            elseif ($savedGender === 1) { $genderLabel = 'Nữ'; }
 
             $newRow = [
                 'id' => $pid,

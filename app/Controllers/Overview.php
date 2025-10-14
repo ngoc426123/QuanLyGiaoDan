@@ -11,8 +11,9 @@ class Overview extends BaseController
         $db = Database::connect();
         // Basic aggregate metrics
         $totalPeople = (int) ($db->table('person')->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
-        $male = (int) ($db->table('person')->where('gender', 1)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
-        $female = (int) ($db->table('person')->where('gender', 0)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
+    // Note: gender mapping changed: male = 0, female = 1
+    $male = (int) ($db->table('person')->where('gender', 0)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
+    $female = (int) ($db->table('person')->where('gender', 1)->selectCount('PID','c')->get()->getFirstRow()->c ?? 0);
         $families = (int) ($db->table('family')->selectCount('FID','c')->get()->getFirstRow()->c ?? 0);
         $zones = (int) ($db->table('zone')->selectCount('ZID','c')->get()->getFirstRow()->c ?? 0);
 

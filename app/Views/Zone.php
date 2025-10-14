@@ -194,7 +194,8 @@
                                                         <div class="person-avatar">
                                                             <?php 
                                                                 $g = strtolower(trim((string)($m['gender'] ?? '')));
-                                                                $icon = ($g === 'nữ' || $g === 'nu' || $g === 'female' || $g === 'f') 
+                                                                // New convention: '0' => Nam, '1' => Nữ. Accept textual labels as fallback.
+                                                                $icon = ($g === '1' || $g === 'nữ' || $g === 'nu' || $g === 'female' || $g === 'f') 
                                                                     ? 'images/icons/icon_female.png' 
                                                                     : 'images/icons/icon_male.png';
                                                             ?>
@@ -785,7 +786,8 @@
                     if (!list.length){ tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">Chưa có thành viên.</td></tr>'; }
                     else {
                         tbody.innerHTML = list.map(function(m){
-                            var g = m.gender === '1' || m.gender === 1 ? 'Nam' : (m.gender === '0' || m.gender === 0 ? 'Nữ' : '');
+                            // New convention: 0 => Nam, 1 => Nữ
+                            var g = (m.gender === '0' || m.gender === 0) ? 'Nam' : ((m.gender === '1' || m.gender === 1) ? 'Nữ' : '');
                             return '<tr>'+
                                 '<td>' + (m.name || '') + '</td>'+
                                 '<td>' + (m.relationship || '') + '</td>'+

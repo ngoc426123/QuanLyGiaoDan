@@ -502,7 +502,8 @@
         }
             var items = list.map(function(m){
             var g = (m.gender || '').toString().toLowerCase();
-            var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+            // Accept numeric encoding or textual labels. New convention: '0' => Nam, '1' => Nữ
+            var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
             var rel = m.relationship ? ('<span class="badge bg-light text-dark ms-2">' + m.relationship + '</span>') : '';
             var phone = m.phone ? ('<span class="text-muted ms-3"><i class="fa-solid fa-phone me-1"></i>' + m.phone + '</span>') : '';
             var birth = m.birth ? ('<span class="text-muted ms-3"><i class="fa-regular fa-calendar me-1"></i>' + m.birth + '</span>') : '';
@@ -610,7 +611,7 @@
                             if (!results.length){ box.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy.</div>'; return; }
                             box.innerHTML = results.map(function(p){
                                 var g = (p.gender || '').toString().toLowerCase();
-                                var icon = (g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
+                                var icon = (g === '1' || g === 'nữ' || g === 'nu' || g === 'female' || g === 'f') ? 'images/icons/icon_female.png' : 'images/icons/icon_male.png';
                                 var base = (window.BASE_URL || '/');
                                             return '<a href="#" class="list-group-item list-group-item-action family-add-result" data-pid="' + p.pid + '">' +
                                     '<img src="' + base + icon + '" style="width:24px;height:24px;object-fit:contain" class="me-2"/>' +

@@ -83,7 +83,8 @@
                                     <div class="person-avatar">
                                         <?php 
                                             $g = strtolower(trim((string)($p['gender'] ?? '')));
-                                            $icon = ($g === 'nữ' || $g === 'nu' || $g === 'female' || $g === 'f') 
+                                            // New convention: '0' => Nam, '1' => Nữ. Accept textual labels as fallback.
+                                            $icon = ($g === '1' || $g === 'nữ' || $g === 'nu' || $g === 'female' || $g === 'f') 
                                                 ? 'images/icons/icon_female.png' 
                                                 : 'images/icons/icon_male.png';
                                         ?>
@@ -205,8 +206,8 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
                                         <select class="form-select" name="gender" aria-label="Giới tính">
-                                            <option value="1">Nam</option>
-                                            <option value="0">Nữ</option>
+                                            <option value="0">Nam</option>
+                                            <option value="1">Nữ</option>
                                         </select>
                                     </div>
                                 </div>
@@ -421,8 +422,8 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
                                         <select class="form-select" name="gender" aria-label="Giới tính">
-                                            <option value="1">Nam</option>
-                                            <option value="0">Nữ</option>
+                                            <option value="0">Nam</option>
+                                            <option value="1">Nữ</option>
                                         </select>
                                     </div>
                                 </div>
