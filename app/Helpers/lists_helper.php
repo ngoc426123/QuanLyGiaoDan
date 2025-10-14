@@ -15,13 +15,30 @@ if (!function_exists('get_suggestion_list')) {
         if ($cache === null) {
             $cache = [];
             try {
-                $path = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'options' . DIRECTORY_SEPARATOR . 'lists.json';
-                if (is_file($path)) {
-                    $json = @file_get_contents($path);
-                    if ($json !== false) {
-                        $data = json_decode($json, true);
-                        if (is_array($data)) {
-                            $cache = $data;
+                // Prefer public/lists.json (accessible and versioned). FCPATH points to public/ (front controller path).
+                if (defined('FCPATH')) {
+                    $publicPath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'lists.json';
+                    if (is_file($publicPath)) {
+                        $json = @file_get_contents($publicPath);
+                        if ($json !== false) {
+                            $data = json_decode($json, true);
+                            if (is_array($data)) {
+                                $cache = $data;
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: writable area (existing behavior)
+                if (empty($cache)) {
+                    $path = rtrim(WRITEPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'options' . DIRECTORY_SEPARATOR . 'lists.json';
+                    if (is_file($path)) {
+                        $json = @file_get_contents($path);
+                        if ($json !== false) {
+                            $data = json_decode($json, true);
+                            if (is_array($data)) {
+                                $cache = $data;
+                            }
                         }
                     }
                 }
