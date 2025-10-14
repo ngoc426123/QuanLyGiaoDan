@@ -11,7 +11,8 @@
                 <?php endif; ?>
             </div>
             <div class="text-muted small">
-                Định dạng ngày: <?= esc(date_format_option()) ?>
+                <?php helper('date'); ?>
+                Định dạng ngày: <?= esc(date_format_option()) ?> (ví dụ: <?= esc(format_date(date('Y-m-d'))) ?>)
             </div>
         </div>
     </div>

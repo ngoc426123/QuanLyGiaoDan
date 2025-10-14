@@ -189,22 +189,7 @@ class Person extends BaseController
         if ($pager) { $pager->only(['q','zone','family','sort']); }
 
         $dateFmt = function (?string $date) {
-            $date = $date ? trim($date) : '';
-            if ($date === '' || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
-                return null;
-            }
-            try {
-                $dt = new \DateTime($date);
-                // Map option format (e.g., dd/mm/yyyy) to PHP DateTime format
-                $opt = function_exists('date_format_option') ? date_format_option() : 'dd/mm/yyyy';
-                $fmt = 'd/m/Y';
-                if ($opt === 'mm/dd/yyyy') {
-                    $fmt = 'm/d/Y';
-                }
-                return $dt->format($fmt);
-            } catch (\Throwable $e) {
-                return null;
-            }
+            return format_date($date);
         };
 
         $calcAge = function (?string $dob) {
@@ -644,10 +629,9 @@ class Person extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'error' => 'Not found']);
         }
 
-        // Format dates as d/m/Y when valid
+        // Format dates using application date format option
         $fmt = function($date){
-            if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') return null;
-            try { $dt = new \DateTime($date); return $dt->format('d/m/Y'); } catch (\Throwable $e) { return null; }
+            return format_date($date);
         };
         $age = null;
         if (!empty($person['date_of_birth']) && $person['date_of_birth'] !== '0000-00-00'){

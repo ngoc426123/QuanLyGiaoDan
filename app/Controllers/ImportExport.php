@@ -13,7 +13,7 @@ class ImportExport extends BaseController
     {
         $history = [
             [
-                'time' => date('d/m/Y H:i', strtotime('-2 hours')),
+                'time' => format_datetime(strtotime('-2 hours')),
                 'type' => 'import',
                 'target' => 'Giáo dân',
                 'format' => 'xlsx',
@@ -21,7 +21,7 @@ class ImportExport extends BaseController
                 'note' => 'Nhập 320 dòng từ file people_2025.xlsx'
             ],
             [
-                'time' => date('d/m/Y H:i', strtotime('-1 day')),
+                'time' => format_datetime(strtotime('-1 day')),
                 'type' => 'export',
                 'target' => 'Gia đình',
                 'format' => 'csv',
@@ -29,7 +29,7 @@ class ImportExport extends BaseController
                 'note' => 'Tải về families_backup_2025-10-10.csv'
             ],
             [
-                'time' => date('d/m/Y H:i', strtotime('-3 days')),
+                'time' => format_datetime(strtotime('-3 days')),
                 'type' => 'import',
                 'target' => 'Giáo khu',
                 'format' => 'xlsx',
