@@ -47,6 +47,254 @@ class ImportExport extends BaseController
 
         return view('ImportExport', $data);
     }
+
+    /**
+     * POST /import-export/import
+     * Import persons from an uploaded spreadsheet file (xlsx, xls, csv, Excel 2003 XML).
+     * Expected: first row is header in Vietnamese matching the sample file provided.
+     * Maps headers to person fields and writes only to `person` table.
+     * Gender mapping: male (nam) -> 0, female (nữ) -> 1
+     */
+    public function import()
+    {
+        $target = (string) ($this->request->getPost('target') ?? 'person');
+        if ($target !== 'person') {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Only target=person is supported for import']);
+        }
+
+        $file = $this->request->getFile('file');
+        if (! $file || ! $file->isValid()) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'No uploaded file found (use form field name "file")']);
+        }
+
+        if (! class_exists('\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'PhpSpreadsheet is required to import files']);
+        }
+
+        $tmp = $file->getTempName();
+        try {
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($tmp);
+            $spreadsheet = $reader->load($tmp);
+        } catch (\Throwable $ex) {
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'Failed to read spreadsheet: ' . $ex->getMessage()]);
+        }
+
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray(null, true, true, true);
+        if (count($rows) < 2) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Spreadsheet contains no data rows']);
+        }
+
+        // header mapping: normalize header text and map to person fields
+        $headerRowIndex = min(array_keys($rows));
+        $header = $rows[$headerRowIndex];
+
+        $normalizeHeader = function($h) {
+            $h = trim((string)$h);
+            $h = mb_strtolower($h);
+            $removeAccents = function($s) {
+                $a = [
+                    'à'=>'a','á'=>'a','ạ'=>'a','ả'=>'a','ã'=>'a',
+                    'â'=>'a','ầ'=>'a','ấ'=>'a','ậ'=>'a','ẩ'=>'a','ẫ'=>'a',
+                    'ă'=>'a','ằ'=>'a','ắ'=>'a','ặ'=>'a','ẳ'=>'a','ẵ'=>'a',
+                    'è'=>'e','é'=>'e','ẹ'=>'e','ẻ'=>'e','ẽ'=>'e',
+                    'ê'=>'e','ề'=>'e','ế'=>'e','ệ'=>'e','ể'=>'e','ễ'=>'e',
+                    'ì'=>'i','í'=>'i','ị'=>'i','ỉ'=>'i','ĩ'=>'i',
+                    'ò'=>'o','ó'=>'o','ọ'=>'o','ỏ'=>'o','õ'=>'o',
+                    'ô'=>'o','ồ'=>'o','ố'=>'o','ộ'=>'o','ổ'=>'o','ỗ'=>'o',
+                    'ơ'=>'o','ờ'=>'o','ớ'=>'o','ợ'=>'o','ở'=>'o','ỡ'=>'o',
+                    'ù'=>'u','ú'=>'u','ụ'=>'u','ủ'=>'u','ũ'=>'u',
+                    'ư'=>'u','ừ'=>'u','ứ'=>'u','ự'=>'u','ử'=>'u','ữ'=>'u',
+                    'ỳ'=>'y','ý'=>'y','ỵ'=>'y','ỷ'=>'y','ỹ'=>'y',
+                    'đ'=>'d',
+                    'À'=>'A','Á'=>'A','Ạ'=>'A','Ả'=>'A','Ã'=>'A',
+                    'Â'=>'A','Ầ'=>'A','Ấ'=>'A','Ậ'=>'A','Ẩ'=>'A','Ẫ'=>'A',
+                    'Ă'=>'A','Ằ'=>'A','Ắ'=>'A','Ặ'=>'A','Ẳ'=>'A','Ẵ'=>'A',
+                    'È'=>'E','É'=>'E','Ẹ'=>'E','Ẻ'=>'E','Ẽ'=>'E',
+                    'Ê'=>'E','Ề'=>'E','Ế'=>'E','Ệ'=>'E','Ể'=>'E','Ễ'=>'E',
+                    'Ì'=>'I','Í'=>'I','Ị'=>'I','Ỉ'=>'I','Ĩ'=>'I',
+                    'Ò'=>'O','Ó'=>'O','Ọ'=>'O','Ỏ'=>'O','Õ'=>'O',
+                    'Ô'=>'O','Ồ'=>'O','Ố'=>'O','Ộ'=>'O','Ổ'=>'O','Ỗ'=>'O',
+                    'Ơ'=>'O','Ờ'=>'O','Ớ'=>'O','Ợ'=>'O','Ở'=>'O','Ỡ'=>'O',
+                    'Ù'=>'U','Ú'=>'U','Ụ'=>'U','Ủ'=>'U','Ũ'=>'U',
+                    'Ư'=>'U','Ừ'=>'U','Ứ'=>'U','Ự'=>'U','Ử'=>'U','Ữ'=>'U',
+                    'Ỳ'=>'Y','Ý'=>'Y','Ỵ'=>'Y','Ỷ'=>'Y','Ỹ'=>'Y',
+                    'Đ'=>'D'
+                ];
+                return strtr($s, $a);
+            };
+            $h = $removeAccents($h);
+            $h = preg_replace('/[^a-z0-9_\s]/', '', $h);
+            $h = preg_replace('/\s+/', ' ', $h);
+            return trim($h);
+        };
+
+        $colMap = [];
+        foreach ($header as $colLetter => $colText) {
+            $nh = $normalizeHeader($colText);
+            // map common Vietnamese headers to person fields
+            if (preg_match('/ten thanh|tenthan|ten thanh|ten thang/u', $nh)) { $colMap[$colLetter] = 'holy_name'; continue; }
+            if (preg_match('/^ho(\b|\s)/', $nh) || $nh === 'ho') { $colMap[$colLetter] = 'last_name'; continue; }
+            if (preg_match('/(^|\s)ten(\b|\s)/', $nh) || $nh === 'ten') { $colMap[$colLetter] = 'first_name'; continue; }
+            if (strpos($nh, 'dien thoai') !== false || strpos($nh, 'dien_thoai') !== false || strpos($nh, 'dienthoai') !== false) { $colMap[$colLetter] = 'phone'; continue; }
+            if (strpos($nh, 'gioi tinh') !== false || strpos($nh, 'gioitinh') !== false) { $colMap[$colLetter] = 'gender'; continue; }
+            if (strpos($nh, 'ngay sinh') !== false || strpos($nh, 'ngaysinh') !== false) { $colMap[$colLetter] = 'date_of_birth'; continue; }
+            if (strpos($nh, 'ngay rua toi') !== false || strpos($nh, 'ngay rua toi') !== false || strpos($nh, 'ngay rua toi') !== false || strpos($nh, 'ngay rua toi') !== false) { $colMap[$colLetter] = 'date_RT'; continue; }
+            if (strpos($nh, 'ngay ruoc le') !== false || strpos($nh, 'ngay ruoc le') !== false) { $colMap[$colLetter] = 'date_RL'; continue; }
+            if (strpos($nh, 'ngay them suc') !== false || strpos($nh, 'ngay them suc') !== false) { $colMap[$colLetter] = 'date_TS'; continue; }
+            if (strpos($nh, 'ngay hon phoi') !== false || strpos($nh, 'ngay hon phoi') !== false) { $colMap[$colLetter] = 'date_HP'; continue; }
+            if (strpos($nh, 'ghi chu') !== false || strpos($nh, 'ghi chu') !== false) { $colMap[$colLetter] = 'note'; continue; }
+            // fallback: try common English headers
+            if (strpos($nh, 'holy') !== false) { $colMap[$colLetter] = 'holy_name'; continue; }
+            if (strpos($nh, 'first') !== false) { $colMap[$colLetter] = 'first_name'; continue; }
+            if (strpos($nh, 'last') !== false || strpos($nh, 'surname') !== false) { $colMap[$colLetter] = 'last_name'; continue; }
+            if (strpos($nh, 'phone') !== false || strpos($nh, 'mobile') !== false) { $colMap[$colLetter] = 'phone'; continue; }
+            if (strpos($nh, 'gender') !== false || strpos($nh, 'sex') !== false) { $colMap[$colLetter] = 'gender'; continue; }
+            if (strpos($nh, 'dob') !== false || strpos($nh, 'birth') !== false) { $colMap[$colLetter] = 'date_of_birth'; continue; }
+        }
+
+        if (empty($colMap)) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'Could not map any columns from the header']);
+        }
+
+        // helpers
+        $normalizeGender = function($val) {
+            $v = trim((string)$val);
+            if ($v === '') { return null; }
+            // remove Vietnamese accents to canonical ASCII
+            $removeAccents = function($s) {
+                $a = [
+                    'à'=>'a','á'=>'a','ạ'=>'a','ả'=>'a','ã'=>'a',
+                    'â'=>'a','ầ'=>'a','ấ'=>'a','ậ'=>'a','ẩ'=>'a','ẫ'=>'a',
+                    'ă'=>'a','ằ'=>'a','ắ'=>'a','ặ'=>'a','ẳ'=>'a','ẵ'=>'a',
+                    'è'=>'e','é'=>'e','ẹ'=>'e','ẻ'=>'e','ẽ'=>'e',
+                    'ê'=>'e','ề'=>'e','ế'=>'e','ệ'=>'e','ể'=>'e','ễ'=>'e',
+                    'ì'=>'i','í'=>'i','ị'=>'i','ỉ'=>'i','ĩ'=>'i',
+                    'ò'=>'o','ó'=>'o','ọ'=>'o','ỏ'=>'o','õ'=>'o',
+                    'ô'=>'o','ồ'=>'o','ố'=>'o','ộ'=>'o','ổ'=>'o','ỗ'=>'o',
+                    'ơ'=>'o','ờ'=>'o','ớ'=>'o','ợ'=>'o','ở'=>'o','ỡ'=>'o',
+                    'ù'=>'u','ú'=>'u','ụ'=>'u','ủ'=>'u','ũ'=>'u',
+                    'ư'=>'u','ừ'=>'u','ứ'=>'u','ự'=>'u','ử'=>'u','ữ'=>'u',
+                    'ỳ'=>'y','ý'=>'y','ỵ'=>'y','ỷ'=>'y','ỹ'=>'y',
+                    'đ'=>'d',
+                    'À'=>'A','Á'=>'A','Ạ'=>'A','Ả'=>'A','Ã'=>'A',
+                    'Â'=>'A','Ầ'=>'A','Ấ'=>'A','Ậ'=>'A','Ẩ'=>'A','Ẫ'=>'A',
+                    'Ă'=>'A','Ằ'=>'A','Ắ'=>'A','Ặ'=>'A','Ẳ'=>'A','Ẵ'=>'A',
+                    'È'=>'E','É'=>'E','Ẹ'=>'E','Ẻ'=>'E','Ẽ'=>'E',
+                    'Ê'=>'E','Ề'=>'E','Ế'=>'E','Ệ'=>'E','Ể'=>'E','Ễ'=>'E',
+                    'Ì'=>'I','Í'=>'I','Ị'=>'I','Ỉ'=>'I','Ĩ'=>'I',
+                    'Ò'=>'O','Ó'=>'O','Ọ'=>'O','Ỏ'=>'O','Õ'=>'O',
+                    'Ô'=>'O','Ồ'=>'O','Ố'=>'O','Ộ'=>'O','Ổ'=>'O','Ỗ'=>'O',
+                    'Ơ'=>'O','Ờ'=>'O','Ớ'=>'O','Ợ'=>'O','Ở'=>'O','Ỡ'=>'O',
+                    'Ù'=>'U','Ú'=>'U','Ụ'=>'U','Ủ'=>'U','Ũ'=>'U',
+                    'Ư'=>'U','Ừ'=>'U','Ứ'=>'U','Ự'=>'U','Ử'=>'U','Ữ'=>'U',
+                    'Ỳ'=>'Y','Ý'=>'Y','Ỵ'=>'Y','Ỷ'=>'Y','Ỹ'=>'Y',
+                    'Đ'=>'D'
+                ];
+                return strtr($s, $a);
+            };
+
+            $low = mb_strtolower($removeAccents($v));
+            $low = preg_replace('/[^a-z0-9]/', '', $low);
+            // possible values: nam -> male, nu -> female, male/female, 0/1
+            if ($low === '0' || $low === 'male' || $low === 'm' || $low === 'nam') { return 0; }
+            if ($low === '1' || $low === 'female' || $low === 'f' || $low === 'nu') { return 1; }
+            // heuristic: contains nam/nu
+            if (strpos($low, 'nam') !== false) { return 0; }
+            if (strpos($low, 'nu') !== false) { return 1; }
+            return null;
+        };
+
+        $parseDate = function($val) {
+            $v = trim((string)$val);
+            if ($v === '' || in_array($v, ['0000-00-00','0'], true)) { return null; }
+            // try dd/mm/YYYY
+            $d = \DateTime::createFromFormat('d/m/Y', $v);
+            if ($d !== false) { return $d->format('Y-m-d'); }
+            // try Y-m-d
+            $d = \DateTime::createFromFormat('Y-m-d', $v);
+            if ($d !== false) { return $d->format('Y-m-d'); }
+            // try generic parse
+            try {
+                $d = new \DateTime($v);
+                return $d->format('Y-m-d');
+            } catch (\Throwable $ex) {
+                return null;
+            }
+        };
+
+        $db = db_connect();
+        $insertRows = [];
+        $rowCount = 0;
+        $errors = [];
+
+        ksort($rows);
+        foreach ($rows as $rIndex => $row) {
+            if ($rIndex === $headerRowIndex) { continue; }
+            // detect empty row
+            $allEmpty = true;
+            foreach ($row as $c) { if (trim((string)$c) !== '') { $allEmpty = false; break; } }
+            if ($allEmpty) { continue; }
+
+            $rowCount++;
+            $data = [];
+            foreach ($colMap as $colLetter => $field) {
+                $val = isset($row[$colLetter]) ? $row[$colLetter] : '';
+                if ($field === 'gender') {
+                    $g = $normalizeGender($val);
+                    // default: null -> leave null
+                    if ($g === null) {
+                        $data['gender'] = null;
+                    } else {
+                        $data['gender'] = $g;
+                    }
+                } elseif (in_array($field, ['date_of_birth','date_RT','date_RL','date_TS','date_HP'], true)) {
+                    $d = $parseDate($val);
+                    $data[$field] = $d;
+                } else {
+                    $data[$field] = trim((string)$val);
+                }
+            }
+
+            // At minimum require last_name or first_name to avoid inserting empty persons
+            if ((empty($data['last_name']) && empty($data['first_name']) && empty($data['holy_name']))) {
+                $errors[] = "Row {$rIndex}: missing name fields, skipped";
+                continue;
+            }
+
+            $insertRows[] = $data;
+        }
+
+        if (empty($insertRows)) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'No valid person rows found', 'errors' => $errors]);
+        }
+
+        // insert in transaction and batches
+        $db->transStart();
+        try {
+            $chunks = array_chunk($insertRows, 200);
+            $inserted = 0;
+            foreach ($chunks as $chunk) {
+                $db->table('person')->insertBatch($chunk);
+                $inserted += count($chunk);
+            }
+            $db->transComplete();
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'Database transaction failed']);
+            }
+        } catch (\Throwable $ex) {
+            $db->transRollback();
+            return $this->response->setStatusCode(500)->setJSON(['ok' => false, 'message' => 'Insert failed: ' . $ex->getMessage()]);
+        }
+
+        return $this->response->setJSON([
+            'ok' => true,
+            'message' => 'Import completed',
+            'rows_read' => $rowCount,
+            'rows_inserted' => count($insertRows),
+            'errors' => $errors,
+        ]);
+    }
                     /*
      * GET /import-export/export?target=person&format=csv
      * Generate a CSV or XLSX for the selected target. When target=all, create one sheet per zone only.
