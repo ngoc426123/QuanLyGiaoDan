@@ -39,7 +39,7 @@ REM Chạy server PHP tại localhost:8080
 start "PHP Server" cmd /c "php -S localhost:8080"
 
 REM Đợi server khởi động một chút
-ping 127.0.0.1 -n 3 > nul
+ping 127.0.0.1 -n 5 > nul
 
 REM Mở trình duyệt Chrome nếu có, nếu không thì mở trình duyệt mặc định
 set "URL=http://localhost:8080"
