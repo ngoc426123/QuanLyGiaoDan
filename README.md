@@ -3,6 +3,8 @@
 > Đây là hệ thống quản lý giáo dân của một giáo xứ, mục đích hệ thống này dùng cho việc dễ dàng tìm kiếm thông tin giáo dân, thêm, bớt, chỉnh sửa hoặc xuất các tài liệu liên quan, không sử dụng excel mà thay bằng quản lý hệ thống này giúp tiết kiệm tối đa thời gian truy xuất và làm việc
 
 > Hệ thống này mới mẻ và được hỗ trợ bởi các lập trình viên có kinh nghiệm lâu năm, tuy thế nhưng vẫn sẽ có lỗi trong lúc sử dụng, đừng ngại mà hãy liên hệ với chúng tôi theom thông tin dưới cùng để nhận được sự hỗ trợ kịp thời.
+
+
 ## CÔNG NGHỆ
 
 **Client:** Boostrap, JS thuần
@@ -11,41 +13,66 @@
 
 **Database:** SQLite
 
+## CÁC ỨNG DỤNG CẦN CÓ
+
+**1. Ứng dụng Quản lý giáo dân:** link clone về từ bên dưới
+```bash
+https://github.com/ngoc426123/QuanLyGiaoDan.git
+```
+
+**2. PHP phiên bản mới nhất - hoặc từ 8.0 trở lên:** link download bên dưới
+```bash
+https://windows.php.net/download/
+```
+
+**3. Composer:** link download bên dưới
+```bash
+https://getcomposer.org/download/
+```
 
 ## CÀI ĐẶT
 
 Đây là ứng dụng được viết trên nền codeigniter (web framwork), vì đây là ứng dụng web, không phải là ứng dụng window nên cần một số bước cài đặt bên dưới:
 
-1. Sao chép hệ thống này về từ link github:
+1. Sao chép hệ thống này về từ link github, bạn sẽ nhận được toàn bộ source của dự án.
 
-```bash
-git clone https://github.com/ngoc426123/QuanLyGiaoDan.git
-```
-
-2. Tải và cài đặt php phiên bản mới nhất trở lên, link download php bên dưới, hãy tải bản **Thread Safe** (tìm trong nội dung download)
-
-```bash
-https://windows.php.net/download/
-```
+2. Tải và cài đặt php phiên bản mới nhất trở lên, link download php để phía trên, hãy tải bản **Thread Safe** (tìm trong nội dung download)
 
 3. Giải nén php vô một thư mục bất kỳ và khi nhớ đường dẫn thư mụa này.
 
 4. Chỉnh hoặc thêm mới sửa nội dung PATH trong *Window Environment Variables* để cấu hình trỏ đến folder chứa php đã cài đặt (từ bước này trở đi nếu gặp khó khăn, xin liên hệ đội ngũ kỹ thuật để được hỗ trợ).
 
-5. Sau đó mở terminal (Window PowerShell), chạy lệnh bên dướid để kiểm tra php đã hoạt động chưa.
+5. Sau đó mở terminal (Window PowerShell), chạy lệnh bên dưới để kiểm tra php đã hoạt động chưa.
+```bash
+php -v
+```
 
 6. Chỉnh sửa file php.init để mở các extension dùng cho hệ thống, danh sách các extension bên dưới đây:
-
 ```bash
 intl
 mbstring
 sqlite3
+openssl
+fileinfo
+gd
+zip
 ```
 
 7. Nếu cài đặt php khác với *C:/php* thì vui lòng kiểm tra dòng dưới đây, đảm bảo folder extension trỏ tới đúng folder *ext* trong php
-
 ```bash
 extension_dir = "./"
+```
+
+8. Cài đặt composer, link download để phía trên, composer sẽ tự động thêm biến môi trường cho chính nó
+
+9. Sau đó mở terminal (Window PowerShell), chạy lệnh bên dưới để kiểm tra composer đã hoạt động chưa.
+```bash
+composer -v
+```
+
+10. Đi tới folder dự án, chạy lệnh dưới đầy trong bất kỳ terminal nào window của bạn có để ứng dụng cài đặt các thư viện liên quan:
+```bash
+composer i --no-dev
 ```
 
 ## CHẠY HỆ THỐNG
