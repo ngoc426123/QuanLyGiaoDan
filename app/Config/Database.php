@@ -28,8 +28,8 @@ class Database extends Config
         // Using SQLite file database stored under public/databases/database.sqlite
         'DSN'          => '',
         // Path to SQLite database file. Use FCPATH so it's inside the public folder.
-        'database'     => FCPATH . 'databases' . DIRECTORY_SEPARATOR . 'database.sqlite',
-        'DBDriver'     => 'SQLite3',
+        'database'     => '',
+        'DBDriver'     => '',
         'DBPrefix'     => '',
         'pConnect'     => false,
         'DBDebug'      => true,
