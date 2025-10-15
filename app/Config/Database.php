@@ -25,25 +25,23 @@ class Database extends Config
      * @var array<string, mixed>
      */
     public array $default = [
+        // Using SQLite file database stored under public/databases/database.sqlite
         'DSN'          => '',
-        'hostname'     => 'localhost',
-        'username'     => '',
-        'password'     => '',
-        'database'     => '',
-        'DBDriver'     => 'MySQLi',
+        // Path to SQLite database file. Use FCPATH so it's inside the public folder.
+        'database'     => FCPATH . 'databases' . DIRECTORY_SEPARATOR . 'database.sqlite',
+        'DBDriver'     => 'SQLite3',
         'DBPrefix'     => '',
         'pConnect'     => false,
         'DBDebug'      => true,
-        'charset'      => 'utf8mb4',
-        'DBCollat'     => 'utf8mb4_general_ci',
+        'charset'      => 'utf8',
+        'DBCollat'     => '',
         'swapPre'      => '',
         'encrypt'      => false,
         'compress'     => false,
         'strictOn'     => false,
         'failover'     => [],
-        'port'         => 3306,
-        'numberNative' => false,
-        'foundRows'    => false,
+        'foreignKeys'  => true,
+        'busyTimeout'  => 1000,
         'dateFormat'   => [
             'date'     => 'Y-m-d',
             'datetime' => 'Y-m-d H:i:s',
@@ -167,7 +165,8 @@ class Database extends Config
         'hostname'    => '127.0.0.1',
         'username'    => '',
         'password'    => '',
-        'database'    => ':memory:',
+        // Use a file-based SQLite DB for tests instead of in-memory
+        'database'    => FCPATH . 'databases' . DIRECTORY_SEPARATOR . 'tests.sqlite',
         'DBDriver'    => 'SQLite3',
         'DBPrefix'    => 'db_',  // Needed to ensure we're working correctly with prefixes live. DO NOT REMOVE FOR CI DEVS
         'pConnect'    => false,
@@ -198,6 +197,23 @@ class Database extends Config
         // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
+        }
+
+        // If using SQLite and a relative path is provided via env, resolve it to an absolute path.
+        if (isset($this->default['DBDriver']) && $this->default['DBDriver'] === 'SQLite3' && ! empty($this->default['database'])) {
+            $dbPath = $this->default['database'];
+            // If looks like a relative path (doesn't start with drive letter or /), try to resolve
+            if (! preg_match('#^(?:[A-Za-z]:\\\|[A-Za-z]:/|/|\\\\)#', $dbPath)) {
+                if (defined('ROOTPATH')) {
+                    $resolved = rtrim(ROOTPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $dbPath;
+                } elseif (defined('FCPATH')) {
+                    $resolved = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $dbPath;
+                } else {
+                    $resolved = $dbPath;
+                }
+
+                $this->default['database'] = $resolved;
+            }
         }
     }
 }
