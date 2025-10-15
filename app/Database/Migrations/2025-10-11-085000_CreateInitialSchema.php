@@ -6,20 +6,25 @@ use CodeIgniter\Database\Migration;
 
 class CreateInitialSchema extends Migration
 {
-    protected array $tableAttributes = [
-        'ENGINE' => 'InnoDB',
-        'DEFAULT CHARSET' => 'utf8mb4',
-        'COLLATE' => 'utf8mb4_general_ci',
-    ];
+    protected array $tableAttributes = [];
 
     public function up()
     {
+        // Adjust table attributes depending on DB driver. MySQL needs engine/charset; SQLite ignores them.
+        if (isset($this->db) && property_exists($this->db, 'DBDriver') && $this->db->DBDriver === 'MySQLi') {
+            $this->tableAttributes = [
+                'ENGINE' => 'InnoDB',
+                'DEFAULT CHARSET' => 'utf8mb4',
+                'COLLATE' => 'utf8mb4_general_ci',
+            ];
+        } else {
+            $this->tableAttributes = [];
+        }
         // person
         $this->forge->addField([
             'PID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
                 'auto_increment' => true,
             ],
             'holy_name' => [
@@ -90,9 +95,8 @@ class CreateInitialSchema extends Migration
         // family
         $this->forge->addField([
             'FID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
                 'auto_increment' => true,
             ],
             'name' => [
@@ -124,9 +128,8 @@ class CreateInitialSchema extends Migration
         // zone (không còn LPID)
         $this->forge->addField([
             'ZID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
                 'auto_increment' => true,
             ],
             'name' => [
@@ -158,14 +161,12 @@ class CreateInitialSchema extends Migration
         // person_family (bảng liên kết person - family)
         $this->forge->addField([
             'PID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'FID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'relationship' => [
                 'type' => 'VARCHAR',
@@ -185,14 +186,12 @@ class CreateInitialSchema extends Migration
         // person_zone (bảng liên kết person - zone) + relationship
         $this->forge->addField([
             'PID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'ZID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'relationship' => [
                 'type' => 'VARCHAR',
@@ -220,14 +219,12 @@ class CreateInitialSchema extends Migration
         // family_zone (bảng liên kết family - zone)
         $this->forge->addField([
             'FID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'ZID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
             ],
             'note' => [
                 'type' => 'TEXT',
@@ -242,9 +239,8 @@ class CreateInitialSchema extends Migration
         // options (giữ nguyên như mô hình)
         $this->forge->addField([
             'ID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 3,
-                'unsigned' => true,
                 'auto_increment' => true,
             ],
             'key' => [
@@ -268,9 +264,8 @@ class CreateInitialSchema extends Migration
         // history (giữ nguyên như mô hình)
         $this->forge->addField([
             'ID' => [
-                'type' => 'INT',
+                'type' => 'INTEGER',
                 'constraint' => 10,
-                'unsigned' => true,
                 'auto_increment' => true,
             ],
             'type' => [
