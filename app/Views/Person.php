@@ -325,21 +325,27 @@
                                     </div>
                                 </div>
                                 <div class="form-divider"></div>
-                                <div class="col-12 text-end deceased-block">
-                                    <div class="form-check form-switch d-inline-flex align-items-center gap-2">
-                                        <input class="form-check-input" type="checkbox" id="isDeceasedSwitch" name="is_deceased">
-                                        <label class="form-check-label mb-0 small text-muted" for="isDeceasedSwitch">Đã qua đời</label>
-                                    </div>
-                                    <div class="mt-2 d-none maxw-200 ms-auto" id="deceasedYearWrap">
-                                        <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-end" placeholder="dd/mm/yyyy" autocomplete="off">
-                                        <div class="invalid-feedback text-end">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
-                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3 align-items-center">
+                        <div class="col-md-8">
+                            <small class="text-muted"><span class="text-danger">*</span> Thông tin bắt buộc</small>
+                            <div class="text-muted small mt-1">Thông tin sẽ được lưu và có thể chỉnh sửa sau.</div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="deceased-block d-inline-flex flex-column align-items-end">
+                                <div class="form-check form-switch d-inline-flex align-items-center gap-2 mb-2">
+                                    <input class="form-check-input" type="checkbox" id="isDeceasedSwitch" name="is_deceased">
+                                    <label class="form-check-label mb-0 small text-muted" for="isDeceasedSwitch">Đã qua đời</label>
+                                </div>
+                                <div class="d-none" id="deceasedYearWrap" style="min-width:160px;">
+                                    <input type="text" name="deceased_year" class="form-control form-control-sm yearpicker text-start" placeholder="dd/mm/yyyy" autocomplete="off">
+                                    <div class="invalid-feedback text-start">Năm mất phải lớn hơn hoặc bằng năm sinh.</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <small class="text-muted d-block mt-3"><span class="text-danger">*</span> Thông tin bắt buộc</small>
-                    <div class="text-muted small mt-1">Thông tin sẽ được lưu và có thể chỉnh sửa sau.</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>

@@ -427,6 +427,9 @@
 .modal-backdrop {
     z-index: 10990 !important;
 }
+.modal-dialog-scrollable .modal-content {
+    overflow-y: auto;
+}
 
 /* Family members modal: limit height and allow scroll (~6 items visible) */
 .family-members-scroll {

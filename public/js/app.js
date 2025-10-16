@@ -254,9 +254,9 @@
       form.dataset.boundSubmit = '1';
     }
 
-    // deceased toggle
-    var deceasedSwitch = container.getElementById ? container.getElementById('isDeceasedSwitch') : document.getElementById('isDeceasedSwitch');
-    var deceasedWrap = container.getElementById ? container.getElementById('deceasedYearWrap') : document.getElementById('deceasedYearWrap');
+  // deceased toggle (scope lookup to the provided container to avoid collisions)
+  var deceasedSwitch = (container && container.querySelector) ? container.querySelector('#isDeceasedSwitch') : document.getElementById('isDeceasedSwitch');
+  var deceasedWrap = (container && container.querySelector) ? container.querySelector('#deceasedYearWrap') : document.getElementById('deceasedYearWrap');
     if (deceasedSwitch && deceasedWrap && !deceasedSwitch.dataset.boundToggle){
       deceasedSwitch.addEventListener('change', function(){
         if (this.checked){
