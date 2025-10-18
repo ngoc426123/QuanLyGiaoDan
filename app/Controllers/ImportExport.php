@@ -315,8 +315,12 @@ class ImportExport extends BaseController
 
         // Prepare row/col list for simple targets; 'all' is handled specially
         if ($target === 'person') {
-            $rows = $db->table('person')->select('PID, holy_name, first_name, last_name, phone, gender')->orderBy('PID','ASC')->get()->getResultArray();
-            $cols = ['PID','holy_name','first_name','last_name','phone','gender'];
+            // select full person info used by person export
+            $rows = $db->table('person')
+                ->select('PID, holy_name, last_name, first_name, phone, gender, date_of_birth, date_RT, date_TS, date_RL, date_HP, note')
+                ->orderBy('PID','ASC')->get()->getResultArray();
+            // use a synthetic 'full_name' column (will be computed when writing)
+            $cols = ['PID','holy_name','full_name','phone','gender','date_of_birth','date_RT','date_TS','date_RL','date_HP','note'];
         } elseif ($target === 'family') {
             // We'll handle family exports specially below (CSV/XLSX) to group members under
             // a merged family header (like the 'all' export). Fetch families list here.
@@ -391,12 +395,34 @@ class ImportExport extends BaseController
                 return;
             }
 
-            // default simple CSV for other targets
-            fputcsv($out, $cols);
-            foreach ($rows as $r) {
-                $line = [];
-                foreach ($cols as $c) { $line[] = $r[$c] ?? ''; }
-                fputcsv($out, $line);
+            // default simple CSV for other targets; special-case person to compute full_name and format dates
+            if ($target === 'person') {
+                $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
+                fputcsv($out, $headers);
+                foreach ($rows as $r) {
+                    $fullname = trim(implode(' ', array_filter([$r['holy_name'] ?? '', $r['last_name'] ?? '', $r['first_name'] ?? ''])));
+                    $line = [
+                        $r['PID'] ?? '',
+                        $r['holy_name'] ?? '',
+                        $fullname,
+                        $r['phone'] ?? '',
+                        isset($r['gender']) ? ($r['gender'] === '0' || $r['gender'] === 0 ? 'Nam' : ($r['gender'] === '1' || $r['gender'] === 1 ? 'Nữ' : $r['gender'])) : '',
+                        $formatDateForCsv($r['date_of_birth'] ?? ''),
+                        $formatDateForCsv($r['date_RT'] ?? ''),
+                        $formatDateForCsv($r['date_TS'] ?? ''),
+                        $formatDateForCsv($r['date_RL'] ?? ''),
+                        $formatDateForCsv($r['date_HP'] ?? ''),
+                        $r['note'] ?? '',
+                    ];
+                    fputcsv($out, $line);
+                }
+            } else {
+                fputcsv($out, $cols);
+                foreach ($rows as $r) {
+                    $line = [];
+                    foreach ($cols as $c) { $line[] = $r[$c] ?? ''; }
+                    fputcsv($out, $line);
+                }
             }
             fclose($out);
             return;
@@ -735,19 +761,92 @@ class ImportExport extends BaseController
                 } else {
                 // simple single-sheet export (persons/families/zones handled earlier)
                 $sheet = $spreadsheet->getActiveSheet();
-                $col = 1;
-                foreach ($cols as $c) {
-                    $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
-                    $sheet->setCellValue($cell, $c);
-                }
-                $rowNo = 2;
-                foreach ($rows as $r) {
+                if ($target === 'person') {
+                    // headers in Vietnamese
+                    $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
+                    $col = 1;
+                    foreach ($headers as $h) {
+                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
+                        $sheet->setCellValue($cell, $h);
+                    }
+                    // write rows
+                    $rowNo = 2;
+                    $writeExcelDate = function($val) {
+                        if ($val === '' || $val === '0000-00-00') { return null; }
+                        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $val)) {
+                            try { $dt = new \DateTime(substr($val,0,10)); return \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dt); } catch (\Throwable $ex) { return null; }
+                        }
+                        return null;
+                    };
+                    foreach ($rows as $r) {
+                        $fullname = trim(implode(' ', array_filter([$r['holy_name'] ?? '', $r['last_name'] ?? '', $r['first_name'] ?? ''])));
+                        $col = 1;
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['PID'] ?? '');
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['holy_name'] ?? '');
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $fullname);
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['phone'] ?? '');
+                        $gender = isset($r['gender']) ? ($r['gender'] === '0' || $r['gender'] === 0 ? 'Nam' : ($r['gender'] === '1' || $r['gender'] === 1 ? 'Nữ' : $r['gender'])) : '';
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $gender);
+                        // dates
+                        $dval = $writeExcelDate($r['date_of_birth'] ?? '');
+                        if ($dval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $dval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_of_birth'] ?? ''); }
+                        $bval = $writeExcelDate($r['date_RT'] ?? ''); if ($bval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $bval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_RT'] ?? ''); }
+                        $cval = $writeExcelDate($r['date_TS'] ?? ''); if ($cval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $cval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_TS'] ?? ''); }
+                        $rlval = $writeExcelDate($r['date_RL'] ?? ''); if ($rlval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $rlval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_RL'] ?? ''); }
+                        $hpval = $writeExcelDate($r['date_HP'] ?? ''); if ($hpval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $hpval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_HP'] ?? ''); }
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['note'] ?? '');
+                        $rowNo++;
+                    }
+                    // header styling
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($headers);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    // Apply date format for date columns (F..J depending on headers)
+                    $dateRange = 'F2:J' . $lastRow;
+                    $sheet->getStyle($dateRange)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                    // autosize
+                    for ($i = 1; $i <= $numCols; $i++) { $colLetter = Coordinate::stringFromColumnIndex($i); $sheet->getColumnDimension($colLetter)->setAutoSize(true); }
+                    $sheet->freezePane('A2');
+                } else {
                     $col = 1;
                     foreach ($cols as $c) {
-                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo;
-                        $sheet->setCellValue($cell, $r[$c] ?? '');
+                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
+                        $sheet->setCellValue($cell, $c);
                     }
-                    $rowNo++;
+                    $rowNo = 2;
+                    foreach ($rows as $r) {
+                        $col = 1;
+                        foreach ($cols as $c) {
+                            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo;
+                            $sheet->setCellValue($cell, $r[$c] ?? '');
+                        }
+                        $rowNo++;
+                    }
+                    // --- Styling for single-sheet exports ---
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($cols);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    $usedRange = 'A1:' . $lastCol . $lastRow;
+                    $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    // autosize
+                    for ($i = 1; $i <= $numCols; $i++) {
+                        $colLetter = Coordinate::stringFromColumnIndex($i);
+                        $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                    }
+                    // freeze header
+                    $sheet->freezePane('A2');
                 }
                 // --- Styling for single-sheet exports ---
                 $lastRow = max(1, $rowNo - 1);
