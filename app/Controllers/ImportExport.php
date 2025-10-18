@@ -318,8 +318,11 @@ class ImportExport extends BaseController
             $rows = $db->table('person')->select('PID, holy_name, first_name, last_name, phone, gender')->orderBy('PID','ASC')->get()->getResultArray();
             $cols = ['PID','holy_name','first_name','last_name','phone','gender'];
         } elseif ($target === 'family') {
-            $rows = $db->table('family')->select('FID, name, address')->orderBy('FID','ASC')->get()->getResultArray();
-            $cols = ['FID','name','address'];
+            // We'll handle family exports specially below (CSV/XLSX) to group members under
+            // a merged family header (like the 'all' export). Fetch families list here.
+            $families = $db->table('family')->select('FID, name, address')->orderBy('name','ASC')->get()->getResultArray();
+            // placeholder cols (unused for family special export)
+            $cols = ['dummy'];
         } elseif ($target === 'zone') {
             $rows = $db->table('zone')->select('ZID, name, holy_name, note')->orderBy('ZID','ASC')->get()->getResultArray();
             $cols = ['ZID','name','holy_name','note'];
@@ -336,6 +339,59 @@ class ImportExport extends BaseController
             $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"');
             $out = fopen('php://output', 'w');
             echo "\xEF\xBB\xBF"; // BOM
+
+            // helper to format ISO date to dd/mm/YYYY for CSV
+            $formatDateForCsv = function($val) {
+                $v = trim((string)$val);
+                if ($v === '' || $v === '0000-00-00') { return ''; }
+                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $v, $m)) {
+                    return $m[3] . '/' . $m[2] . '/' . $m[1];
+                }
+                return $v;
+            };
+
+            if ($target === 'family') {
+                // Write families grouped: family header line, then member header, then members
+                foreach ($families as $fam) {
+                    $hdr = 'Gia đình: ' . ($fam['name'] ?? '') . ' — ' . ($fam['address'] ?? '');
+                    fputcsv($out, [$hdr]);
+                    $memberHeader = ['TÊN THÁNH','HỌ VÀ TÊN','QUAN HỆ','NGÀY SINH','NGÀY RỬA TỘI','NGÀY THÊM SỨC','NGÀY RƯỚC LỄ','NGÀY HÔN PHỐI','GHI CHÚ'];
+                    fputcsv($out, $memberHeader);
+
+                    $members = $db->table('person_family pf')
+                        ->select('pf.PID, pf.relationship, p.holy_name, p.first_name, p.last_name, p.date_of_birth, p.date_RT, p.date_TS, p.date_RL, p.date_HP, p.note')
+                        ->join('person p','p.PID=pf.PID','left')
+                        ->where('pf.FID',$fam['FID'])->orderBy('pf.relationship','ASC')->get()->getResultArray();
+
+                    if (empty($members)) {
+                        // leave a blank line for empty family
+                        fputcsv($out, []);
+                        continue;
+                    }
+
+                    foreach ($members as $m) {
+                        $pname = trim(implode(' ', array_filter([ $m['holy_name'] ?? '', $m['last_name'] ?? '', $m['first_name'] ?? '' ])));
+                        $row = [
+                            $m['holy_name'] ?? '',
+                            $pname,
+                            $m['relationship'] ?? '',
+                            $formatDateForCsv($m['date_of_birth'] ?? ''),
+                            $formatDateForCsv($m['date_RT'] ?? ''),
+                            $formatDateForCsv($m['date_TS'] ?? ''),
+                            $formatDateForCsv($m['date_RL'] ?? ''),
+                            $formatDateForCsv($m['date_HP'] ?? ''),
+                            $m['note'] ?? '',
+                        ];
+                        fputcsv($out, $row);
+                    }
+                    // blank separator row
+                    fputcsv($out, []);
+                }
+                fclose($out);
+                return;
+            }
+
+            // default simple CSV for other targets
             fputcsv($out, $cols);
             foreach ($rows as $r) {
                 $line = [];
@@ -447,6 +503,8 @@ class ImportExport extends BaseController
                     $zsheet->setCellValue('G' . $headerRow, 'Ngày rước lễ');
                     $zsheet->setCellValue('H' . $headerRow, 'Ngày hôn phối');
                     $zsheet->setCellValue('I' . $headerRow, 'Ghi chú');
+                    // make header row bold
+                    $zsheet->getStyle('A' . $headerRow . ':I' . $headerRow)->getFont()->setBold(true);
                     $rno = $headerRow + 1;
                     $familiesInZone = $db->table('family f')->select('f.FID, f.name, f.address')->join('family_zone fz','fz.FID=f.FID','inner')->where('fz.ZID',$zid)->orderBy('f.name','ASC')->get()->getResultArray();
                     $famIndex = 0;
@@ -577,7 +635,104 @@ class ImportExport extends BaseController
                     $sheet = $spreadsheet->getActiveSheet();
                     $sheet->setTitle('Zones');
                 }
-            } else {
+                } elseif ($target === 'family') {
+                    // Single-sheet family export: group members under family headers
+                    $sheet = $spreadsheet->getActiveSheet();
+                    $sheet->setTitle('Families');
+                    $rno = 1;
+                    // header row for member columns will be inserted dynamically per family block
+                    $famIndex = 0;
+                    foreach ($families as $fam) {
+                        $famIndex++;
+                        $members = $db->table('person_family pf')
+                            ->select('pf.PID, pf.relationship, p.holy_name, p.first_name, p.last_name, p.date_of_birth, p.date_RT, p.date_TS, p.date_RL, p.date_HP, p.note')
+                            ->join('person p','p.PID=pf.PID','left')
+                            ->where('pf.FID',$fam['FID'])->orderBy('pf.relationship','ASC')->get()->getResultArray();
+
+                        // family header
+                        $hdrRow = $rno;
+                        $hdrText = 'Gia đình: ' . ($fam['name'] ?? '') . ' — ' . ($fam['address'] ?? '');
+                        $sheet->setCellValue('A' . $hdrRow, $hdrText);
+                        $sheet->mergeCells('A' . $hdrRow . ':I' . $hdrRow);
+                        $sheet->getStyle('A' . $hdrRow)->getFont()->setBold(true)->setSize(12);
+                        $rno = $hdrRow + 1;
+
+                        // member table header
+                        $headerRow = $rno;
+                        $sheet->setCellValue('A' . $headerRow, 'Tên thánh');
+                        $sheet->setCellValue('B' . $headerRow, 'Họ và tên');
+                        $sheet->setCellValue('C' . $headerRow, 'Quan hệ');
+                        $sheet->setCellValue('D' . $headerRow, 'Ngày sinh');
+                        $sheet->setCellValue('E' . $headerRow, 'Ngày rửa tội');
+                        $sheet->setCellValue('F' . $headerRow, 'Ngày thêm sức');
+                        $sheet->setCellValue('G' . $headerRow, 'Ngày rước lễ');
+                        $sheet->setCellValue('H' . $headerRow, 'Ngày hôn phối');
+                        $sheet->setCellValue('I' . $headerRow, 'Ghi chú');
+                        // make header row bold
+                        $sheet->getStyle('A' . $headerRow . ':I' . $headerRow)->getFont()->setBold(true);
+                        $rno = $headerRow + 1;
+
+                        if (!empty($members)) {
+                            $writeExcelDate = function($val) {
+                                if ($val === '' || $val === '0000-00-00') { return null; }
+                                if (preg_match('/^\d{4}-\d{2}-\d{2}/', $val)) {
+                                    try {
+                                        $dt = new \DateTime(substr($val,0,10));
+                                        return \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dt);
+                                    } catch (\Throwable $ex) { return null; }
+                                }
+                                return null;
+                            };
+
+                            foreach ($members as $m) {
+                                $pname = trim(implode(' ', array_filter([ $m['holy_name'] ?? '', $m['last_name'] ?? '', $m['first_name'] ?? '' ])));
+                                $sheet->setCellValue('A' . $rno, $m['holy_name'] ?? '');
+                                $sheet->setCellValue('B' . $rno, $pname);
+                                $sheet->setCellValue('C' . $rno, $m['relationship'] ?? '');
+                                $dob = trim((string)($m['date_of_birth'] ?? ''));
+                                $bap = trim((string)($m['date_RT'] ?? ''));
+                                $conf = trim((string)($m['date_TS'] ?? ''));
+                                $comm = trim((string)($m['date_RL'] ?? ''));
+                                $mar = trim((string)($m['date_HP'] ?? ''));
+                                $note = trim((string)($m['note'] ?? ''));
+                                $dval = $writeExcelDate($dob);
+                                if ($dval !== null) { $sheet->setCellValue('D' . $rno, $dval); }
+                                else { $sheet->setCellValue('D' . $rno, $dob); }
+                                $bval = $writeExcelDate($bap);
+                                if ($bval !== null) { $sheet->setCellValue('E' . $rno, $bval); } else { $sheet->setCellValue('E' . $rno, $bap); }
+                                $cval = $writeExcelDate($conf);
+                                if ($cval !== null) { $sheet->setCellValue('F' . $rno, $cval); } else { $sheet->setCellValue('F' . $rno, $conf); }
+                                $rlval = $writeExcelDate($comm);
+                                if ($rlval !== null) { $sheet->setCellValue('G' . $rno, $rlval); } else { $sheet->setCellValue('G' . $rno, $comm); }
+                                $hpval = $writeExcelDate($mar);
+                                if ($hpval !== null) { $sheet->setCellValue('H' . $rno, $hpval); } else { $sheet->setCellValue('H' . $rno, $mar); }
+                                $sheet->setCellValue('I' . $rno, $note);
+                                $rno++;
+                            }
+                        }
+
+                        // style family header (merged A..I): blue background + white text like table headers
+                        $sheet->getStyle('A' . $hdrRow . ':I' . $hdrRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                        ]);
+                        // draw borders for the family block
+                        $blockStart = $hdrRow;
+                        $blockEnd = max($hdrRow, $rno - 1);
+                        $range = 'A' . $blockStart . ':I' . $blockEnd;
+                        $sheet->getStyle($range)->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN,'color' => ['rgb' => 'BFBFBF']]]]);
+                        // separator blank row
+                        $sheet->setCellValue('A' . $rno, '');
+                        $rno++;
+                    }
+
+                    // apply header style for each member header — since repeated, just style columns and freeze first header encountered
+                    // autosize
+                    foreach (range('A','I') as $colLetter) { $sheet->getColumnDimension($colLetter)->setAutoSize(true); }
+                    $sheet->getStyle('B1:B' . max(1,$rno))->getAlignment()->setWrapText(true);
+                    // done family sheet
+                } else {
                 // simple single-sheet export (persons/families/zones handled earlier)
                 $sheet = $spreadsheet->getActiveSheet();
                 $col = 1;
