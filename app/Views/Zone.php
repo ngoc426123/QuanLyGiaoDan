@@ -120,7 +120,7 @@
                         </div>
                     </div>
                     <div class="table-responsive" id="zoneFamiliesWrap">
-                        <table class="table align-middle" id="zoneFamiliesTable">
+                        <table class="table align-middle zone-family-table" id="zoneFamiliesTable">
                             <thead>
                                 <tr>
                                     <th>Gia đình</th>
@@ -134,11 +134,14 @@
                             <tbody>
                                 <?php foreach (($details['families'] ?? []) as $f): ?>
                                 <tr>
-                                    <td class="fw-semibold"><i class="fas fa-home text-info me-1"></i><?= esc($f['name']) ?></td>
-                                    <td><?= esc($f['head']) ?></td>
-                                    <td><?= (int)($f['members'] ?? 0) ?></td>
-                                    <td><?= esc($f['phone']) ?></td>
-                                    <td><?= esc($f['address']) ?></td>
+                                    <td class="fw-semibold">
+                                        <i class="fas fa-home text-info me-1"></i>
+                                        <?= esc($f['name']) ?>
+                                    </td>
+                                    <td data-label="Chủ hộ"><?= esc($f['head']) ?></td>
+                                    <td data-label="Thành viên"><?= (int)($f['members'] ?? 0) ?></td>
+                                    <td data-label="Điện thoại"><?= esc($f['phone']) ?></td>
+                                    <td data-label="Địa chỉ"><?= esc($f['address']) ?></td>
                                     <td class="text-end">
                                         <div class="btn-group" role="group">
                                             <button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="<?= (int)($f['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fas fa-eye"></i></button>
@@ -206,9 +209,9 @@
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td><?= esc($m['gender'] ?? '') ?></td>
-                                                <td><?= esc($m['phone'] ?? '') ?></td>
-                                                <td><?= esc($m['family'] ?? '') ?></td>
+                                                <td data-label="Giới tính"><?= esc($m['gender'] ?? '') ?></td>
+                                                <td data-label="Điện thoại"><?= esc($m['phone'] ?? '') ?></td>
+                                                <td data-label="Gia đình"><?= esc($m['family'] ?? '') ?></td>
                                                 <td class="text-end">
                                                     <a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="<?= (int)($m['id'] ?? 0) ?>" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a>
                                                 </td>
@@ -263,10 +266,10 @@
         return rows.map(function(f){
             return '<tr>'+
                 '<td class="fw-semibold"><i class="fas fa-home text-info me-1"></i>' + (f.name || '') + '</td>'+
-                '<td>' + (f.head || '') + '</td>'+
-                '<td>' + (f.members || 0) + '</td>'+
-                '<td>' + (f.phone || '') + '</td>'+
-                '<td>' + (f.address || '') + '</td>'+
+                '<td data-label="Chủ hộ">' + (f.head || '') + '</td>'+
+                '<td data-label="Thành viên">' + (f.members || 0) + '</td>'+
+                '<td data-label="Điện thoại">' + (f.phone || '') + '</td>'+
+                '<td data-label="Địa chỉ">' + (f.address || '') + '</td>'+
                 '<td class="text-end">' +
                     '<div class="btn-group" role="group">' +
                         '<button class="btn btn-sm btn-outline-secondary action-family-view" data-fid="' + (f.id || '') + '" title="Xem chi tiết"><i class="fas fa-eye"></i></button>' +
@@ -292,9 +295,9 @@
                         '<div class="person-details"><div class="person-name">' + (m.name || '') + '</div></div>'+
                     '</div>'+
                 '</td>'+
-                '<td>' + (m.gender || '') + '</td>'+
-                '<td>' + (m.phone || '') + '</td>'+
-                '<td>' + (m.family || '') + '</td>'+
+                '<td data-label="Giới tính">' + (m.gender || '') + '</td>'+
+                '<td data-label="Điện thoại">' + (m.phone || '') + '</td>'+
+                '<td data-label="Gia đình">' + (m.family || '') + '</td>'+
                 '<td class="text-end">'
                     + '<a href="#" class="btn btn-sm btn-outline-secondary action-view-person" data-person-id="' + (m.id || '') + '" title="Xem chi tiết"><i class="fa-regular fa-eye"></i></a>'
                     + ' <button class="btn btn-sm btn-outline-danger action-zone-remove-member" data-pid="' + (m.id || '') + '" data-name="' + ((m.name||'').replace(/"/g,'&quot;')) + '" title="Gỡ khỏi khu"><i class="fa-solid fa-user-minus"></i></button>'

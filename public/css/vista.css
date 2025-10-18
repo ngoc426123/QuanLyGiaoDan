@@ -176,7 +176,6 @@ body.vista-theme a:hover {
 /* Tables */
 .vista-theme table.table {
   border-radius: 10px;
-  overflow: hidden;
 }
 
 .vista-theme table.table thead th {
