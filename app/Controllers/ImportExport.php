@@ -761,7 +761,79 @@ class ImportExport extends BaseController
                 } else {
                 // simple single-sheet export (persons/families/zones handled earlier)
                 $sheet = $spreadsheet->getActiveSheet();
-                if ($target === 'person') {
+                if ($target === 'zone') {
+                    // Single-sheet Zones export: each zone as a blue header, followed by person_zone rows
+                    $sheet->setTitle('Zones');
+                    $rno = 1;
+                    foreach ($rows as $z) {
+                        $zid = (int)($z['ZID'] ?? 0);
+                        $zoneName = $z['name'] ?? '';
+                        $zoneSaint = $z['holy_name'] ?? '';
+                        $zoneNote = $z['note'] ?? '';
+
+                        $hdrRow = $rno;
+                        $hdrText = 'KHU: ' . ($zoneName ?: ('Zone ' . $zid)) . (trim($zoneSaint) !== '' ? '  —  ' . $zoneSaint : '');
+                        $sheet->setCellValue('A' . $hdrRow, $hdrText);
+                        $sheet->mergeCells('A' . $hdrRow . ':F' . $hdrRow);
+                        $sheet->getStyle('A' . $hdrRow . ':F' . $hdrRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                        ]);
+                        $rno++;
+                        if (trim($zoneNote) !== '') {
+                            $sheet->setCellValue('A' . $rno, 'Ghi chú: ' . $zoneNote);
+                            $sheet->mergeCells('A' . $rno . ':F' . $rno);
+                            $sheet->getStyle('A' . $rno)->getFont()->setSize(10)->getColor()->setRGB('666666');
+                            $rno++;
+                        }
+
+                        // person_zone header
+                        $headerRow = $rno;
+                        $sheet->setCellValue('A' . $headerRow, 'PID');
+                        $sheet->setCellValue('B' . $headerRow, 'Tên thánh');
+                        $sheet->setCellValue('C' . $headerRow, 'Họ và tên');
+                        $sheet->setCellValue('D' . $headerRow, 'Vai trò');
+                        $sheet->setCellValue('E' . $headerRow, 'Điện thoại');
+                        $sheet->setCellValue('F' . $headerRow, 'Ghi chú');
+                        $sheet->getStyle('A' . $headerRow . ':F' . $headerRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
+                        $rno = $headerRow + 1;
+
+                        $persons = $db->table('person_zone pz')
+                            ->select('pz.PID, p.holy_name, p.first_name, p.last_name, pz.relationship, p.phone, p.note')
+                            ->join('person p','p.PID=pz.PID','left')
+                            ->where('pz.ZID', $zid)->orderBy('pz.relationship','ASC')->get()->getResultArray();
+
+                        if (!empty($persons)) {
+                            foreach ($persons as $p) {
+                                $pname = trim(implode(' ', array_filter([ $p['holy_name'] ?? '', $p['last_name'] ?? '', $p['first_name'] ?? '' ])));
+                                $sheet->setCellValue('A' . $rno, $p['PID'] ?? '');
+                                $sheet->setCellValue('B' . $rno, $p['holy_name'] ?? '');
+                                $sheet->setCellValue('C' . $rno, $pname);
+                                $sheet->setCellValue('D' . $rno, $p['relationship'] ?? '');
+                                $sheet->setCellValue('E' . $rno, $p['phone'] ?? '');
+                                $sheet->setCellValue('F' . $rno, $p['note'] ?? '');
+                                $rno++;
+                            }
+                        } else {
+                            $sheet->setCellValue('A' . $rno, '');
+                            $rno++;
+                        }
+
+                        // blank separator
+                        $rno++;
+                    }
+
+                    // finalize sheet styling: autosize and wrap note column
+                    foreach (range('A','F') as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
+                    $sheet->getStyle('F1:F' . max(1, $rno-1))->getAlignment()->setWrapText(true);
+                    $sheet->freezePane('A2');
+
+                } elseif ($target === 'person') {
                     // headers in Vietnamese
                     $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
                     $col = 1;
@@ -808,12 +880,6 @@ class ImportExport extends BaseController
                         'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                     ]);
                     // Apply date format for date columns (F..J depending on headers)
-                    $dateRange = 'F2:J' . $lastRow;
-                    $sheet->getStyle($dateRange)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-                    // autosize
-                    for ($i = 1; $i <= $numCols; $i++) { $colLetter = Coordinate::stringFromColumnIndex($i); $sheet->getColumnDimension($colLetter)->setAutoSize(true); }
-                    $sheet->freezePane('A2');
-                } else {
                     $col = 1;
                     foreach ($cols as $c) {
                         $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
@@ -849,24 +915,26 @@ class ImportExport extends BaseController
                     $sheet->freezePane('A2');
                 }
                 // --- Styling for single-sheet exports ---
-                $lastRow = max(1, $rowNo - 1);
-                $numCols = count($cols);
-                $lastCol = Coordinate::stringFromColumnIndex($numCols);
-                $headerRange = 'A1:' . $lastCol . '1';
-                $sheet->getStyle($headerRange)->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                ]);
-                $usedRange = 'A1:' . $lastCol . $lastRow;
-                $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                // autosize
-                for ($i = 1; $i <= $numCols; $i++) {
-                    $colLetter = Coordinate::stringFromColumnIndex($i);
-                    $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                if (isset($rowNo, $cols) && is_array($cols)) {
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($cols);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    $usedRange = 'A1:' . $lastCol . $lastRow;
+                    $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    // autosize
+                    for ($i = 1; $i <= $numCols; $i++) {
+                        $colLetter = Coordinate::stringFromColumnIndex($i);
+                        $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                    }
+                    // freeze header
+                    $sheet->freezePane('A2');
                 }
-                // freeze header
-                $sheet->freezePane('A2');
             }
 
             // write and stream
