@@ -35,8 +35,8 @@
 REM Chuyển đến thư mục public
 cd /d %~dp0\public
 
-REM Chạy server PHP tại localhost:8080
-start "PHP Server" cmd /c "php -S localhost:8080"
+REM Chạy server PHP tại localhost:8080 bằng php\php.exe trong dự án
+start "PHP Server" cmd /c "..\php\php.exe -S localhost:8080"
 
 REM Đợi server khởi động một chút
 ping 127.0.0.1 -n 5 > nul

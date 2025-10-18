@@ -5,9 +5,9 @@
     "Cecilia", "Monica", "Augustinô", "Tôma Aquinô", "Phanxicô Xaviê", "Clara", "Anê", "Bênêđictô", "Martino"
   ],
   "relationships": [
-    "Chủ hộ", "Vợ/chồng", "Vợ", "Chồng", "Cha", "Mẹ", "Con", "Ông", "Bà", "Anh", "Chị", "Em"
+    "chủ hộ", "vợ/chồng", "vợ", "chồng", "cha", "mẹ", "con", "ông", "bà", "anh", "chị", "em"
   ],
   "zone_roles": [
-    "Trưởng khu", "Phó khu", "Thư ký", "Thủ quỹ", "Ủy viên", "Thành viên"
+    "trưởng khu", "phó khu", "thư ký", "thủ quỹ", "ủy viên", "thành viên"
   ]
 }

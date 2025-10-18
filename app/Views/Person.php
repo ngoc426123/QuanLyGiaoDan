@@ -62,7 +62,6 @@
         <table class="table person-table mb-0">
             <thead>
                 <tr>
-                    <th class="text-center w-60"><input type="checkbox" class="form-check-input"></th>
                     <th>Giáo dân</th>
                     <th>Thông tin cá nhân</th>
                     <th>Gia đình & Giáo khu</th>
@@ -77,7 +76,6 @@
                 <?php if (!empty($peopleRows ?? [])): ?>
                     <?php foreach (($peopleRows ?? []) as $idx => $p): ?>
                         <tr data-row-id="<?= (int)($p['id'] ?? 0) ?>">
-                            <td class="text-center"><input type="checkbox" class="form-check-input"></td>
                             <td>
                                 <div class="person-info">
                                     <div class="person-avatar">
@@ -111,35 +109,35 @@
                                     Giáo khu: <span class="text-dark"><?= esc($p['zones'] ?? '—') ?></span>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Ngày rửa tội">
                                 <?php if (!empty($p['baptismDate'])): ?>
                                     <span class="baptism-date"><i class="fa-solid fa-water me-1 text-primary"></i><span class="text-primary"><?= esc($p['baptismDate']) ?></span></span>
                                 <?php else: ?>
                                     <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="Ngày rước lễ">
                                 <?php if (!empty($p['communionDate'])): ?>
                                     <span class="communion-date"><i class="fa-solid fa-bread-slice me-1 text-info"></i><span class="text-info"><?= esc($p['communionDate']) ?></span></span>
                                 <?php else: ?>
                                     <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="Thêm sức">
                                 <?php if (!empty($p['confirmationDate'])): ?>
                                     <span class="confirmation-date"><i class="fa-solid fa-dove me-1 text-purple"></i><span class="text-purple"><?= esc($p['confirmationDate']) ?></span></span>
                                 <?php else: ?>
                                     <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="Hôn phối">
                                 <?php if (!empty($p['marriageDate'])): ?>
                                     <span class="marriage-date"><i class="fa-solid fa-ring me-1 text-danger"></i><span class="text-danger"><?= esc($p['marriageDate']) ?></span></span>
                                 <?php else: ?>
                                     <span class="text-muted opacity-50" title="Chưa có dữ liệu"><i class="fa-regular fa-circle fa-xs"></i></span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-center">
+                            <td class="d-flex justify-content-end align-items-center">
                                 <?php $isDropup = ($idx >= (count($peopleRows ?? []) - 2)); ?>
                                 <div class="<?= $isDropup ? 'dropup' : 'dropdown' ?>">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

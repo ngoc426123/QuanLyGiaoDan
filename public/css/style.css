@@ -140,7 +140,7 @@
 }
 
 .person-table-container .table-responsive {
-    overflow-x: auto;
+    overflow-x: visible;
     overflow-y: visible;
     position: static;
     transform: none;
@@ -590,6 +590,83 @@
 .pagination .page-link:hover {
     background-color: #e9ecef;
     border-color: #adb5bd;
+}
+
+@media (max-width: 1200px) {
+    .person-table thead {
+        display: none;
+    }
+
+    .person-table tbody tr {
+        display: block;
+        position: relative;
+        padding-left: 230px;
+    }
+
+    .person-table tbody td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #f1f3f4;
+        position: static;
+    }
+
+    .person-table tbody td[data-label]:before {
+        content: attr(data-label) ": ";
+        font-style: italic;
+        color: #6c757d
+    }
+
+    .person-table tbody td:first-child {
+        padding: 0;
+    }
+
+    .person-info {
+        padding: 1rem;
+        width: 230px;
+        flex-direction: column;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        text-align: center;
+    }
+
+    .zone-family-table thead {
+        display: none;
+    }
+
+    .zone-family-table tbody tr {
+        display: block;
+        position: relative;
+        padding-left: 230px;
+    }
+
+    .zone-family-table tbody td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #f1f3f4;
+        position: static;
+    }
+
+    .zone-family-table tbody td:first-child {
+        padding: 1rem;
+        width: 230px;
+        flex-direction: column;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        text-align: center;
+    }
+    .zone-family-table tbody td[data-label]:before {
+        content: attr(data-label) ": ";
+        font-style: italic;
+        color: #6c757d
+    }
 }
 
 /* Responsive adjustments for person table */

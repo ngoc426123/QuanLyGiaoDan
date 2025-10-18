@@ -315,11 +315,18 @@ class ImportExport extends BaseController
 
         // Prepare row/col list for simple targets; 'all' is handled specially
         if ($target === 'person') {
-            $rows = $db->table('person')->select('PID, holy_name, first_name, last_name, phone, gender')->orderBy('PID','ASC')->get()->getResultArray();
-            $cols = ['PID','holy_name','first_name','last_name','phone','gender'];
+            // select full person info used by person export
+            $rows = $db->table('person')
+                ->select('PID, holy_name, last_name, first_name, phone, gender, date_of_birth, date_RT, date_TS, date_RL, date_HP, note')
+                ->orderBy('PID','ASC')->get()->getResultArray();
+            // use a synthetic 'full_name' column (will be computed when writing)
+            $cols = ['PID','holy_name','full_name','phone','gender','date_of_birth','date_RT','date_TS','date_RL','date_HP','note'];
         } elseif ($target === 'family') {
-            $rows = $db->table('family')->select('FID, name, address')->orderBy('FID','ASC')->get()->getResultArray();
-            $cols = ['FID','name','address'];
+            // We'll handle family exports specially below (CSV/XLSX) to group members under
+            // a merged family header (like the 'all' export). Fetch families list here.
+            $families = $db->table('family')->select('FID, name, address')->orderBy('name','ASC')->get()->getResultArray();
+            // placeholder cols (unused for family special export)
+            $cols = ['dummy'];
         } elseif ($target === 'zone') {
             $rows = $db->table('zone')->select('ZID, name, holy_name, note')->orderBy('ZID','ASC')->get()->getResultArray();
             $cols = ['ZID','name','holy_name','note'];
@@ -336,11 +343,130 @@ class ImportExport extends BaseController
             $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"');
             $out = fopen('php://output', 'w');
             echo "\xEF\xBB\xBF"; // BOM
-            fputcsv($out, $cols);
-            foreach ($rows as $r) {
-                $line = [];
-                foreach ($cols as $c) { $line[] = $r[$c] ?? ''; }
-                fputcsv($out, $line);
+
+            // helper to format ISO date to dd/mm/YYYY for CSV
+            $formatDateForCsv = function($val) {
+                $v = trim((string)$val);
+                if ($v === '' || $v === '0000-00-00') { return ''; }
+                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $v, $m)) {
+                    return $m[3] . '/' . $m[2] . '/' . $m[1];
+                }
+                return $v;
+            };
+
+            if ($target === 'family') {
+                // Write families grouped: family header line, then member header, then members
+                foreach ($families as $fam) {
+                    $hdr = 'Gia đình: ' . ($fam['name'] ?? '') . ' — ' . ($fam['address'] ?? '');
+                    fputcsv($out, [$hdr]);
+                    $memberHeader = ['TÊN THÁNH','HỌ VÀ TÊN','QUAN HỆ','NGÀY SINH','NGÀY RỬA TỘI','NGÀY THÊM SỨC','NGÀY RƯỚC LỄ','NGÀY HÔN PHỐI','GHI CHÚ'];
+                    fputcsv($out, $memberHeader);
+
+                    $members = $db->table('person_family pf')
+                        ->select('pf.PID, pf.relationship, p.holy_name, p.first_name, p.last_name, p.date_of_birth, p.date_RT, p.date_TS, p.date_RL, p.date_HP, p.note')
+                        ->join('person p','p.PID=pf.PID','left')
+                        ->where('pf.FID',$fam['FID'])->orderBy('pf.relationship','ASC')->get()->getResultArray();
+
+                    if (empty($members)) {
+                        // leave a blank line for empty family
+                        fputcsv($out, []);
+                        continue;
+                    }
+
+                    foreach ($members as $m) {
+                        $pname = trim(implode(' ', array_filter([ $m['holy_name'] ?? '', $m['last_name'] ?? '', $m['first_name'] ?? '' ])));
+                        $row = [
+                            $m['holy_name'] ?? '',
+                            $pname,
+                            $m['relationship'] ?? '',
+                            $formatDateForCsv($m['date_of_birth'] ?? ''),
+                            $formatDateForCsv($m['date_RT'] ?? ''),
+                            $formatDateForCsv($m['date_TS'] ?? ''),
+                            $formatDateForCsv($m['date_RL'] ?? ''),
+                            $formatDateForCsv($m['date_HP'] ?? ''),
+                            $m['note'] ?? '',
+                        ];
+                        fputcsv($out, $row);
+                    }
+                    // blank separator row
+                    fputcsv($out, []);
+                }
+                fclose($out);
+                return;
+            }
+
+            // default simple CSV for other targets; special-case person to compute full_name and format dates
+            if ($target === 'zone') {
+                // For zone CSV export, write each zone header then the person_zone rows
+                foreach ($rows as $z) {
+                    $zid = (int)($z['ZID'] ?? 0);
+                    $hdr = 'KHU: ' . ($z['name'] ?? '') . (trim((string)($z['holy_name'] ?? '')) !== '' ? ' — ' . $z['holy_name'] : '');
+                    fputcsv($out, [$hdr]);
+                    if (trim((string)($z['note'] ?? '')) !== '') {
+                        fputcsv($out, ['Ghi chú: ' . $z['note']]);
+                    }
+                    $personHeader = ['PID','Tên thánh','Họ và tên','Vai trò','Điện thoại','Ghi chú'];
+                    fputcsv($out, $personHeader);
+
+                    $persons = $db->table('person_zone pz')
+                        ->select('pz.PID, p.holy_name, p.first_name, p.last_name, pz.relationship, p.phone, p.note')
+                        ->join('person p','p.PID=pz.PID','left')
+                        ->where('pz.ZID', $zid)
+                        ->where('pz.relationship IS NOT NULL', null, false)
+                        ->where("pz.relationship <> ''", null, false)
+                        ->orderBy('pz.relationship','ASC')
+                        ->get()->getResultArray();
+
+                    if (empty($persons)) {
+                        fputcsv($out, []);
+                    } else {
+                        foreach ($persons as $p) {
+                            $pname = trim(implode(' ', array_filter([$p['holy_name'] ?? '', $p['last_name'] ?? '', $p['first_name'] ?? ''])));
+                            $row = [
+                                $p['PID'] ?? '',
+                                $p['holy_name'] ?? '',
+                                $pname,
+                                $p['relationship'] ?? '',
+                                $p['phone'] ?? '',
+                                $p['note'] ?? '',
+                            ];
+                            fputcsv($out, $row);
+                        }
+                    }
+                    // separator
+                    fputcsv($out, []);
+                }
+                fclose($out);
+                return;
+            }
+
+            if ($target === 'person') {
+                $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
+                fputcsv($out, $headers);
+                foreach ($rows as $r) {
+                    $fullname = trim(implode(' ', array_filter([$r['holy_name'] ?? '', $r['last_name'] ?? '', $r['first_name'] ?? ''])));
+                    $line = [
+                        $r['PID'] ?? '',
+                        $r['holy_name'] ?? '',
+                        $fullname,
+                        $r['phone'] ?? '',
+                        isset($r['gender']) ? ($r['gender'] === '0' || $r['gender'] === 0 ? 'Nam' : ($r['gender'] === '1' || $r['gender'] === 1 ? 'Nữ' : $r['gender'])) : '',
+                        $formatDateForCsv($r['date_of_birth'] ?? ''),
+                        $formatDateForCsv($r['date_RT'] ?? ''),
+                        $formatDateForCsv($r['date_TS'] ?? ''),
+                        $formatDateForCsv($r['date_RL'] ?? ''),
+                        $formatDateForCsv($r['date_HP'] ?? ''),
+                        $r['note'] ?? '',
+                    ];
+                    fputcsv($out, $line);
+                }
+            } else {
+                fputcsv($out, $cols);
+                foreach ($rows as $r) {
+                    $line = [];
+                    foreach ($cols as $c) { $line[] = $r[$c] ?? ''; }
+                    fputcsv($out, $line);
+                }
             }
             fclose($out);
             return;
@@ -447,6 +573,8 @@ class ImportExport extends BaseController
                     $zsheet->setCellValue('G' . $headerRow, 'Ngày rước lễ');
                     $zsheet->setCellValue('H' . $headerRow, 'Ngày hôn phối');
                     $zsheet->setCellValue('I' . $headerRow, 'Ghi chú');
+                    // make header row bold
+                    $zsheet->getStyle('A' . $headerRow . ':I' . $headerRow)->getFont()->setBold(true);
                     $rno = $headerRow + 1;
                     $familiesInZone = $db->table('family f')->select('f.FID, f.name, f.address')->join('family_zone fz','fz.FID=f.FID','inner')->where('fz.ZID',$zid)->orderBy('f.name','ASC')->get()->getResultArray();
                     $famIndex = 0;
@@ -577,42 +705,284 @@ class ImportExport extends BaseController
                     $sheet = $spreadsheet->getActiveSheet();
                     $sheet->setTitle('Zones');
                 }
-            } else {
+                } elseif ($target === 'family') {
+                    // Single-sheet family export: group members under family headers
+                    $sheet = $spreadsheet->getActiveSheet();
+                    $sheet->setTitle('Families');
+                    $rno = 1;
+                    // header row for member columns will be inserted dynamically per family block
+                    $famIndex = 0;
+                    foreach ($families as $fam) {
+                        $famIndex++;
+                        $members = $db->table('person_family pf')
+                            ->select('pf.PID, pf.relationship, p.holy_name, p.first_name, p.last_name, p.date_of_birth, p.date_RT, p.date_TS, p.date_RL, p.date_HP, p.note')
+                            ->join('person p','p.PID=pf.PID','left')
+                            ->where('pf.FID',$fam['FID'])->orderBy('pf.relationship','ASC')->get()->getResultArray();
+
+                        // family header
+                        $hdrRow = $rno;
+                        $hdrText = 'Gia đình: ' . ($fam['name'] ?? '') . ' — ' . ($fam['address'] ?? '');
+                        $sheet->setCellValue('A' . $hdrRow, $hdrText);
+                        $sheet->mergeCells('A' . $hdrRow . ':I' . $hdrRow);
+                        $sheet->getStyle('A' . $hdrRow)->getFont()->setBold(true)->setSize(12);
+                        $rno = $hdrRow + 1;
+
+                        // member table header
+                        $headerRow = $rno;
+                        $sheet->setCellValue('A' . $headerRow, 'Tên thánh');
+                        $sheet->setCellValue('B' . $headerRow, 'Họ và tên');
+                        $sheet->setCellValue('C' . $headerRow, 'Quan hệ');
+                        $sheet->setCellValue('D' . $headerRow, 'Ngày sinh');
+                        $sheet->setCellValue('E' . $headerRow, 'Ngày rửa tội');
+                        $sheet->setCellValue('F' . $headerRow, 'Ngày thêm sức');
+                        $sheet->setCellValue('G' . $headerRow, 'Ngày rước lễ');
+                        $sheet->setCellValue('H' . $headerRow, 'Ngày hôn phối');
+                        $sheet->setCellValue('I' . $headerRow, 'Ghi chú');
+                        // make header row bold
+                        $sheet->getStyle('A' . $headerRow . ':I' . $headerRow)->getFont()->setBold(true);
+                        $rno = $headerRow + 1;
+
+                        if (!empty($members)) {
+                            $writeExcelDate = function($val) {
+                                if ($val === '' || $val === '0000-00-00') { return null; }
+                                if (preg_match('/^\d{4}-\d{2}-\d{2}/', $val)) {
+                                    try {
+                                        $dt = new \DateTime(substr($val,0,10));
+                                        return \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dt);
+                                    } catch (\Throwable $ex) { return null; }
+                                }
+                                return null;
+                            };
+
+                            foreach ($members as $m) {
+                                $pname = trim(implode(' ', array_filter([ $m['holy_name'] ?? '', $m['last_name'] ?? '', $m['first_name'] ?? '' ])));
+                                $sheet->setCellValue('A' . $rno, $m['holy_name'] ?? '');
+                                $sheet->setCellValue('B' . $rno, $pname);
+                                $sheet->setCellValue('C' . $rno, $m['relationship'] ?? '');
+                                $dob = trim((string)($m['date_of_birth'] ?? ''));
+                                $bap = trim((string)($m['date_RT'] ?? ''));
+                                $conf = trim((string)($m['date_TS'] ?? ''));
+                                $comm = trim((string)($m['date_RL'] ?? ''));
+                                $mar = trim((string)($m['date_HP'] ?? ''));
+                                $note = trim((string)($m['note'] ?? ''));
+                                $dval = $writeExcelDate($dob);
+                                if ($dval !== null) { $sheet->setCellValue('D' . $rno, $dval); }
+                                else { $sheet->setCellValue('D' . $rno, $dob); }
+                                $bval = $writeExcelDate($bap);
+                                if ($bval !== null) { $sheet->setCellValue('E' . $rno, $bval); } else { $sheet->setCellValue('E' . $rno, $bap); }
+                                $cval = $writeExcelDate($conf);
+                                if ($cval !== null) { $sheet->setCellValue('F' . $rno, $cval); } else { $sheet->setCellValue('F' . $rno, $conf); }
+                                $rlval = $writeExcelDate($comm);
+                                if ($rlval !== null) { $sheet->setCellValue('G' . $rno, $rlval); } else { $sheet->setCellValue('G' . $rno, $comm); }
+                                $hpval = $writeExcelDate($mar);
+                                if ($hpval !== null) { $sheet->setCellValue('H' . $rno, $hpval); } else { $sheet->setCellValue('H' . $rno, $mar); }
+                                $sheet->setCellValue('I' . $rno, $note);
+                                $rno++;
+                            }
+                        }
+
+                        // style family header (merged A..I): blue background + white text like table headers
+                        $sheet->getStyle('A' . $hdrRow . ':I' . $hdrRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                        ]);
+                        // draw borders for the family block
+                        $blockStart = $hdrRow;
+                        $blockEnd = max($hdrRow, $rno - 1);
+                        $range = 'A' . $blockStart . ':I' . $blockEnd;
+                        $sheet->getStyle($range)->applyFromArray(['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN,'color' => ['rgb' => 'BFBFBF']]]]);
+                        // separator blank row
+                        $sheet->setCellValue('A' . $rno, '');
+                        $rno++;
+                    }
+
+                    // apply header style for each member header — since repeated, just style columns and freeze first header encountered
+                    // autosize
+                    foreach (range('A','I') as $colLetter) { $sheet->getColumnDimension($colLetter)->setAutoSize(true); }
+                    $sheet->getStyle('B1:B' . max(1,$rno))->getAlignment()->setWrapText(true);
+                    // done family sheet
+                } else {
                 // simple single-sheet export (persons/families/zones handled earlier)
                 $sheet = $spreadsheet->getActiveSheet();
-                $col = 1;
-                foreach ($cols as $c) {
-                    $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
-                    $sheet->setCellValue($cell, $c);
-                }
-                $rowNo = 2;
-                foreach ($rows as $r) {
+                if ($target === 'zone') {
+                    // Single-sheet Zones export: each zone as a blue header, followed by person_zone rows
+                    $sheet->setTitle('Zones');
+                    $rno = 1;
+                    foreach ($rows as $z) {
+                        $zid = (int)($z['ZID'] ?? 0);
+                        $zoneName = $z['name'] ?? '';
+                        $zoneSaint = $z['holy_name'] ?? '';
+                        $zoneNote = $z['note'] ?? '';
+
+                        $hdrRow = $rno;
+                        $hdrText = 'KHU: ' . ($zoneName ?: ('Zone ' . $zid)) . (trim($zoneSaint) !== '' ? '  —  ' . $zoneSaint : '');
+                        $sheet->setCellValue('A' . $hdrRow, $hdrText);
+                        $sheet->mergeCells('A' . $hdrRow . ':F' . $hdrRow);
+                        $sheet->getStyle('A' . $hdrRow . ':F' . $hdrRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                        ]);
+                        $rno++;
+                        if (trim($zoneNote) !== '') {
+                            $sheet->setCellValue('A' . $rno, 'Ghi chú: ' . $zoneNote);
+                            $sheet->mergeCells('A' . $rno . ':F' . $rno);
+                            $sheet->getStyle('A' . $rno)->getFont()->setSize(10)->getColor()->setRGB('666666');
+                            $rno++;
+                        }
+
+                        // person_zone header
+                        $headerRow = $rno;
+                        $sheet->setCellValue('A' . $headerRow, 'PID');
+                        $sheet->setCellValue('B' . $headerRow, 'Tên thánh');
+                        $sheet->setCellValue('C' . $headerRow, 'Họ và tên');
+                        $sheet->setCellValue('D' . $headerRow, 'Vai trò');
+                        $sheet->setCellValue('E' . $headerRow, 'Điện thoại');
+                        $sheet->setCellValue('F' . $headerRow, 'Ghi chú');
+                        $sheet->getStyle('A' . $headerRow . ':F' . $headerRow)->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        ]);
+                        $rno = $headerRow + 1;
+
+                        $persons = $db->table('person_zone pz')
+                            ->select('pz.PID, p.holy_name, p.first_name, p.last_name, pz.relationship, p.phone, p.note')
+                            ->join('person p','p.PID=pz.PID','left')
+                            ->where('pz.ZID', $zid)
+                            ->where('pz.relationship IS NOT NULL', null, false)
+                            ->where("pz.relationship <> ''", null, false)
+                            ->orderBy('pz.relationship','ASC')
+                            ->get()->getResultArray();
+
+                        if (!empty($persons)) {
+                            foreach ($persons as $p) {
+                                $pname = trim(implode(' ', array_filter([ $p['holy_name'] ?? '', $p['last_name'] ?? '', $p['first_name'] ?? '' ])));
+                                $sheet->setCellValue('A' . $rno, $p['PID'] ?? '');
+                                $sheet->setCellValue('B' . $rno, $p['holy_name'] ?? '');
+                                $sheet->setCellValue('C' . $rno, $pname);
+                                $sheet->setCellValue('D' . $rno, $p['relationship'] ?? '');
+                                $sheet->setCellValue('E' . $rno, $p['phone'] ?? '');
+                                $sheet->setCellValue('F' . $rno, $p['note'] ?? '');
+                                $rno++;
+                            }
+                        } else {
+                            $sheet->setCellValue('A' . $rno, '');
+                            $rno++;
+                        }
+
+                        // blank separator
+                        $rno++;
+                    }
+
+                    // finalize sheet styling: autosize and wrap note column
+                    foreach (range('A','F') as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
+                    $sheet->getStyle('F1:F' . max(1, $rno-1))->getAlignment()->setWrapText(true);
+                    $sheet->freezePane('A2');
+
+                } elseif ($target === 'person') {
+                    // headers in Vietnamese
+                    $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
+                    $col = 1;
+                    foreach ($headers as $h) {
+                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
+                        $sheet->setCellValue($cell, $h);
+                    }
+                    // write rows
+                    $rowNo = 2;
+                    $writeExcelDate = function($val) {
+                        if ($val === '' || $val === '0000-00-00') { return null; }
+                        if (preg_match('/^\d{4}-\d{2}-\d{2}/', $val)) {
+                            try { $dt = new \DateTime(substr($val,0,10)); return \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dt); } catch (\Throwable $ex) { return null; }
+                        }
+                        return null;
+                    };
+                    foreach ($rows as $r) {
+                        $fullname = trim(implode(' ', array_filter([$r['holy_name'] ?? '', $r['last_name'] ?? '', $r['first_name'] ?? ''])));
+                        $col = 1;
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['PID'] ?? '');
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['holy_name'] ?? '');
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $fullname);
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['phone'] ?? '');
+                        $gender = isset($r['gender']) ? ($r['gender'] === '0' || $r['gender'] === 0 ? 'Nam' : ($r['gender'] === '1' || $r['gender'] === 1 ? 'Nữ' : $r['gender'])) : '';
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $gender);
+                        // dates
+                        $dval = $writeExcelDate($r['date_of_birth'] ?? '');
+                        if ($dval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $dval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_of_birth'] ?? ''); }
+                        $bval = $writeExcelDate($r['date_RT'] ?? ''); if ($bval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $bval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_RT'] ?? ''); }
+                        $cval = $writeExcelDate($r['date_TS'] ?? ''); if ($cval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $cval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_TS'] ?? ''); }
+                        $rlval = $writeExcelDate($r['date_RL'] ?? ''); if ($rlval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $rlval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_RL'] ?? ''); }
+                        $hpval = $writeExcelDate($r['date_HP'] ?? ''); if ($hpval !== null) { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $hpval); } else { $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['date_HP'] ?? ''); }
+                        $sheet->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo, $r['note'] ?? '');
+                        $rowNo++;
+                    }
+                    // header styling
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($headers);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    // Apply date format for date columns (F..J depending on headers)
                     $col = 1;
                     foreach ($cols as $c) {
-                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo;
-                        $sheet->setCellValue($cell, $r[$c] ?? '');
+                        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . '1';
+                        $sheet->setCellValue($cell, $c);
                     }
-                    $rowNo++;
+                    $rowNo = 2;
+                    foreach ($rows as $r) {
+                        $col = 1;
+                        foreach ($cols as $c) {
+                            $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col++) . $rowNo;
+                            $sheet->setCellValue($cell, $r[$c] ?? '');
+                        }
+                        $rowNo++;
+                    }
+                    // --- Styling for single-sheet exports ---
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($cols);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    $usedRange = 'A1:' . $lastCol . $lastRow;
+                    $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    // autosize
+                    for ($i = 1; $i <= $numCols; $i++) {
+                        $colLetter = Coordinate::stringFromColumnIndex($i);
+                        $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                    }
+                    // freeze header
+                    $sheet->freezePane('A2');
                 }
                 // --- Styling for single-sheet exports ---
-                $lastRow = max(1, $rowNo - 1);
-                $numCols = count($cols);
-                $lastCol = Coordinate::stringFromColumnIndex($numCols);
-                $headerRange = 'A1:' . $lastCol . '1';
-                $sheet->getStyle($headerRange)->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                ]);
-                $usedRange = 'A1:' . $lastCol . $lastRow;
-                $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                // autosize
-                for ($i = 1; $i <= $numCols; $i++) {
-                    $colLetter = Coordinate::stringFromColumnIndex($i);
-                    $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                if (isset($rowNo, $cols) && is_array($cols)) {
+                    $lastRow = max(1, $rowNo - 1);
+                    $numCols = count($cols);
+                    $lastCol = Coordinate::stringFromColumnIndex($numCols);
+                    $headerRange = 'A1:' . $lastCol . '1';
+                    $sheet->getStyle($headerRange)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2F75B5']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                    $usedRange = 'A1:' . $lastCol . $lastRow;
+                    $sheet->getStyle($usedRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    // autosize
+                    for ($i = 1; $i <= $numCols; $i++) {
+                        $colLetter = Coordinate::stringFromColumnIndex($i);
+                        $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+                    }
+                    // freeze header
+                    $sheet->freezePane('A2');
                 }
-                // freeze header
-                $sheet->freezePane('A2');
             }
 
             // write and stream
