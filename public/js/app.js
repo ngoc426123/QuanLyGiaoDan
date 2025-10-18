@@ -169,7 +169,6 @@
                   if (row.id) { try { tr.setAttribute('data-row-id', String(row.id)); } catch(_) {} }
                   var base = (window.BASE_URL || '/');
                   tr.innerHTML = `
-                    <td class="text-center"><input type="checkbox" class="form-check-input"></td>
                     <td>
                       <div class="person-info">
                         <div class="person-avatar">
