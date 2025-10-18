@@ -396,6 +396,50 @@ class ImportExport extends BaseController
             }
 
             // default simple CSV for other targets; special-case person to compute full_name and format dates
+            if ($target === 'zone') {
+                // For zone CSV export, write each zone header then the person_zone rows
+                foreach ($rows as $z) {
+                    $zid = (int)($z['ZID'] ?? 0);
+                    $hdr = 'KHU: ' . ($z['name'] ?? '') . (trim((string)($z['holy_name'] ?? '')) !== '' ? ' — ' . $z['holy_name'] : '');
+                    fputcsv($out, [$hdr]);
+                    if (trim((string)($z['note'] ?? '')) !== '') {
+                        fputcsv($out, ['Ghi chú: ' . $z['note']]);
+                    }
+                    $personHeader = ['PID','Tên thánh','Họ và tên','Vai trò','Điện thoại','Ghi chú'];
+                    fputcsv($out, $personHeader);
+
+                    $persons = $db->table('person_zone pz')
+                        ->select('pz.PID, p.holy_name, p.first_name, p.last_name, pz.relationship, p.phone, p.note')
+                        ->join('person p','p.PID=pz.PID','left')
+                        ->where('pz.ZID', $zid)
+                        ->where('pz.relationship IS NOT NULL', null, false)
+                        ->where("pz.relationship <> ''", null, false)
+                        ->orderBy('pz.relationship','ASC')
+                        ->get()->getResultArray();
+
+                    if (empty($persons)) {
+                        fputcsv($out, []);
+                    } else {
+                        foreach ($persons as $p) {
+                            $pname = trim(implode(' ', array_filter([$p['holy_name'] ?? '', $p['last_name'] ?? '', $p['first_name'] ?? ''])));
+                            $row = [
+                                $p['PID'] ?? '',
+                                $p['holy_name'] ?? '',
+                                $pname,
+                                $p['relationship'] ?? '',
+                                $p['phone'] ?? '',
+                                $p['note'] ?? '',
+                            ];
+                            fputcsv($out, $row);
+                        }
+                    }
+                    // separator
+                    fputcsv($out, []);
+                }
+                fclose($out);
+                return;
+            }
+
             if ($target === 'person') {
                 $headers = ['PID','Tên thánh','Họ và tên','Điện thoại','Giới tính','Ngày sinh','Ngày rửa tội','Ngày thêm sức','Ngày rước lễ','Ngày hôn phối','Ghi chú'];
                 fputcsv($out, $headers);
@@ -806,7 +850,11 @@ class ImportExport extends BaseController
                         $persons = $db->table('person_zone pz')
                             ->select('pz.PID, p.holy_name, p.first_name, p.last_name, pz.relationship, p.phone, p.note')
                             ->join('person p','p.PID=pz.PID','left')
-                            ->where('pz.ZID', $zid)->orderBy('pz.relationship','ASC')->get()->getResultArray();
+                            ->where('pz.ZID', $zid)
+                            ->where('pz.relationship IS NOT NULL', null, false)
+                            ->where("pz.relationship <> ''", null, false)
+                            ->orderBy('pz.relationship','ASC')
+                            ->get()->getResultArray();
 
                         if (!empty($persons)) {
                             foreach ($persons as $p) {
