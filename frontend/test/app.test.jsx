@@ -10,6 +10,7 @@ import { samplePersons } from '../src/features/preview/sampleData.js'
 
 let settings
 let listener
+let windowStateListener
 let unsubscribe
 beforeEach(() => {
   settings = { 'ui.theme': 'system', 'ui.density': 'comfortable', 'general.language': 'vi' }
@@ -31,6 +32,16 @@ beforeEach(() => {
         listener = callback
         return unsubscribe
       }),
+      onWindowStateChanged: vi.fn((callback) => {
+        windowStateListener = callback
+        return vi.fn()
+      }),
+    },
+    app: {
+      closeWindow: vi.fn(async () => ({ ok: true, data: { closed: true } })),
+      minimizeWindow: vi.fn(async () => ({ ok: true, data: { minimized: true } })),
+      toggleMaximize: vi.fn(async () => ({ ok: true, data: { maximized: true } })),
+      getWindowState: vi.fn(async () => ({ ok: true, data: { maximized: false } })),
     },
     backup: {
       exportToFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
@@ -40,6 +51,21 @@ beforeEach(() => {
 })
 
 describe('Khung ứng dụng qua API preload', () => {
+  it('menu khung gọi được lệnh thật và đồng bộ nút phóng to', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Tệp' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Cài đặt' }))
+    expect(await screen.findByRole('combobox', { name: 'Chế độ giao diện' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Xem' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Thu gọn hoặc mở rộng thanh bên' }))
+    expect(screen.getByRole('main').closest('[data-collapsed]').dataset.collapsed).toBe('true')
+    await user.click(screen.getByRole('button', { name: 'Phóng to cửa sổ' }))
+    expect(window.api.app.toggleMaximize).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Khôi phục cửa sổ' })).toBeTruthy()
+    act(() => windowStateListener({ maximized: false }))
+    expect(screen.getByRole('button', { name: 'Phóng to cửa sổ' })).toBeTruthy()
+  })
   it('lỗi render ở trang giáo dân không làm sập sidebar của App Shell', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const originalName = samplePersons[1].fullName

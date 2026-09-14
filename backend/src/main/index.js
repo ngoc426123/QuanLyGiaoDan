@@ -8,6 +8,7 @@ import { userDataPaths } from './paths.js'
 import { registerIpcHandlers } from './ipc/index.js'
 import { applySessionSecurity, devServerUrl, hardenWebContents } from './security.js'
 import { readWindowState, restoreWindowState, saveWindowState } from './window-manager.js'
+import { CHANNELS } from '@shared/channels.js'
 
 /**
  * Điểm vào của Main Process. Thứ tự khởi động là bắt buộc — `overview.md` §6.1:
@@ -49,6 +50,8 @@ function createMainWindow() {
   )
   mainWindow = new BrowserWindow({
     ...bounds,
+    frame: false,
+    title: 'Danh bạ giáo xứ',
     minWidth: 940,
     minHeight: 600,
     show: false,
@@ -62,12 +65,21 @@ function createMainWindow() {
   })
 
   const window = mainWindow
+  const sendWindowState = () => {
+    if (!window.isDestroyed()) {
+      window.webContents.send(CHANNELS.EVENTS.WINDOW_STATE_CHANGED, {
+        maximized: window.isMaximized(),
+      })
+    }
+  }
   window.setMenu(null)
   window.once('ready-to-show', () => {
     if (isMaximized) window.maximize()
     window.show()
   })
   window.on('close', () => persistWindow(window))
+  window.on('maximize', sendWindowState)
+  window.on('unmaximize', sendWindowState)
   mainWindow.on('closed', () => {
     mainWindow = null
   })

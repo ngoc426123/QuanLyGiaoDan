@@ -30,8 +30,8 @@ Cách xử lý mâu thuẫn: `docs/00-meta/agent-rules.md` §6.
 | 0   | [phase-0-bootstrap.md](./phase-0-bootstrap.md)       | Khởi tạo & Hạ tầng                       | 1–2 ngày   |     ☑      |
 | 1   | [phase-1-ipc-backbone.md](./phase-1-ipc-backbone.md) | Xương sống IPC                           | 1–2 ngày   |     ☑      |
 | 2   | [phase-2-data-layer.md](./phase-2-data-layer.md)     | Tầng dữ liệu                             | 2–3 ngày   |     ☑      |
-| 3   | [phase-3-ui-shell.md](./phase-3-ui-shell.md)         | Bộ khung giao diện                       | 2–3 ngày   |     ☐      |
-| 4   | [phase-4-core-crud.md](./phase-4-core-crud.md)       | Nghiệp vụ lõi (CRUD)                     | 5–7 ngày   |     ☐      |
+| 3   | [phase-3-ui-shell.md](./phase-3-ui-shell.md)         | Bộ khung giao diện                       | 2–3 ngày   |     ☑      |
+| 4   | [phase-4-core-crud.md](./phase-4-core-crud.md)       | Nghiệp vụ lõi (CRUD)                     | 5–7 ngày   |     ◐      |
 | 5   | [phase-5-experience.md](./phase-5-experience.md)     | Hoàn thiện trải nghiệm                   | 3–5 ngày   |     ☐      |
 | 6   | [phase-6-reliability.md](./phase-6-reliability.md)   | Độ tin cậy                               | 2–3 ngày   |     ☐      |
 | 7   | [phase-7-packaging.md](./phase-7-packaging.md)       | Đóng gói & Phát hành                     | 2–3 ngày   |     ☐      |

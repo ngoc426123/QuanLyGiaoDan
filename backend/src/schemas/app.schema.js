@@ -36,6 +36,11 @@ export const appGetVersionSchema = noPayloadSchema
 
 export const appGetPathsSchema = noPayloadSchema
 
+export const appCloseWindowSchema = noPayloadSchema
+export const appMinimizeWindowSchema = noPayloadSchema
+export const appToggleMaximizeSchema = noPayloadSchema
+export const appGetWindowStateSchema = noPayloadSchema
+
 /**
  * Whitelist giao thức nằm **ở đây**, tại tầng validate — chặn `javascript:` và
  * `file://` trước khi payload chạm tới `shell.openExternal`

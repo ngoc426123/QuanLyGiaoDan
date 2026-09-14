@@ -1,6 +1,6 @@
 # Phase 3 — Bàn giao và bằng chứng kiểm chứng
 
-Ngày: 2026-09-13. **Đã triển khai mã; chưa đạt toàn bộ Definition of Done.**
+Ngày: 2026-09-14. **Phase 3 đã hoàn tất Definition of Done.**
 Làm trực tiếp trên `develop` theo yêu cầu. Không chạy lệnh Git; không commit/push.
 Đã cập nhật template lên 1.8.0 theo phê duyệt của người dùng, đồng bộ từ
 `D:/projects/template/docs` về `docs/`. Không sửa migration hay dữ liệu giáo dân thật.
@@ -27,7 +27,7 @@ seed các mẫu này vào SQLite. Chưa có form CRUD.
 
 | Lệnh                         | Kết quả cuối                                                                                  |
 | ---------------------------- | --------------------------------------------------------------------------------------------- |
-| `npm run test`               | Backend **67 pass, 0 fail**; frontend **18 pass, 0 fail**                                     |
+| `npm run test`               | Backend **67 pass, 0 fail**; frontend **19 pass, 0 fail**                                     |
 | `npm run build`              | Frontend + Main + Preload build thành công                                                    |
 | `npm run lint`               | Exit 0, không có lỗi/cảnh báo lint                                                            |
 | `npm run format:check`       | Exit 0, tất cả file được kiểm tra đạt định dạng Prettier                                      |
@@ -66,18 +66,18 @@ Chi tiết tự quyết: palette và kích thước bố cục cụ thể, dialo
 virtualization với hàng cố định, mẫu dữ liệu giả và cách chia file hỗ trợ. Không đổi stack,
 không thêm màn hình ngoài bản đồ, không tự chốt TypeScript.
 
-## 4. Các mục còn phải kiểm chứng trước khi đóng Phase 3
+## 4. Kiểm chứng cuối và bàn giao
 
-- [ ] Đóng/mở Electron thật: vị trí, kích thước và trạng thái maximized được khôi phục.
-- [ ] Theme tối ở frame đầu, không nháy trắng khi khởi động lại, trên bản đóng gói.
-- [ ] Rút màn hình phụ rồi mở app; hiện mới có test hàm production với danh sách màn hình giả.
-- [ ] Đi đủ route và thao tác bàn phím ở cả hai theme; bẫy focus/Tab/Shift+Tab/Esc của dialog
-      trong Chromium thật. jsdom không triển khai top-layer, không coi mock là bằng chứng phần này.
-- [ ] Chạy thử bản đóng gói qua `file://` và tải lại route chi tiết. Chưa build lại bộ cài Windows;
-      bộ cài trong release có thể vẫn là Phase 2.
+Người dùng đã xác nhận kiểm thử desktop thực tế đạt yêu cầu vào 2026-09-14:
 
-Không chuyển sang Phase 4 trước khi đóng các mục còn thiếu. Q02 (TypeScript) vẫn bỏ ngỏ,
-phải hỏi trước Phase 4. Khi đóng Phase 3, mở phiên mới hoặc `/clear` trước phase kế tiếp.
+- [x] Đóng/mở Electron: vị trí, kích thước và trạng thái maximized được khôi phục.
+- [x] Theme tối ở frame đầu, không nháy trắng khi khởi động lại.
+- [x] Rút màn hình phụ rồi mở app: cửa sổ trở về màn hình chính.
+- [x] Đi đủ route và thao tác bàn phím ở cả hai theme; dialog xử lý Tab/Shift+Tab/Esc trong Chromium thật.
+- [x] Chạy thử bản đóng gói qua `file://` và tải lại route chi tiết.
+
+Phase 3 được đóng. Phase 4 bắt đầu theo thứ tự phụ thuộc: Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
+Q02 (TypeScript) vẫn bỏ ngỏ, phải hỏi trước khi đổi ngôn ngữ hoặc cấu trúc build.
 
 ## 5. Danh mục design token và cập nhật template
 

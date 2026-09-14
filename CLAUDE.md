@@ -3,18 +3,17 @@
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
 **Ngôn ngữ: chỉ tiếng Việt**, không triển khai i18n — người dùng chốt 2026-09-13 (Q03).
-**Trạng thái: Phase 3 đã triển khai, còn kiểm chứng thực tế** (2026-09-13).
-App Shell, 10 route minh hoạ, UI primitives, theme lưu SQLite và khôi phục cửa sổ đã có.
-Các mục chưa kiểm chứng không được tick xong; xem `project/phase-3-review.md`.
-**Chưa chuyển sang Phase 4.** Tiến độ đầy đủ: `project/roadmap.md`.
+**Trạng thái: Phase 3 đã hoàn tất** (2026-09-14).
+App Shell, 10 route minh hoạ, UI primitives, theme lưu SQLite, title bar Windows và khôi phục
+cửa sổ đã được kiểm chứng. Bằng chứng: `project/phase-3-review.md`.
+**Phase 4 đang chuẩn bị triển khai**: làm CRUD theo thứ tự Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
+Tiến độ đầy đủ: `project/roadmap.md`.
 
-## Ghi chú tiếp tục phiên sau — 2026-09-13
+## Ghi chú tiếp tục phiên sau — 2026-09-14
 
-**Người dùng chưa đồng ý với style giao diện hiện tại.** Tạm dừng vì đã muộn;
-phiên tiếp theo ưu tiên trao đổi với người dùng để xác định hướng giao diện mong muốn
-rồi chỉnh lại style Phase 3. Không coi style hiện tại là thiết kế đã được duyệt.
-Giữ trạng thái Phase 3 chưa hoàn tất; các kiểm chứng thực tế còn thiếu nằm trong
-`project/phase-3-review.md`, chưa chuyển Phase 4.
+Giao diện Phase 3 đã được người dùng xác nhận ổn định, gồm dark theme và title bar custom.
+Trước khi viết feature đầu tiên của Phase 4, phải hỏi và chốt Q02: giữ JavaScript + JSDoc hay
+chuyển sang TypeScript. Không tự đổi ngôn ngữ hoặc cấu trúc build.
 Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
 Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
 

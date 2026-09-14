@@ -17,6 +17,7 @@
   min-height: 0;
   min-width: 0;
   padding: var(--space-8);
+  background: var(--color-bg-subtle);
 }
 .skip {
   position: fixed;

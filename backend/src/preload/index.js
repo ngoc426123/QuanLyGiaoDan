@@ -41,6 +41,10 @@ function subscribe(channel, listener) {
 const appApi = Object.freeze({
   getVersion: () => ipcRenderer.invoke(CHANNELS.APP.GET_VERSION),
   getPaths: () => ipcRenderer.invoke(CHANNELS.APP.GET_PATHS),
+  closeWindow: () => ipcRenderer.invoke(CHANNELS.APP.CLOSE_WINDOW),
+  minimizeWindow: () => ipcRenderer.invoke(CHANNELS.APP.MINIMIZE_WINDOW),
+  toggleMaximize: () => ipcRenderer.invoke(CHANNELS.APP.TOGGLE_MAXIMIZE),
+  getWindowState: () => ipcRenderer.invoke(CHANNELS.APP.GET_WINDOW_STATE),
   openExternal: (url) => ipcRenderer.invoke(CHANNELS.APP.OPEN_EXTERNAL, { url }),
   showOpenDialog: (options) => ipcRenderer.invoke(CHANNELS.APP.SHOW_OPEN_DIALOG, options),
   showSaveDialog: (options) => ipcRenderer.invoke(CHANNELS.APP.SHOW_SAVE_DIALOG, options),
@@ -58,6 +62,7 @@ const eventsApi = Object.freeze({
   onAppError: (listener) => subscribe(CHANNELS.EVENTS.APP_ERROR, listener),
   onImportProgress: (listener) => subscribe(CHANNELS.EVENTS.IMPORT_PROGRESS, listener),
   onUpdateStatus: (listener) => subscribe(CHANNELS.EVENTS.UPDATE_STATUS, listener),
+  onWindowStateChanged: (listener) => subscribe(CHANNELS.EVENTS.WINDOW_STATE_CHANGED, listener),
 })
 
 /**

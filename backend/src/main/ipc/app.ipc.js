@@ -3,6 +3,10 @@ import { CHANNELS } from '@shared/channels.js'
 import { AppError, ERROR_CODES } from '@shared/errors.js'
 import {
   appGetPathsSchema,
+  appCloseWindowSchema,
+  appMinimizeWindowSchema,
+  appToggleMaximizeSchema,
+  appGetWindowStateSchema,
   appGetVersionSchema,
   appOpenExternalSchema,
   appShowOpenDialogSchema,
@@ -43,6 +47,42 @@ export const appHandlers = Object.freeze([
 
       return { userData, dbFile, logs }
     },
+  },
+
+  {
+    channel: CHANNELS.APP.CLOSE_WINDOW,
+    schema: appCloseWindowSchema,
+    handle: () => {
+      focusedWindow()?.close()
+      return { closed: true }
+    },
+  },
+
+  {
+    channel: CHANNELS.APP.MINIMIZE_WINDOW,
+    schema: appMinimizeWindowSchema,
+    handle: () => {
+      focusedWindow()?.minimize()
+      return { minimized: true }
+    },
+  },
+
+  {
+    channel: CHANNELS.APP.TOGGLE_MAXIMIZE,
+    schema: appToggleMaximizeSchema,
+    handle: () => {
+      const window = focusedWindow()
+      if (!window) return { maximized: false }
+      if (window.isMaximized()) window.unmaximize()
+      else window.maximize()
+      return { maximized: window.isMaximized() }
+    },
+  },
+
+  {
+    channel: CHANNELS.APP.GET_WINDOW_STATE,
+    schema: appGetWindowStateSchema,
+    handle: () => ({ maximized: focusedWindow()?.isMaximized() === true }),
   },
 
   {

@@ -52,6 +52,10 @@ export const CHANNELS = Object.freeze({
   APP: Object.freeze({
     GET_VERSION: 'app:getVersion',
     GET_PATHS: 'app:getPaths',
+    CLOSE_WINDOW: 'app:closeWindow',
+    MINIMIZE_WINDOW: 'app:minimizeWindow',
+    TOGGLE_MAXIMIZE: 'app:toggleMaximize',
+    GET_WINDOW_STATE: 'app:getWindowState',
     OPEN_EXTERNAL: 'app:openExternal',
     SHOW_OPEN_DIALOG: 'app:showOpenDialog',
     SHOW_SAVE_DIALOG: 'app:showSaveDialog',
@@ -77,5 +81,6 @@ export const CHANNELS = Object.freeze({
     APP_ERROR: 'event:app-error',
     IMPORT_PROGRESS: 'event:import-progress',
     UPDATE_STATUS: 'event:update-status',
+    WINDOW_STATE_CHANGED: 'event:window-state-changed',
   }),
 })

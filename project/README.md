@@ -45,12 +45,12 @@ Kế hoạch thi công chi tiết nằm ở [`plan/`](../plan/README.md) — cũ
 
 ## Trạng thái
 
-| Hạng mục         | Trạng thái                                                                       |
-| ---------------- | -------------------------------------------------------------------------------- |
-| Domain nghiệp vụ | **Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12 (Q01 Hiệu lực)                 |
-| Nguồn đặc tả     | `diagrams.jpg` ở gốc repo → `plan/00-domain-lock-in.md`                          |
-| Đặc tả nghiệp vụ | **Đã điền đầy đủ** — schema, kênh IPC, màn hình, invalidate, thuật ngữ           |
-| Việc cần làm     | [`plan/phase-0-bootstrap.md`](../plan/phase-0-bootstrap.md) — Khởi tạo & Hạ tầng |
-| Mã nguồn         | Chưa bắt đầu                                                                     |
+| Hạng mục         | Trạng thái                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| Domain nghiệp vụ | **Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12 (Q01 Hiệu lực)                   |
+| Nguồn đặc tả     | `diagrams.jpg` ở gốc repo → `plan/00-domain-lock-in.md`                            |
+| Đặc tả nghiệp vụ | **Đã điền đầy đủ** — schema, kênh IPC, màn hình, invalidate, thuật ngữ             |
+| Việc đang làm    | [`plan/phase-4-core-crud.md`](../plan/phase-4-core-crud.md) — Nghiệp vụ lõi (CRUD) |
+| Mã nguồn         | Đã hoàn tất Phase 0–3; chuẩn bị triển khai Phase 4                                 |
 
 > Cần một ví dụ đã điền đầy đủ để tham khảo hình dạng? Xem [`docs/examples/sample-domain.md`](../docs/examples/sample-domain.md).

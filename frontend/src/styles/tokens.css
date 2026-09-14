@@ -1,19 +1,20 @@
 :root {
   color-scheme: light;
-  --color-bg-base: #ffffff;
-  --color-bg-subtle: #f4f6f5;
-  --color-bg-hover: #e8eeeb;
-  --color-bg-selected: #dfefe9;
-  --color-text-primary: #202f2b;
-  --color-text-muted: #55665f;
-  --color-border-default: #ced8d2;
-  --color-border-focus: #08715b;
-  --color-accent: #116b55;
+  --color-bg-base: #fbfaf7;
+  --color-bg-subtle: #f1f0eb;
+  --color-bg-sidebar: #f6f7f8;
+  --color-bg-hover: #e5e7e2;
+  --color-bg-selected: #e1e8e4;
+  --color-text-primary: #263633;
+  --color-text-muted: #66736e;
+  --color-border-default: #d4d9d5;
+  --color-border-focus: #2f6658;
+  --color-accent: #2f6658;
   --color-on-accent: #ffffff;
   --color-danger: #ae3039;
   --color-success: #216c45;
   --color-warning: #865600;
-  --color-overlay: #132b2866;
+  --color-overlay: #1b2d2866;
   --space-0: 0;
   --space-1: 4px;
   --space-2: 8px;
@@ -26,8 +27,8 @@
   --space-10: 40px;
   --space-12: 48px;
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
   --radius-full: 999px;
   --font-sans:
     'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', 'Noto Sans',
@@ -44,6 +45,7 @@
   --font-weight-bold: 700;
   --line-height: 1.5;
   --shadow-sm: 0 2px 8px #132b280a;
+  --shadow-sidebar: 8px 0 24px #132b2814;
   --shadow-popover: 0 16px 64px #132b2833;
   --z-dropdown: 100;
   --z-modal: 400;
@@ -56,7 +58,7 @@
   --focus-offset: 3px;
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
-  --topbar-height: 80px;
+  --topbar-height: 68px;
   --statusbar-height: 36px;
   --control-height: 40px;
   --control-min: 32px;
@@ -71,20 +73,24 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --color-bg-base: #1b2925;
-  --color-bg-subtle: #14201c;
-  --color-bg-hover: #2c3c35;
-  --color-bg-selected: #23493c;
-  --color-text-primary: #edf3ef;
-  --color-text-muted: #b0c1b7;
-  --color-border-default: #485e52;
-  --color-border-focus: #83d9b8;
-  --color-accent: #83d9b8;
-  --color-on-accent: #14201c;
-  --color-danger: #ffa4aa;
-  --color-success: #93d8a6;
-  --color-warning: #efd08a;
-  --color-overlay: #050d0bcc;
+  --color-bg-base: #15171b;
+  --color-bg-subtle: #090b0f;
+  --color-bg-sidebar: #10141c;
+  --color-bg-hover: #20242c;
+  --color-bg-selected: #182438;
+  --color-text-primary: #f5f7fa;
+  --color-text-muted: #a8b0bc;
+  --color-border-default: #2c323b;
+  --color-border-focus: #60a5fa;
+  --color-accent: #60a5fa;
+  --color-on-accent: #07111f;
+  --color-danger: #f87171;
+  --color-success: #86efac;
+  --color-warning: #facc15;
+  --color-overlay: #020408cc;
+  --shadow-sm: 0 1px 3px #00000066;
+  --shadow-sidebar: 8px 0 24px #00000066;
+  --shadow-popover: 0 18px 50px #00000099;
 }
 
 [data-density='compact'] {

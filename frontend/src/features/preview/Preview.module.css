@@ -61,6 +61,7 @@
   padding: var(--space-7);
   background: var(--color-bg-selected);
   border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--color-border-default);
 }
 .welcome h2 {
   margin-block: var(--space-2);
