@@ -171,8 +171,9 @@ Bộ lọc phụ giữ ở `useFilterStore`.
 ## 4.6 — Phân trang
 
 - `pageSize` mặc định **50**, tối đa **200**
-- Danh sách trên **200 phần tử** phải dùng `VirtualList` (`ui-structure.md` §2.2)
-- Một giáo xứ vài nghìn giáo dân → `/persons` **chắc chắn** cần virtual scroll
+- Mọi danh sách dùng phân trang SQL; Renderer chỉ dựng tối đa 50 dòng của trang hiện hành
+- Một giáo xứ vài nghìn giáo dân vẫn dùng `/persons` theo từng trang 50 dòng; không dùng
+  virtual scroll trong Phase 4 (quyết định người dùng, 2026-09-14)
 
 ---
 
@@ -233,21 +234,24 @@ Màn hình `/trash` để **Phase 5** (khôi phục + xoá vĩnh viễn).
 
 ## Definition of Done
 
-- [ ] Tạo/sửa/xoá **giáo họ, hộ, giáo dân, thành viên hộ** hoạt động trọn vẹn
-- [ ] Chuyển hộ chạy đúng: hộ cũ có `to_date`, hộ mới hiện hành, lịch sử hiện đủ trên hồ sơ
-- [ ] **Mọi màn hình có đủ 5 trạng thái** (loading / empty / error / filtered-empty / success)
-- [ ] Lỗi validation hiển thị **đúng tại từng trường** trong form
-- [ ] Ba lỗi nghiệp vụ ở 4.4 hiện thông điệp tiếng Việt dễ hiểu, không phải mã lỗi thô
-- [ ] Sửa dữ liệu ở màn hình này → màn hình khác tự cập nhật (nhờ invalidate)
-- [ ] Mở hai cửa sổ, sửa ở cửa sổ A → cửa sổ B tự cập nhật (nhờ broadcast)
-- [ ] Sửa cùng một bản ghi ở hai nơi → nhận `CONFLICT`, **không** âm thầm ghi đè
-- [ ] Danh sách 3.000 giáo dân cuộn mượt
-- [ ] Bấm nút Lưu hai lần thật nhanh → chỉ tạo **một** bản ghi
-- [ ] **Không có dữ liệu server nào bị copy vào Zustand**
-- [ ] Không component nào gọi `window.api` hoặc `useQuery` trực tiếp
-- [ ] Không có mảng query key nào viết trực tiếp trong component
-- [ ] Bảng invalidate ở `state-management.md` §3.1 khớp với thực tế code
-- [ ] `npm run lint` + `npm run format:check` sạch, test pass
+Người dùng xác nhận hoàn tất Phase 4 ngày 2026-09-14. Kiểm chứng tự động cuối:
+`npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run build`.
+
+- [x] Tạo/sửa/xoá **giáo họ, hộ, giáo dân, thành viên hộ** hoạt động trọn vẹn
+- [x] Chuyển hộ chạy đúng: hộ cũ có `to_date`, hộ mới hiện hành, lịch sử hiện đủ trên hồ sơ
+- [x] **Mọi màn hình có đủ 5 trạng thái** (loading / empty / error / filtered-empty / success)
+- [x] Lỗi validation hiển thị **đúng tại từng trường** trong form
+- [x] Ba lỗi nghiệp vụ ở 4.4 hiện thông điệp tiếng Việt dễ hiểu, không phải mã lỗi thô
+- [x] Sửa dữ liệu ở màn hình này → màn hình khác tự cập nhật (nhờ invalidate)
+- [x] Mở hai cửa sổ, sửa ở cửa sổ A → cửa sổ B tự cập nhật (nhờ broadcast)
+- [x] Sửa cùng một bản ghi ở hai nơi → nhận `CONFLICT`, **không** âm thầm ghi đè
+- [x] Danh sách 3.000 giáo dân chuyển trang mượt, mỗi trang chỉ dựng tối đa 50 dòng
+- [x] Bấm nút Lưu hai lần thật nhanh → chỉ tạo **một** bản ghi
+- [x] **Không có dữ liệu server nào bị copy vào Zustand**
+- [x] Không component nào gọi `window.api` hoặc `useQuery` trực tiếp
+- [x] Không có mảng query key nào viết trực tiếp trong component
+- [x] Bảng invalidate ở `state-management.md` §3.1 khớp với thực tế code
+- [x] `npm run lint` + `npm run format:check` sạch, test pass
 
 ---
 

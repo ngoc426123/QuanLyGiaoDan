@@ -18,7 +18,7 @@
 | 1     | Xương sống IPC         | 1–2 ngày      |     ☑      |
 | 2     | Tầng dữ liệu           | 2–3 ngày      |     ☑      |
 | 3     | Bộ khung giao diện     | 2–3 ngày      |     ☑      |
-| 4     | Nghiệp vụ lõi (CRUD)   | 5–7 ngày      |     ◐      |
+| 4     | Nghiệp vụ lõi (CRUD)   | 5–7 ngày      |     ☑      |
 | 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☐      |
 | 6     | Độ tin cậy             | 2–3 ngày      |     ☐      |
 | 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☐      |
@@ -31,8 +31,9 @@
 **☑ Phase 3 (2026-09-14):** đã hoàn tất kiểm thử tự động và xác nhận desktop thực tế.
 Bằng chứng, giới hạn và danh sách file: [`phase-3-review.md`](./phase-3-review.md).
 
-**◐ Phase 4 (2026-09-14):** đã chuyển đường chạy mã nguồn, build và test sang TypeScript;
-chuẩn bị triển khai CRUD lõi, bắt đầu từ feature Giáo họ.
+**☑ Phase 4 (2026-09-14):** đã chuyển đường chạy mã nguồn, build và test sang TypeScript;
+hoàn tất CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ. Người dùng đã xác nhận kiểm tra
+CRUD thực tế. Danh sách lớn dùng phân trang SQL 50 dòng/trang theo quyết định người dùng.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 

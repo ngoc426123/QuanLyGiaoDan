@@ -5,10 +5,16 @@ import styles from './Zone.module.css'
 
 type ZoneInput = { name: string; holyName: string; note: string }
 
+function toFormValue(initialValue: any): ZoneInput {
+  return {
+    name: initialValue?.name ?? '',
+    holyName: initialValue?.holyName ?? '',
+    note: initialValue?.note ?? '',
+  }
+}
+
 export function ZoneForm({ initialValue, onSubmit, isPending, submitLabel }: any) {
-  const [value, setValue] = useState<ZoneInput>(
-    initialValue ?? { name: '', holyName: '', note: '' },
-  )
+  const [value, setValue] = useState<ZoneInput>(() => toFormValue(initialValue))
   const [error, setError] = useState<any>(null)
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

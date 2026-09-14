@@ -26,6 +26,11 @@ import {
 
 const NOT_FOUND_MESSAGE = 'Không tìm thấy dòng thành viên'
 
+function formatCalendarDate(value: string) {
+  const [year, month, day] = value.split('-')
+  return `${day}/${month}/${year}`
+}
+
 function assertFamilyExists(familyId) {
   if (familyRepository.exists(familyId)) return
 
@@ -148,7 +153,10 @@ export function move({ personId, toFamilyId, relationship, moveDate }: any) {
     }
 
     if (isBefore(moveDate, current.fromDate)) {
-      throw fieldError('moveDate', 'Ngày chuyển hộ không được trước ngày vào hộ hiện tại')
+      throw fieldError(
+        'moveDate',
+        `Ngày chuyển hộ không được trước ngày vào hộ cũ (${formatCalendarDate(current.fromDate)})`,
+      )
     }
 
     assertFamilyExists(toFamilyId)

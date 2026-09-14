@@ -3,18 +3,20 @@
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
 **Ngôn ngữ: chỉ tiếng Việt**, không triển khai i18n — người dùng chốt 2026-09-13 (Q03).
-**Trạng thái: Phase 3 đã hoàn tất** (2026-09-14).
-App Shell, 10 route minh hoạ, UI primitives, theme lưu SQLite, title bar Windows và khôi phục
-cửa sổ đã được kiểm chứng. Bằng chứng: `project/phase-3-review.md`.
-**Phase 4 đang chuẩn bị triển khai**: chuyển mã nguồn sang TypeScript, rồi làm CRUD theo thứ tự
-Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
+**Trạng thái: Phase 4 đã hoàn tất** (2026-09-14).
+Đường chạy đã chuyển sang TypeScript; CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ,
+phân trang SQL, đồng bộ broadcast, kiểm tra xung đột và thông báo lỗi nghiệp vụ đã được hoàn tất.
+Người dùng đã xác nhận Phase 4 sau khi kiểm tra CRUD thực tế.
+**Phase 5 đang chuẩn bị triển khai**: hoàn thiện trải nghiệm, gồm thùng rác, nhập CSV/Excel,
+in/xuất danh sách và các cải tiến thao tác hằng ngày.
 Tiến độ đầy đủ: `project/roadmap.md`.
 
 ## Ghi chú tiếp tục phiên sau — 2026-09-14
 
-Giao diện Phase 3 đã được người dùng xác nhận ổn định, gồm dark theme và title bar custom.
-Q02 đã được người dùng chốt ngày 2026-09-14: dùng TypeScript thay cho JavaScript + JSDoc.
-Hoàn tất chuyển đổi ngôn ngữ trước feature đầu tiên của Phase 4; không tự đổi cấu trúc build.
+Phase 3 và 4 đã được người dùng xác nhận hoàn tất. Q02 đã được chốt ngày 2026-09-14:
+dùng TypeScript thay cho JavaScript + JSDoc; mọi mã nguồn đang chạy đã chuyển đổi trước CRUD.
+Phase 4 dùng phân trang SQL 50 dòng/trang cho danh sách lớn, không dùng virtual scroll.
+Tiếp tục từ Phase 5, không tự đổi cấu trúc build.
 Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
 Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
 

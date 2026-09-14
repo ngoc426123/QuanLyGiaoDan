@@ -99,4 +99,18 @@ describe('Gia đình', () => {
       ),
     ).toBeTruthy()
   })
+
+  it('sửa gia đình chỉ gửi các trường cho phép trong patch', async () => {
+    const user = userEvent.setup()
+    renderFeature(<FamilyDetail id={family.id} />, `/families/${family.id}`)
+    await user.click(await screen.findByRole('button', { name: 'Sửa' }))
+    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+    await waitFor(() =>
+      expect(window.api.family.update).toHaveBeenCalledWith({
+        id: family.id,
+        expectedUpdatedAt: family.updatedAt,
+        patch: { zoneId: zone.id, name: family.name, address: '', note: '' },
+      }),
+    )
+  })
 })

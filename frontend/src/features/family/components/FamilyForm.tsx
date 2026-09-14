@@ -6,10 +6,17 @@ import styles from './Family.module.css'
 
 type FamilyInput = { zoneId: string; name: string; address: string; note: string }
 
+function toFormValue(initialValue: any): FamilyInput {
+  return {
+    zoneId: initialValue?.zoneId ?? '',
+    name: initialValue?.name ?? '',
+    address: initialValue?.address ?? '',
+    note: initialValue?.note ?? '',
+  }
+}
+
 export function FamilyForm({ initialValue, zones, onSubmit, isPending, submitLabel }: any) {
-  const [value, setValue] = useState<FamilyInput>(
-    initialValue ?? { zoneId: '', name: '', address: '', note: '' },
-  )
+  const [value, setValue] = useState<FamilyInput>(() => toFormValue(initialValue))
   const [error, setError] = useState<any>(null)
   const fieldErrors = error?.details?.fieldErrors ?? {}
   const submit = async (event: FormEvent<HTMLFormElement>) => {

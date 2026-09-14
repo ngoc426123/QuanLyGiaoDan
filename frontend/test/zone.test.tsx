@@ -81,4 +81,18 @@ describe('Giáo họ', () => {
       await screen.findByText('Giáo họ còn 1 gia đình, hãy chuyển sang giáo họ khác trước.'),
     ).toBeTruthy()
   })
+
+  it('sửa giáo họ chỉ gửi các trường cho phép trong patch', async () => {
+    const user = userEvent.setup()
+    renderFeature(<ZoneDetail id={zone.id} />, `/zones/${zone.id}`)
+    await user.click(await screen.findByRole('button', { name: 'Sửa' }))
+    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+    await waitFor(() =>
+      expect(window.api.zone.update).toHaveBeenCalledWith({
+        id: zone.id,
+        expectedUpdatedAt: zone.updatedAt,
+        patch: { name: zone.name, holyName: zone.holyName, note: '' },
+      }),
+    )
+  })
 })

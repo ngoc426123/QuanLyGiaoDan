@@ -23,11 +23,33 @@ const emptyValue = {
   fromDate: '',
 }
 
+const editableFields = [
+  'fullName',
+  'givenName',
+  'holyName',
+  'gender',
+  'birthDate',
+  'phone',
+  'baptismDate',
+  'firstCommunionDate',
+  'confirmationDate',
+  'marriageDate',
+  'deathDate',
+  'note',
+] as const
+
+function toFormValue(initialValue: any) {
+  const value = { ...emptyValue }
+  for (const key of Object.keys(emptyValue)) {
+    if (Object.hasOwn(initialValue ?? {}, key)) value[key] = initialValue[key] ?? ''
+  }
+  return value
+}
+
 function toPayload(value: any) {
   const payload: any = {}
-  for (const [key, item] of Object.entries(value)) {
-    if (['familyId', 'relationship', 'fromDate'].includes(key)) continue
-    payload[key] = key === 'fullName' ? item : item || null
+  for (const key of editableFields) {
+    payload[key] = key === 'fullName' ? value[key] : value[key] || null
   }
   if (value.familyId) {
     payload.family = {
@@ -47,7 +69,7 @@ export function PersonForm({
   submitLabel,
   allowFamilyAssignment = false,
 }: any) {
-  const [value, setValue] = useState({ ...emptyValue, ...initialValue })
+  const [value, setValue] = useState(() => toFormValue(initialValue))
   const [error, setError] = useState<any>(null)
   const fieldErrors = error?.details?.fieldErrors ?? {}
   const set = (key: string, next: string) => setValue({ ...value, [key]: next })

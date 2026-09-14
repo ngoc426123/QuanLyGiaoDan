@@ -282,7 +282,10 @@ describe('family-member.service', () => {
           relationship: 'child',
           moveDate: '2009-01-01',
         }),
-      codeIs('VALIDATION_ERROR'),
+      (error) =>
+        error.code === 'VALIDATION_ERROR' &&
+        error.details.fieldErrors.moveDate ===
+          'Ngày chuyển hộ không được trước ngày vào hộ cũ (01/01/2010)',
     )
   })
 })
