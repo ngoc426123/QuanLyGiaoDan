@@ -1,0 +1,4 @@
+.icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}

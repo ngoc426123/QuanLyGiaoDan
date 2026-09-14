@@ -1,0 +1,9 @@
+node_modules
+backend/out
+backend/renderer
+backend/release
+frontend/dist
+.phase3-qa
+package-lock.json
+# docs/ là template dùng chung — CẤM định dạng lại ở dự án này
+docs

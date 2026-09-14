@@ -1,0 +1,28 @@
+{
+  "name": "elecrusion-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Renderer — React + Vite. Build ra file tĩnh cho backend/renderer.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.102.8",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.6",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@vitejs/plugin-react": "5.2.0",
+    "jsdom": "30.0.1",
+    "vite": "7.3.6",
+    "vitest": "5.0.0"
+  }
+}

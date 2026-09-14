@@ -1,0 +1,25 @@
+# Cấu hình đóng gói tối thiểu của Phase 2 — hoàn thiện ở Phase 7.
+# Luật gốc: docs/01-architecture/project-structure.md §6.
+
+appId: com.elecrusion.app
+productName: Elecrusion
+
+directories:
+  output: release
+
+files:
+  - out/**
+  - renderer/**
+  - package.json
+
+# Binary native không nằm được trong asar — Electron không nạp được .node từ trong archive.
+asarUnpack:
+  - '**/*.node'
+
+# better-sqlite3 v13 phát hành binary theo Node-API: ABI ổn định qua mọi phiên bản Node và
+# Electron, nên KHÔNG được rebuild. Để `true` thì electron-builder gọi node-gyp và đòi
+# Python + VS Build Tools để biên dịch một thứ không cần biên dịch (project-structure.md §6.1).
+npmRebuild: false
+
+win:
+  target: nsis

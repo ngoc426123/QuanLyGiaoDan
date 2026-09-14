@@ -1,4 +1,10 @@
-vendor
-writable
-php
-*.exe
+node_modules/
+backend/out/
+backend/renderer/
+backend/release/
+frontend/dist/
+*.db
+*.db-wal
+*.db-shm
+.env*
+.phase3-qa/

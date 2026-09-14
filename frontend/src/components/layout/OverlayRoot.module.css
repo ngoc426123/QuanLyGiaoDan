@@ -1,0 +1,12 @@
+.toasts {
+  position: fixed;
+  bottom: var(--space-12);
+  right: var(--space-6);
+  width: min(var(--modal-width), calc(100% - var(--space-12)));
+  display: grid;
+  gap: var(--space-3);
+  z-index: var(--z-toast);
+}
+.toasts:empty {
+  display: none;
+}

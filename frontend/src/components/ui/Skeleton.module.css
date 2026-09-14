@@ -1,0 +1,14 @@
+.skeleton {
+  height: var(--virtual-height);
+  padding: var(--space-6);
+}
+.skeleton span {
+  display: block;
+  height: 100%;
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-md);
+  visibility: hidden;
+}
+.skeleton[data-visible='true'] span {
+  visibility: visible;
+}

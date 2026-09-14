@@ -1,0 +1,16 @@
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+.state p {
+  color: var(--color-text-muted);
+}
+.symbol {
+  font-size: var(--font-size-display);
+  color: var(--color-accent);
+}

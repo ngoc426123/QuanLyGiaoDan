@@ -1,0 +1,20 @@
+.viewport {
+  height: var(--virtual-height);
+  overflow-y: auto;
+}
+.spacer {
+  position: relative;
+  height: var(--virtual-height);
+}
+.row {
+  position: absolute;
+  inset-inline: var(--space-0);
+  top: var(--space-0);
+  transform: translateY(var(--virtual-offset));
+  height: var(--row-height);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border-default);
+}
+.row[data-active='true'] {
+  background: var(--color-bg-selected);
+}

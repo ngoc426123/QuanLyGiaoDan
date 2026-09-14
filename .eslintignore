@@ -1,0 +1,6 @@
+node_modules
+backend/out
+backend/renderer
+backend/release
+frontend/dist
+.phase3-qa
