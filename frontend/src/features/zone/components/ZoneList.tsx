@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
+import { Pagination } from '@/components/ui/Pagination.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useCreateZone } from '../hooks/useZoneMutations.ts'
@@ -16,14 +17,21 @@ export function ZoneList() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isCreateOpen, setCreateOpen] = useState(false)
   const search = searchParams.get('q') ?? ''
+  const page = Number(searchParams.get('page') ?? '1') || 1
   const filter = useMemo(
-    () => ({ page: 1, pageSize: 50, search, sortBy: 'name', sortDir: 'asc' }),
-    [search],
+    () => ({ page, pageSize: 50, search, sortBy: 'name', sortDir: 'asc' }),
+    [page, search],
   )
   const query = useZones(filter)
   const create = useCreateZone()
   const rows = query.data?.data ?? []
   const updateSearch = (value: string) => setSearchParams(value ? { q: value } : {})
+  const setPage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams)
+    if (nextPage === 1) next.delete('page')
+    else next.set('page', String(nextPage))
+    setSearchParams(next)
+  }
 
   return (
     <section>
@@ -59,20 +67,28 @@ export function ZoneList() {
         </EmptyState>
       )}
       {rows.length > 0 && (
-        <Table
-          caption="Danh sách giáo họ"
-          rows={rows}
-          columns={[
-            {
-              key: 'name',
-              label: 'Tên giáo họ',
-              render: (row: any) => <Link to={`/zones/${row.id}`}>{row.name}</Link>,
-            },
-            { key: 'holyName', label: 'Bổn mạng' },
-            { key: 'familyCount', label: 'Số hộ' },
-            { key: 'personCount', label: 'Số giáo dân' },
-          ]}
-        />
+        <>
+          <Table
+            caption="Danh sách giáo họ"
+            rows={rows}
+            columns={[
+              {
+                key: 'name',
+                label: 'Tên giáo họ',
+                render: (row: any) => <Link to={`/zones/${row.id}`}>{row.name}</Link>,
+              },
+              { key: 'holyName', label: 'Bổn mạng' },
+              { key: 'familyCount', label: 'Số hộ' },
+              { key: 'personCount', label: 'Số giáo dân' },
+            ]}
+          />
+          <Pagination
+            page={page}
+            pageSize={50}
+            total={query.data?.meta?.total ?? 0}
+            onPageChange={setPage}
+          />
+        </>
       )}
       {isCreateOpen && (
         <Modal title="Thêm giáo họ" onClose={() => setCreateOpen(false)}>

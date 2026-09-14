@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
+import { Pagination } from '@/components/ui/Pagination.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
@@ -24,19 +25,22 @@ export function PersonList() {
   const familyId = params.get('familyId') ?? ''
   const gender = params.get('gender') ?? ''
   const isAlive = params.get('isAlive') ?? ''
+  const page = Number(params.get('page') ?? '1') || 1
+  const sortBy = params.get('sortBy') ?? 'givenName'
+  const sortDir = params.get('sortDir') ?? 'asc'
   const filter = useMemo(
     () => ({
-      page: 1,
+      page,
       pageSize: 50,
       search,
       zoneId: zoneId || undefined,
       familyId: familyId || undefined,
       gender: gender || undefined,
       isAlive: isAlive === '' ? undefined : isAlive === 'true',
-      sortBy: 'givenName',
-      sortDir: 'asc',
+      sortBy,
+      sortDir,
     }),
-    [search, zoneId, familyId, gender, isAlive],
+    [page, search, zoneId, familyId, gender, isAlive, sortBy, sortDir],
   )
   const persons = usePersons(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
@@ -48,6 +52,7 @@ export function PersonList() {
     const result = new URLSearchParams(params)
     for (const [key, value] of Object.entries(next))
       value ? result.set(key, value) : result.delete(key)
+    if (!Object.hasOwn(next, 'page')) result.delete('page')
     setParams(result)
   }
   const clearFilters = () => setParams({})
@@ -73,6 +78,19 @@ export function PersonList() {
             {zone.name}
           </option>
         ))}
+      </Select>
+      <Select
+        label="Sắp xếp"
+        value={`${sortBy}:${sortDir}`}
+        onChange={(event: any) => {
+          const [nextSortBy, nextSortDir] = event.target.value.split(':')
+          updateFilters({ sortBy: nextSortBy, sortDir: nextSortDir })
+        }}
+      >
+        <option value="givenName:asc">Tên gọi A-Z</option>
+        <option value="fullName:asc">Họ tên A-Z</option>
+        <option value="birthDate:asc">Ngày sinh tăng dần</option>
+        <option value="createdAt:desc">Mới tạo trước</option>
       </Select>
       <Select
         label="Gia đình"
@@ -125,47 +143,57 @@ export function PersonList() {
         </EmptyState>
       )}
       {rows.length > 0 && (
-        <Table
-          caption="Danh sách giáo dân"
-          rows={rows}
-          columns={[
-            {
-              key: 'fullName',
-              label: 'Họ tên',
-              render: (person: any) => <Link to={`/persons/${person.id}`}>{person.fullName}</Link>,
-            },
-            {
-              key: 'holyName',
-              label: 'Tên thánh',
-              render: (person: any) => person.holyName || 'Chưa cập nhật',
-            },
-            {
-              key: 'gender',
-              label: 'Giới tính',
-              render: (person: any) =>
-                person.gender === 'male'
-                  ? 'Nam'
-                  : person.gender === 'female'
-                    ? 'Nữ'
-                    : 'Chưa cập nhật',
-            },
-            {
-              key: 'birthDate',
-              label: 'Ngày sinh',
-              render: (person: any) => person.birthDate || 'Chưa cập nhật',
-            },
-            {
-              key: 'familyName',
-              label: 'Hộ',
-              render: (person: any) => person.familyName || 'Chưa gán hộ',
-            },
-            {
-              key: 'zoneName',
-              label: 'Giáo họ',
-              render: (person: any) => person.zoneName || 'Chưa gán hộ',
-            },
-          ]}
-        />
+        <>
+          <Table
+            caption="Danh sách giáo dân"
+            rows={rows}
+            columns={[
+              {
+                key: 'fullName',
+                label: 'Họ tên',
+                render: (person: any) => (
+                  <Link to={`/persons/${person.id}`}>{person.fullName}</Link>
+                ),
+              },
+              {
+                key: 'holyName',
+                label: 'Tên thánh',
+                render: (person: any) => person.holyName || 'Chưa cập nhật',
+              },
+              {
+                key: 'gender',
+                label: 'Giới tính',
+                render: (person: any) =>
+                  person.gender === 'male'
+                    ? 'Nam'
+                    : person.gender === 'female'
+                      ? 'Nữ'
+                      : 'Chưa cập nhật',
+              },
+              {
+                key: 'birthDate',
+                label: 'Ngày sinh',
+                render: (person: any) => person.birthDate || 'Chưa cập nhật',
+              },
+              {
+                key: 'familyName',
+                label: 'Hộ',
+                render: (person: any) => person.familyName || 'Chưa gán hộ',
+              },
+              {
+                key: 'zoneName',
+                label: 'Giáo họ',
+                render: (person: any) => person.zoneName || 'Chưa gán hộ',
+              },
+            ]}
+          />
+          <Pagination
+            page={page}
+            pageSize={50}
+            total={persons.data?.meta?.total ?? 0}
+            onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
+          />
+        </>
       )}
       {isCreateOpen && (
         <Modal title="Thêm giáo dân" onClose={() => setCreateOpen(false)}>

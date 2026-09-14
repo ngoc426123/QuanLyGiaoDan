@@ -1,5 +1,5 @@
-import { DashboardPreview } from '@/features/preview/DashboardPreview.tsx'
+import { Dashboard } from '@/features/dashboard/components/Dashboard.tsx'
 
 export function DashboardPage() {
-  return <DashboardPreview />
+  return <Dashboard />
 }

@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
+import { Pagination } from '@/components/ui/Pagination.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
@@ -19,28 +20,42 @@ export function FamilyList() {
   const [isCreateOpen, setCreateOpen] = useState(false)
   const search = searchParams.get('q') ?? ''
   const zoneId = searchParams.get('zoneId') ?? ''
+  const page = Number(searchParams.get('page') ?? '1') || 1
+  const sortBy = searchParams.get('sortBy') ?? 'name'
+  const sortDir = searchParams.get('sortDir') ?? 'asc'
   const filter = useMemo(
     () => ({
-      page: 1,
+      page,
       pageSize: 50,
       search,
       zoneId: zoneId || undefined,
-      sortBy: 'name',
-      sortDir: 'asc',
+      sortBy,
+      sortDir,
     }),
-    [search, zoneId],
+    [page, search, sortBy, sortDir, zoneId],
   )
   const families = useFamilies(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const create = useCreateFamily()
   const rows = families.data?.data ?? []
   const zoneRows = zones.data?.data ?? []
-  const updateFilters = (next: { search?: string; zoneId?: string }) => {
-    const params = new URLSearchParams()
+  const updateFilters = (next: {
+    search?: string
+    zoneId?: string
+    sortBy?: string
+    sortDir?: string
+    page?: string
+  }) => {
+    const params = new URLSearchParams(searchParams)
     const nextSearch = next.search ?? search
     const nextZoneId = next.zoneId ?? zoneId
     if (nextSearch) params.set('q', nextSearch)
+    else params.delete('q')
     if (nextZoneId) params.set('zoneId', nextZoneId)
+    else params.delete('zoneId')
+    for (const [key, value] of Object.entries(next))
+      if (!['search', 'zoneId'].includes(key)) value ? params.set(key, value) : params.delete(key)
+    if (!Object.hasOwn(next, 'page')) params.delete('page')
     setSearchParams(params)
   }
   const clearFilters = () => setSearchParams({})
@@ -71,6 +86,18 @@ export function FamilyList() {
             {zone.name}
           </option>
         ))}
+      </Select>
+      <Select
+        label="Sắp xếp"
+        value={`${sortBy}:${sortDir}`}
+        onChange={(event: any) => {
+          const [nextSortBy, nextSortDir] = event.target.value.split(':')
+          updateFilters({ sortBy: nextSortBy, sortDir: nextSortDir })
+        }}
+      >
+        <option value="name:asc">Tên hộ A-Z</option>
+        <option value="name:desc">Tên hộ Z-A</option>
+        <option value="createdAt:desc">Mới tạo trước</option>
       </Select>
       {(families.isLoading || zones.isLoading) && <Skeleton />}
       {families.isError && <ErrorState error={families.error} onRetry={families.refetch} />}
@@ -112,24 +139,32 @@ export function FamilyList() {
           </EmptyState>
         )}
       {rows.length > 0 && (
-        <Table
-          caption="Danh sách gia đình"
-          rows={rows}
-          columns={[
-            {
-              key: 'name',
-              label: 'Tên hộ',
-              render: (family: any) => <Link to={`/families/${family.id}`}>{family.name}</Link>,
-            },
-            { key: 'zoneName', label: 'Giáo họ' },
-            {
-              key: 'address',
-              label: 'Địa chỉ',
-              render: (family: any) => family.address || 'Chưa cập nhật',
-            },
-            { key: 'memberCount', label: 'Số thành viên' },
-          ]}
-        />
+        <>
+          <Table
+            caption="Danh sách gia đình"
+            rows={rows}
+            columns={[
+              {
+                key: 'name',
+                label: 'Tên hộ',
+                render: (family: any) => <Link to={`/families/${family.id}`}>{family.name}</Link>,
+              },
+              { key: 'zoneName', label: 'Giáo họ' },
+              {
+                key: 'address',
+                label: 'Địa chỉ',
+                render: (family: any) => family.address || 'Chưa cập nhật',
+              },
+              { key: 'memberCount', label: 'Số thành viên' },
+            ]}
+          />
+          <Pagination
+            page={page}
+            pageSize={50}
+            total={families.data?.meta?.total ?? 0}
+            onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
+          />
+        </>
       )}
       {isCreateOpen && (
         <Modal title="Thêm gia đình" onClose={() => setCreateOpen(false)}>

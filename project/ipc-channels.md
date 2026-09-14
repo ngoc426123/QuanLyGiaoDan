@@ -14,6 +14,12 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 
 ## 1. Nhóm kênh nghiệp vụ
 
+### 1.0. Nhóm `dashboard:*` — Tổng quan
+
+| Kênh                   | Payload vào | Dữ liệu trả về                                                                    | Ghi chú                                                |
+| ---------------------- | ----------- | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `dashboard:getSummary` | —           | Tổng số giáo dân còn sống, hộ, giáo họ, phân bố và hai danh sách cảnh báo dữ liệu | Gom bằng truy vấn SQL, không truy vấn lặp theo từng hộ |
+
 ### 1.1. Nhóm `zone:*` — Giáo họ
 
 | Kênh           | Payload vào                                    | Dữ liệu trả về                                     | Ghi chú                                                     |

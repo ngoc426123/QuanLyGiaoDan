@@ -53,11 +53,16 @@ export function list(filter: any = {}) {
   }
 }
 
-/** Kèm danh sách thành viên **hiện hành** — `project/ipc-channels.md` §1.2. */
+/** Kèm thành viên hiện hành và lịch sử để màn hình chi tiết hộ không tạo truy vấn N+1. */
 export function getById(id) {
   const family = assertFound(familyRepository.findById(id), NOT_FOUND_MESSAGE)
 
-  return { ...family, members: familyMemberRepository.findByFamilyId(id) }
+  const memberships = familyMemberRepository.findByFamilyId(id, { includeHistory: true })
+  return {
+    ...family,
+    members: memberships.filter((member) => member.isCurrent),
+    membershipHistory: memberships.filter((member) => !member.isCurrent),
+  }
 }
 
 export function create(input: any) {

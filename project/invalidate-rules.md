@@ -23,6 +23,7 @@
 | Gỡ thành viên khỏi hộ (`family-member:remove`)                           | `familyKeys.detail(familyId)` + `personKeys.detail(personId)` + `personKeys.lists` + `familyKeys.lists`                                         |
 | **Chuyển hộ** (`family-member:move`)                                     | `familyKeys.detail(hộ cũ)` + `familyKeys.detail(hộ mới)` + `personKeys.detail(id)` + `personKeys.lists` + `familyKeys.lists` + `zoneKeys.lists` |
 | Đổi cài đặt (`setting:*`)                                                | `settingKeys.all`                                                                                                                               |
+| Thay đổi giáo họ / hộ / giáo dân / thành viên                            | `dashboardKeys.all` _(số liệu và cảnh báo tổng quan)_                                                                                           |
 
 ---
 

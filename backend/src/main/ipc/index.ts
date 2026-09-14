@@ -3,6 +3,7 @@ import { broadcast } from './broadcast.ts'
 import { ok, toErrorEnvelope } from './envelope.ts'
 import { appHandlers } from './app.ipc.ts'
 import { backupHandlers } from './backup.ipc.ts'
+import { dashboardHandlers } from './dashboard.ipc.ts'
 import { familyHandlers } from './family.ipc.ts'
 import { familyMemberHandlers } from './family-member.ipc.ts'
 import { personHandlers } from './person.ipc.ts'
@@ -64,6 +65,7 @@ export function registerIpcHandlers() {
     settingHandlers,
     appHandlers,
     backupHandlers,
+    dashboardHandlers,
     zoneHandlers,
     familyHandlers,
     personHandlers,

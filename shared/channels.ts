@@ -13,6 +13,9 @@
  */
 
 export const CHANNELS = Object.freeze({
+  DASHBOARD: Object.freeze({
+    GET_SUMMARY: 'dashboard:getSummary',
+  }),
   /** Giáo họ */
   ZONE: Object.freeze({
     LIST: 'zone:list',

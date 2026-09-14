@@ -2,7 +2,7 @@ import { likePattern, orderBy, paginate, prepare } from './query-helpers.ts'
 
 /** Repository của `families`. Nơi duy nhất viết SQL cho hộ gia đình. */
 
-const SORT_COLUMNS = Object.freeze({ name: 'f.name_ascii' })
+const SORT_COLUMNS = Object.freeze({ name: 'f.name_ascii', createdAt: 'f.created_at' })
 
 const SELECT_COLUMNS = 'id, zone_id, name, name_ascii, address, note, created_at, updated_at'
 

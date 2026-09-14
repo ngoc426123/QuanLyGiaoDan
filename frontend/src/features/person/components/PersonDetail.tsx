@@ -9,6 +9,12 @@ import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
+import { FamilyMemberForm } from '@/features/family-member/components/FamilyMemberForm.tsx'
+import { useMoveFamilyMember } from '@/features/family-member/hooks/useFamilyMemberMutations.ts'
+import {
+  relationshipLabel,
+  type Relationship,
+} from '@/features/family-member/familyMember.types.ts'
 import { AppClientError } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { useRemovePerson, useUpdatePerson } from '../hooks/usePersonMutations.ts'
@@ -18,19 +24,17 @@ import styles from './Person.module.css'
 
 const genderLabel = (value: string | null) =>
   value === 'male' ? 'Nam' : value === 'female' ? 'Nữ' : 'Chưa cập nhật'
-const relationLabel = (value: string) =>
-  ({ head: 'Chủ hộ', spouse: 'Vợ/chồng', child: 'Con', parent: 'Cha/mẹ', other: 'Khác' })[value] ||
-  value
-
 export function PersonDetail({ id }: { id: string | undefined }) {
   const navigate = useNavigate()
   const addToast = useToastStore((state) => state.add)
   const [isEditOpen, setEditOpen] = useState(false)
   const [isRemoveOpen, setRemoveOpen] = useState(false)
+  const [isMoveOpen, setMoveOpen] = useState(false)
   const person = usePerson(id)
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const update = useUpdatePerson()
   const remove = useRemovePerson()
+  const moveMember = useMoveFamilyMember()
   useEffect(() => {
     if (person.error instanceof AppClientError && person.error.code === 'NOT_FOUND') {
       addToast('Giáo dân này không còn tồn tại.', true)
@@ -95,6 +99,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
       </dl>
       <section className={styles.section} aria-labelledby="membership-heading">
         <h2 id="membership-heading">Hộ hiện hành</h2>
+        {record.currentMembership && <Button onClick={() => setMoveOpen(true)}>Chuyển hộ</Button>}
         {record.currentMembership ? (
           <Table
             caption="Hộ hiện hành"
@@ -110,7 +115,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
               {
                 key: 'relationship',
                 label: 'Quan hệ',
-                render: (member: any) => relationLabel(member.relationship),
+                render: (member: any) => relationshipLabel(member.relationship as Relationship),
               },
               { key: 'fromDate', label: 'Ngày vào hộ' },
             ]}
@@ -132,7 +137,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
               {
                 key: 'relationship',
                 label: 'Quan hệ',
-                render: (member: any) => relationLabel(member.relationship),
+                render: (member: any) => relationshipLabel(member.relationship as Relationship),
               },
               { key: 'fromDate', label: 'Từ ngày' },
               {
@@ -178,6 +183,23 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         >
           Bạn có chắc muốn xoá mềm hồ sơ giáo dân này?
         </ConfirmDialog>
+      )}
+      {isMoveOpen && record.currentMembership && (
+        <Modal title="Chuyển hộ" onClose={() => setMoveOpen(false)}>
+          <FamilyMemberForm
+            mode="move"
+            families={(families.data?.data ?? []).filter(
+              (family: any) => family.id !== record.currentMembership.familyId,
+            )}
+            initialValue={{ relationship: record.currentMembership.relationship }}
+            showHeadWarning={record.currentMembership.relationship === 'head'}
+            isPending={moveMember.isPending}
+            onSubmit={async (input: any) => {
+              await moveMember.mutateAsync({ ...input, personId: record.id })
+              setMoveOpen(false)
+            }}
+          />
+        </Modal>
       )}
     </section>
   )

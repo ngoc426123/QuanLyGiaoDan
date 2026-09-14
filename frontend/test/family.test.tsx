@@ -52,6 +52,15 @@ beforeEach(() => {
       update: vi.fn(async () => ({ ok: true, data: family })),
       remove: vi.fn(async () => ({ ok: true, data: { id: family.id } })),
     },
+    person: {
+      list: vi.fn(async () => ({ ok: true, data: { data: [], meta: { total: 0 } } })),
+    },
+    familyMember: {
+      add: vi.fn(async () => ({ ok: true, data: {} })),
+      update: vi.fn(async () => ({ ok: true, data: {} })),
+      move: vi.fn(async () => ({ ok: true, data: {} })),
+      remove: vi.fn(async () => ({ ok: true, data: {} })),
+    },
   }
 })
 

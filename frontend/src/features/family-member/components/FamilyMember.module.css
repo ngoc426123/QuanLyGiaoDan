@@ -1,0 +1,30 @@
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.hint,
+.error,
+.warning {
+  margin: var(--space-0);
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-left: 3px solid var(--color-accent);
+}
+
+.error {
+  color: var(--color-danger);
+  border-left-color: var(--color-danger);
+}
+
+.warning {
+  color: var(--color-warning);
+  border-left-color: var(--color-warning);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

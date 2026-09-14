@@ -109,6 +109,10 @@ const familyMemberApi = Object.freeze({
   remove: (id) => ipcRenderer.invoke(CHANNELS.FAMILY_MEMBER.REMOVE, { id }),
 })
 
+const dashboardApi = Object.freeze({
+  getSummary: () => ipcRenderer.invoke(CHANNELS.DASHBOARD.GET_SUMMARY),
+})
+
 const api = Object.freeze({
   setting: Object.freeze({
     getAll: () => ipcRenderer.invoke(CHANNELS.SETTING.GET_ALL),
@@ -120,6 +124,7 @@ const api = Object.freeze({
   family: familyApi,
   person: personApi,
   familyMember: familyMemberApi,
+  dashboard: dashboardApi,
   events: eventsApi,
 })
 

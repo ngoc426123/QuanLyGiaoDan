@@ -58,6 +58,19 @@ beforeEach(() => {
       exportToFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
       importFromFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
     },
+    dashboard: {
+      getSummary: vi.fn(async () => ({
+        ok: true,
+        data: {
+          livingPersonCount: 1,
+          familyCount: 1,
+          zoneCount: 1,
+          zones: [],
+          familiesWithoutHead: [],
+          personsWithoutFamily: [],
+        },
+      })),
+    },
     zone: {
       list: vi.fn(async () => ({
         ok: true,
@@ -195,7 +208,7 @@ describe('Khung ứng dụng qua API preload', () => {
   it('đi đủ 10 route, trang chi tiết đánh dấu đúng mục cha', async () => {
     const user = userEvent.setup()
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Tổng quan giáo xứ' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Tổng quan giáo xứ' })).toBeTruthy()
     for (const [label, detail] of [
       ['Giáo dân', 'Hồ sơ giáo dân'],
       ['Gia đình', 'Chi tiết hộ'],

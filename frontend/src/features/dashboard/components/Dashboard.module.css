@@ -1,0 +1,57 @@
+.actions,
+.statistics,
+.section,
+.warnings {
+  display: grid;
+  gap: var(--space-4);
+}
+.actions {
+  grid-auto-flow: column;
+  justify-content: start;
+  margin-bottom: var(--space-6);
+}
+.statistics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: var(--space-6);
+}
+.statistic {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  background: var(--color-bg-base);
+  border: var(--border-width) solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+.statistic span {
+  color: var(--color-text-muted);
+}
+.statistic strong {
+  font-size: var(--font-size-display);
+}
+.section {
+  margin-bottom: var(--space-6);
+}
+.section h2,
+.section h3 {
+  margin: var(--space-0);
+}
+.warnings {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.warnings > div {
+  padding: var(--space-5);
+  background: var(--color-bg-subtle);
+  border-left: 3px solid var(--color-warning);
+}
+.warnings ul {
+  margin-bottom: var(--space-0);
+  padding-left: var(--space-5);
+}
+@media (max-width: 1079px) {
+  .statistics,
+  .warnings {
+    grid-template-columns: 1fr;
+  }
+}

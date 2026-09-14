@@ -5,8 +5,9 @@ import { likePattern, orderBy, paginate, prepare } from './query-helpers.ts'
 /** Whitelist `ORDER BY` — `project/database-schema.md` §8. */
 const SORT_COLUMNS = Object.freeze({
   givenName: 'p.given_name_ascii',
-  fullNameAscii: 'p.full_name_ascii',
+  fullName: 'p.full_name_ascii',
   birthDate: 'p.birth_date',
+  createdAt: 'p.created_at',
 })
 
 const SELECT_COLUMNS =
