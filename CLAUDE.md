@@ -6,14 +6,15 @@
 **Trạng thái: Phase 3 đã hoàn tất** (2026-09-14).
 App Shell, 10 route minh hoạ, UI primitives, theme lưu SQLite, title bar Windows và khôi phục
 cửa sổ đã được kiểm chứng. Bằng chứng: `project/phase-3-review.md`.
-**Phase 4 đang chuẩn bị triển khai**: làm CRUD theo thứ tự Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
+**Phase 4 đang chuẩn bị triển khai**: chuyển mã nguồn sang TypeScript, rồi làm CRUD theo thứ tự
+Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
 Tiến độ đầy đủ: `project/roadmap.md`.
 
 ## Ghi chú tiếp tục phiên sau — 2026-09-14
 
 Giao diện Phase 3 đã được người dùng xác nhận ổn định, gồm dark theme và title bar custom.
-Trước khi viết feature đầu tiên của Phase 4, phải hỏi và chốt Q02: giữ JavaScript + JSDoc hay
-chuyển sang TypeScript. Không tự đổi ngôn ngữ hoặc cấu trúc build.
+Q02 đã được người dùng chốt ngày 2026-09-14: dùng TypeScript thay cho JavaScript + JSDoc.
+Hoàn tất chuyển đổi ngôn ngữ trước feature đầu tiên của Phase 4; không tự đổi cấu trúc build.
 Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
 Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
 
@@ -30,7 +31,7 @@ File này chứa ràng buộc **bắt buộc**. Chi tiết tra ở `docs/` (temp
 | Server state | TanStack Query                                                |
 | UI state     | Zustand                                                       |
 | Style        | CSS Modules + CSS custom property (design token)              |
-| Main         | Node.js ESM, JavaScript + JSDoc (chưa dùng TypeScript)        |
+| Mã nguồn     | TypeScript ESM, không dùng JavaScript + JSDoc                 |
 | DB           | SQLite qua `better-sqlite3`                                   |
 | Validate     | Zod, ở biên IPC phía Main                                     |
 | Build        | Vite (FE) + electron-vite (BE) + electron-builder             |
@@ -61,7 +62,7 @@ elecrusion/
 ├── docs/                 TEMPLATE — dùng lại được, không chứa nghiệp vụ
 ├── project/              NGHIỆP VỤ — riêng dự án này
 ├── plan/                 KẾ HOẠCH THI CÔNG — riêng dự án này
-├── shared/               JS thuần, KHÔNG có package.json — channels.js, errors.js
+├── shared/               TypeScript thuần, KHÔNG có package.json — channels.ts, errors.ts
 ├── frontend/             package 1 — React. Build ra file tĩnh
 └── backend/              package 2 — LÀ ứng dụng Electron (package.json = manifest app)
     └── src/{main,preload,services,repositories,schemas,db}
@@ -86,7 +87,7 @@ Chiều phụ thuộc BE: `ipc/ → services/ → repositories/ → db/`. Cấm 
 ## Hợp đồng IPC
 
 - Kênh: `domain:action` (`task:create`), event: `event:<domain>-<past>` (`event:task-changed`).
-- Tên kênh **chỉ** khai báo ở `shared/channels.js`. Cấm magic string.
+- Tên kênh **chỉ** khai báo ở `shared/channels.ts`. Cấm magic string.
 - Dùng `invoke`/`handle`. **Cấm `sendSync`.**
 - Mọi handler trả envelope: `{ ok: true, data, meta? }` hoặc `{ ok: false, error: { code, message, details } }`.
   **Không bao giờ throw xuyên ranh giới IPC.** Handler luôn bọc `try/catch`.
@@ -98,7 +99,7 @@ Chiều phụ thuộc BE: `ipc/ → services/ → repositories/ → db/`. Cấm 
 - Preload chỉ expose `window.api` dạng whitelist theo domain, `Object.freeze`. **Cấm** expose `ipcRenderer` thô hoặc hàm `invoke(channel, ...)` động.
 - Hàm đăng ký listener phải trả về hàm huỷ đăng ký.
 
-Mã lỗi (ở `shared/errors.js`): `VALIDATION_ERROR` `NOT_FOUND` `CONFLICT` `FOREIGN_KEY_VIOLATION` `DB_ERROR` `IO_ERROR` `PERMISSION_DENIED` `UNKNOWN_ERROR`.
+Mã lỗi (ở `shared/errors.ts`): `VALIDATION_ERROR` `NOT_FOUND` `CONFLICT` `FOREIGN_KEY_VIOLATION` `DB_ERROR` `IO_ERROR` `PERMISSION_DENIED` `UNKNOWN_ERROR`.
 `message` viết tiếng Việt, hiển thị được trực tiếp. Frontend phân nhánh theo `error.code`, **cấm** so khớp `message`.
 
 ---
@@ -120,10 +121,10 @@ Mã lỗi (ở `shared/errors.js`): `VALIDATION_ERROR` `NOT_FOUND` `CONFLICT` `F
 
 ## Frontend
 
-- Component **không** gọi `window.api` trực tiếp — đi qua custom hook của feature → `<domain>.api.js` → `shared/invoke.js`.
+- Component **không** gọi `window.api` trực tiếp — đi qua custom hook của feature → `<domain>.api.ts` → `shared/invoke.ts`.
 - Component **không** gọi `useQuery`/`useMutation` trực tiếp.
 - **Cấm sao chép dữ liệu server vào Zustand.** Server state thuộc TanStack Query.
-- Query key lấy từ `shared/queryKeys.js`, cấm viết mảng key trực tiếp.
+- Query key lấy từ `shared/queryKeys.ts`, cấm viết mảng key trực tiếp.
 - Mutation `onSuccess` phải invalidate đủ key liên quan (bảng ở `project/invalidate-rules.md`).
 - Event từ Main chỉ dùng để **invalidate**, không ghi đè cache.
 - Mọi `useEffect` có đăng ký phải có cleanup.
@@ -250,5 +251,4 @@ Chi tiết: `docs/00-meta/agent-rules.md`. Rút gọn:
 
 | Vấn đề                                           | Hạn chót      |
 | ------------------------------------------------ | ------------- |
-| Chuyển sang TypeScript                           | Trước Phase 4 |
 | Mã hoá DB (SQLCipher) — **quyết định một chiều** | Trước Phase 7 |

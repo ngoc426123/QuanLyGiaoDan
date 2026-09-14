@@ -31,7 +31,8 @@
 **☑ Phase 3 (2026-09-14):** đã hoàn tất kiểm thử tự động và xác nhận desktop thực tế.
 Bằng chứng, giới hạn và danh sách file: [`phase-3-review.md`](./phase-3-review.md).
 
-**◐ Phase 4 (2026-09-14):** chuẩn bị triển khai CRUD lõi, bắt đầu từ feature Giáo họ.
+**◐ Phase 4 (2026-09-14):** đã chuyển đường chạy mã nguồn, build và test sang TypeScript;
+chuẩn bị triển khai CRUD lõi, bắt đầu từ feature Giáo họ.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 

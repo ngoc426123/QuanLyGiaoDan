@@ -21,9 +21,9 @@
 
 Sai lệch khỏi baseline (nếu có) ghi ở đây:
 
-| #   | Quyết định baseline | Dự án này làm khác | Lý do |
-| --- | ------------------- | ------------------ | ----- |
-| —   | _(chưa có)_         |                    |       |
+| #   | Quyết định baseline    | Dự án này làm khác | Lý do                                                                                                                                                 |
+| --- | ---------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D09 | JavaScript ESM + JSDoc | TypeScript ESM     | CRUD gồm nhiều thực thể, hợp đồng IPC và dữ liệu liên kết; kiểm tra kiểu tĩnh giảm lỗi khi đổi dữ liệu xuyên frontend, preload, backend và `shared/`. |
 
 ---
 
@@ -32,7 +32,7 @@ Sai lệch khỏi baseline (nếu có) ghi ở đây:
 | #   | Câu hỏi                 | Trả lời                                                    | Ngày       | Trạng thái   |
 | --- | ----------------------- | ---------------------------------------------------------- | ---------- | ------------ |
 | Q01 | **Domain nghiệp vụ**    | **Quản lý giáo dân giáo xứ** — nguồn đặc tả `diagrams.jpg` | 2026-09-12 | **Hiệu lực** |
-| Q02 | Chuyển sang TypeScript? | _(chưa)_ — hạn chót trước Phase 4                          |            | Bỏ ngỏ       |
+| Q02 | Chuyển sang TypeScript? | Dùng TypeScript ESM thay cho JavaScript + JSDoc            | 2026-09-14 | Đã chốt      |
 | Q03 | Đa ngôn ngữ (i18n)?     | Chỉ tiếng Việt, không thêm i18n — người dùng chốt          | 2026-09-13 | Đã chốt      |
 | Q04 | Mã hoá database?        | _(chưa)_ — hạn chót **đầu Phase 7**. **Một chiều**         |            | Bỏ ngỏ       |
 | Q05 | Chứng chỉ ký số?        | _(chưa)_ — hạn chót trước Phase 7                          |            | Bỏ ngỏ       |

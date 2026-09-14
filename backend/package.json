@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "electron-vite dev --watch",
     "build": "electron-vite build",
-    "test": "node --import ./test/helpers/alias-hook.mjs --test \"test/*.test.mjs\"",
+    "test": "tsx --import ./test/helpers/alias-hook.mjs --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
     "dist": "electron-builder --win"
   },
   "dependencies": {
@@ -16,9 +17,13 @@
     "elecrusion-workspace": "file:.."
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.5.1",
     "electron": "44.3.0",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
     "vite": "7.3.6",
     "zod": "4.6.2"
   }

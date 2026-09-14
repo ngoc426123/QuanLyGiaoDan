@@ -10,7 +10,7 @@ export default defineConfig({
     build: {
       outDir: 'out',
       emptyOutDir: true,
-      lib: { entry: 'src/main/index.js', formats: ['es'] },
+      lib: { entry: 'src/main/index.ts', formats: ['es'] },
       rollupOptions: { output: { entryFileNames: 'main.js' } },
     },
   },
@@ -23,7 +23,7 @@ export default defineConfig({
       // báo `type: module`, đuôi phải là `.cjs` thì Node mới đọc đúng định dạng.
       outDir: 'out',
       emptyOutDir: false,
-      lib: { entry: 'src/preload/index.js', formats: ['cjs'] },
+      lib: { entry: 'src/preload/index.ts', formats: ['cjs'] },
       rollupOptions: {
         output: { entryFileNames: 'preload.cjs', inlineDynamicImports: true },
       },

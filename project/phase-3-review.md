@@ -64,7 +64,7 @@ riêng của electron-vite (FE được build bằng Vite riêng); không có l�
 
 Chi tiết tự quyết: palette và kích thước bố cục cụ thể, dialog gốc của Chromium,
 virtualization với hàng cố định, mẫu dữ liệu giả và cách chia file hỗ trợ. Không đổi stack,
-không thêm màn hình ngoài bản đồ, không tự chốt TypeScript.
+không thêm màn hình ngoài bản đồ; tại thời điểm đóng Phase 3, TypeScript chưa được chốt.
 
 ## 4. Kiểm chứng cuối và bàn giao
 
@@ -77,7 +77,8 @@ Người dùng đã xác nhận kiểm thử desktop thực tế đạt yêu c�
 - [x] Chạy thử bản đóng gói qua `file://` và tải lại route chi tiết.
 
 Phase 3 được đóng. Phase 4 bắt đầu theo thứ tự phụ thuộc: Giáo họ → Gia đình → Giáo dân → Thành viên hộ.
-Q02 (TypeScript) vẫn bỏ ngỏ, phải hỏi trước khi đổi ngôn ngữ hoặc cấu trúc build.
+Q02 (TypeScript) còn bỏ ngỏ tại thời điểm đóng Phase 3. Người dùng đã chốt dùng TypeScript
+ngày 2026-09-14 trước khi triển khai feature đầu tiên của Phase 4.
 
 ## 5. Danh mục design token và cập nhật template
 

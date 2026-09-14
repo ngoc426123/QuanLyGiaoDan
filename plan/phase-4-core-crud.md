@@ -8,6 +8,9 @@
 **Đọc trước**: `docs/04-guidelines/recipes.md` (Công thức 1), `docs/03-frontend/state-management.md`,
 `docs/04-guidelines/coding-standards-frontend.md`.
 
+> **Ngôn ngữ**: Q02 đã chốt dùng TypeScript ngày 2026-09-14. Mọi file được thêm hoặc sửa trong
+> Phase 4 dùng `.ts` / `.tsx`; không tạo JavaScript + JSDoc mới.
+
 > **Dài hơn roadmap gốc (4–6 ngày)** vì domain này có 4 thực thể và `family_members`
 > mang ràng buộc nghiệp vụ riêng (1 hộ hiện hành, 1 chủ hộ, chuyển hộ có lịch sử).
 
@@ -26,9 +29,9 @@ Mỗi feature làm theo **Công thức 1** của `recipes.md`, bước 10–15 (
 
 | #   | File                                                 | Việc                                                                |
 | --- | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| 10  | `frontend/src/shared/queryKeys.js`                   | Thêm bộ key theo mẫu `all / lists / list(f) / details / detail(id)` |
-| 11  | `frontend/src/features/<domain>/api/<domain>.api.js` | Wrapper mỏng quanh `window.api`, qua `shared/invoke.js`             |
-| 12  | `frontend/src/features/<domain>/hooks/`              | `use<Domain>s.js`, `use<Domain>.js`, `use<Domain>Mutations.js`      |
+| 10  | `frontend/src/shared/queryKeys.ts`                   | Thêm bộ key theo mẫu `all / lists / list(f) / details / detail(id)` |
+| 11  | `frontend/src/features/<domain>/api/<domain>.api.ts` | Wrapper mỏng quanh `window.api`, qua `shared/invoke.ts`             |
+| 12  | `frontend/src/features/<domain>/hooks/`              | `use<Domain>s.ts`, `use<Domain>.ts`, `use<Domain>Mutations.ts`      |
 | 13  | `frontend/src/features/<domain>/components/`         | Component hiển thị + form                                           |
 | 14  | `docs/03-frontend/state-management.md` §3.1          | Thêm dòng vào bảng invalidate                                       |
 | 15  | Test                                                 | Theo `coding-standards-frontend.md` §10                             |
@@ -36,7 +39,7 @@ Mỗi feature làm theo **Công thức 1** của `recipes.md`, bước 10–15 (
 **Ba tầng bắt buộc** (`coding-standards-frontend.md` §6.1) — không được rút ngắn:
 
 ```
-component  →  custom hook  →  <domain>.api.js  →  shared/invoke.js  →  window.api
+component  →  custom hook  →  <domain>.api.ts  →  shared/invoke.ts  →  window.api
 ```
 
 - Component **không** gọi `window.api` trực tiếp

@@ -21,7 +21,6 @@
 | Đa cửa sổ                          | Kiểm chứng cơ chế broadcast event đã dựng từ Phase 1                                   | `expectedUpdatedAt` đã làm đúng từ Phase 2                                       |
 | Xuất JSON đầy đủ                   | Cho người dùng mang dữ liệu đi nơi khác. Chạy trong `worker_threads`                   |                                                                                  |
 | Đa ngôn ngữ (i18n)                 | **Q03** — chốt trước khi bắt đầu, ảnh hưởng cách viết **mọi** chuỗi hiển thị           | Với domain này gần như chắc chắn **không cần**                                   |
-| Chuyển sang TypeScript             | **Q02** — đổi dần từng file, bắt đầu từ `shared/`                                      |                                                                                  |
 | Thông báo bổn mạng / sinh nhật     | Danh sách "tháng này ai mừng bổn mạng" — nhu cầu thật của giáo xứ                      | Index trên `birth_date` đã có từ Phase 2                                         |
 | Thống kê theo năm                  | Số rửa tội / hôn phối / qua đời theo năm                                               |                                                                                  |
 | Tray icon, khởi động cùng hệ thống |                                                                                        |                                                                                  |

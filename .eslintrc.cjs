@@ -23,7 +23,7 @@ const MESSAGES = {
   service: 'Service phải chạy được bằng Node thuần để unit test.',
   repository: 'Repository không được phụ thuộc ngược lên Service.',
   ipc: 'ipc/ chỉ được gọi services/. Cấm nhảy tầng xuống repositories/.',
-  shared: 'shared/ phải là JS thuần.',
+  shared: 'shared/ phải là TypeScript thuần.',
   sql: 'Cấm nối chuỗi SQL. Dùng tham số hoá `?` ở Repository.',
 }
 
@@ -31,10 +31,10 @@ module.exports = {
   root: true,
   env: { es2023: true },
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
-  plugins: ['import'],
+  plugins: ['import', '@typescript-eslint'],
   extends: ['eslint:recommended', 'plugin:import/recommended', 'prettier'],
   settings: {
-    'import/resolver': { node: { extensions: ['.js', '.jsx'] } },
+    'import/resolver': { node: { extensions: ['.ts', '.tsx', '.js', '.jsx'] } },
     react: { version: '18.3' },
   },
   rules: {
@@ -46,10 +46,22 @@ module.exports = {
     'prefer-const': 'error',
   },
   overrides: [
+    {
+      files: ['**/*.{ts,tsx}'],
+      parser: '@typescript-eslint/parser',
+      rules: {
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+        ],
+      },
+    },
     { files: ['frontend/public/**/*.js'], env: { browser: true } },
     {
-      files: ['frontend/test/**/*.{js,jsx}'],
+      files: ['frontend/test/**/*.{ts,tsx}'],
       env: { browser: true, node: true },
+      parser: '@typescript-eslint/parser',
       parserOptions: { ecmaFeatures: { jsx: true } },
       plugins: ['react'],
       extends: ['plugin:react/recommended', 'plugin:react/jsx-runtime', 'prettier'],
@@ -57,8 +69,9 @@ module.exports = {
     },
     // ── Renderer ────────────────────────────────────────────────────────────
     {
-      files: ['frontend/src/**/*.{js,jsx}'],
+      files: ['frontend/src/**/*.{ts,tsx}'],
       env: { browser: true },
+      parser: '@typescript-eslint/parser',
       parserOptions: { ecmaFeatures: { jsx: true } },
       plugins: ['react', 'react-hooks', 'jsx-a11y'],
       extends: [
@@ -93,8 +106,9 @@ module.exports = {
 
     // ── Backend ─────────────────────────────────────────────────────────────
     {
-      files: ['backend/src/**/*.js'],
+      files: ['backend/src/**/*.ts'],
       env: { node: true },
+      parser: '@typescript-eslint/parser',
       rules: {
         'no-console': 'error',
         'no-restricted-imports': [
@@ -118,7 +132,7 @@ module.exports = {
       },
     },
     {
-      files: ['backend/src/services/**/*.js'],
+      files: ['backend/src/services/**/*.ts'],
       rules: {
         'no-restricted-imports': [
           'error',
@@ -127,7 +141,7 @@ module.exports = {
       },
     },
     {
-      files: ['backend/src/repositories/**/*.js'],
+      files: ['backend/src/repositories/**/*.ts'],
       rules: {
         'no-restricted-imports': [
           'error',
@@ -136,7 +150,7 @@ module.exports = {
       },
     },
     {
-      files: ['backend/src/main/ipc/**/*.js'],
+      files: ['backend/src/main/ipc/**/*.ts'],
       rules: {
         'no-restricted-imports': [
           'error',
@@ -146,10 +160,11 @@ module.exports = {
     },
 
     // ── Test của backend ────────────────────────────────────────────────────
-    // Chạy bằng `node --test`, nên là ESM `.mjs` và có sẵn bộ test của Node.
+    // Chạy bằng `tsx --test`, nên dùng TypeScript và bộ test có sẵn của Node.
     {
-      files: ['backend/test/**/*.mjs'],
+      files: ['backend/test/**/*.ts'],
       env: { node: true },
+      parser: '@typescript-eslint/parser',
       rules: {
         'no-console': 'error',
         'no-restricted-syntax': [
@@ -162,10 +177,16 @@ module.exports = {
         ],
       },
     },
+    {
+      files: ['backend/test/helpers/**/*.mjs'],
+      env: { node: true },
+      rules: { 'no-console': 'error' },
+    },
 
     // ── shared/ ─────────────────────────────────────────────────────────────
     {
-      files: ['shared/**/*.js'],
+      files: ['shared/**/*.ts'],
+      parser: '@typescript-eslint/parser',
       rules: {
         'no-restricted-imports': [
           'error',
