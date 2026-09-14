@@ -225,3 +225,42 @@ export function hardDelete(id) {
 export function exists(id) {
   return Boolean(prepare('SELECT 1 AS ok FROM persons WHERE id = ? AND deleted_at IS NULL').get(id))
 }
+
+/** Đối chiếu trùng khi import, gom các khoá thành một tham số JSON để tránh N+1. */
+export function findPotentialDuplicates(keys) {
+  return prepare(
+    "WITH input AS (SELECT json_extract(value, '$.fullNameAscii') AS full_name_ascii," +
+      " json_extract(value, '$.birthDate') AS birth_date FROM json_each(?))" +
+      ' SELECT p.id, p.full_name, p.birth_date FROM persons p' +
+      ' JOIN input i ON i.full_name_ascii = p.full_name_ascii AND i.birth_date = p.birth_date' +
+      ' WHERE p.deleted_at IS NULL LIMIT 200',
+  )
+    .all(JSON.stringify(keys))
+    .map((row: any) => ({
+      id: row.id,
+      fullName: row.full_name,
+      birthDate: row.birth_date,
+    }))
+}
+
+export function countPotentialDuplicates(keys) {
+  return prepare(
+    "WITH input AS (SELECT json_extract(value, '$.fullNameAscii') AS full_name_ascii," +
+      " json_extract(value, '$.birthDate') AS birth_date FROM json_each(?))" +
+      ' SELECT COUNT(*) AS total FROM persons p' +
+      ' JOIN input i ON i.full_name_ascii = p.full_name_ascii AND i.birth_date = p.birth_date' +
+      ' WHERE p.deleted_at IS NULL',
+  ).get(JSON.stringify(keys)).total
+}
+
+export function countActiveByIds(ids) {
+  return prepare(
+    'SELECT COUNT(*) AS total FROM persons WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).get(JSON.stringify(ids)).total
+}
+
+export function softDeleteMany(ids, deletedAt) {
+  return prepare(
+    'UPDATE persons SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).run(deletedAt, deletedAt, JSON.stringify(ids)).changes
+}

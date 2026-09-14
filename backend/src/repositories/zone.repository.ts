@@ -183,3 +183,21 @@ export function countFamiliesAndPersons(zoneId) {
 
   return { familyCount: row.family_count, personCount: row.person_count }
 }
+
+export function countActiveByIds(ids) {
+  return prepare(
+    'SELECT COUNT(*) AS total FROM zones WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).get(JSON.stringify(ids)).total
+}
+
+export function softDeleteMany(ids, deletedAt) {
+  return prepare(
+    'UPDATE zones SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).run(deletedAt, deletedAt, JSON.stringify(ids)).changes
+}
+
+export function countFamiliesByZoneIds(ids) {
+  return prepare(
+    'SELECT COUNT(*) AS total FROM families WHERE deleted_at IS NULL AND zone_id IN (SELECT value FROM json_each(?))',
+  ).get(JSON.stringify(ids)).total
+}

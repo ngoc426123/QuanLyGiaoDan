@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -13,11 +13,17 @@ import { Table } from '@/components/ui/Table.tsx'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useCreateFamily } from '../hooks/useFamilyMutations.ts'
 import { useFamilies } from '../hooks/useFamilies.ts'
+import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { FamilyForm } from './FamilyForm.tsx'
+import { FamilyBulkActions } from './FamilyBulkActions.tsx'
+import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
+import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
 
 export function FamilyList() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isCreateOpen, setCreateOpen] = useState(false)
+  const [contextMenu, setContextMenu] = useState<any>(null)
+  const navigate = useNavigate()
   const search = searchParams.get('q') ?? ''
   const zoneId = searchParams.get('zoneId') ?? ''
   const page = Number(searchParams.get('page') ?? '1') || 1
@@ -37,6 +43,10 @@ export function FamilyList() {
   const families = useFamilies(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const create = useCreateFamily()
+  const exportCsv = useCsvExport()
+  const selectedIds = useSelectionStore(selectedIdsFor('family'))
+  const toggleSelection = useSelectionStore((state) => state.toggle)
+  const clearSelection = useSelectionStore((state) => state.clear)
   const rows = families.data?.data ?? []
   const zoneRows = zones.data?.data ?? []
   const updateFilters = (next: {
@@ -63,6 +73,18 @@ export function FamilyList() {
   return (
     <section>
       <PageHeader title="Gia đình" description="Quản lý hộ gia đình và giáo họ trực thuộc.">
+        <Button
+          variant="secondary"
+          disabled={exportCsv.isPending || rows.length === 0}
+          onClick={() =>
+            exportCsv.mutate({
+              report: 'families',
+              filter: { search, zoneId: zoneId || undefined },
+            })
+          }
+        >
+          Xuất CSV
+        </Button>
         <Button
           onClick={() => setCreateOpen(true)}
           disabled={zones.isLoading || zoneRows.length === 0}
@@ -140,10 +162,32 @@ export function FamilyList() {
         )}
       {rows.length > 0 && (
         <>
+          <FamilyBulkActions
+            ids={selectedIds}
+            zones={zoneRows}
+            onDone={() => clearSelection('family')}
+          />
           <Table
             caption="Danh sách gia đình"
             rows={rows}
+            onRowActivate={(family: any) => navigate(`/families/${family.id}`)}
+            onRowDelete={(family: any) => navigate(`/families/${family.id}?remove=1`)}
+            onRowContextMenu={(family: any, x: number, y: number) =>
+              setContextMenu({ family, x, y })
+            }
             columns={[
+              {
+                key: 'selected',
+                label: 'Chọn',
+                render: (family: any) => (
+                  <input
+                    type="checkbox"
+                    aria-label={`Chọn ${family.name}`}
+                    checked={selectedIds.includes(family.id)}
+                    onChange={() => toggleSelection('family', family.id)}
+                  />
+                ),
+              },
               {
                 key: 'name',
                 label: 'Tên hộ',
@@ -164,6 +208,28 @@ export function FamilyList() {
             total={families.data?.meta?.total ?? 0}
             onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
           />
+          {contextMenu && (
+            <RowContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              onClose={() => setContextMenu(null)}
+              items={[
+                {
+                  label: 'Xem chi tiết',
+                  onClick: () => navigate(`/families/${contextMenu.family.id}`),
+                },
+                {
+                  label: 'Sửa',
+                  onClick: () => navigate(`/families/${contextMenu.family.id}?edit=1`),
+                },
+                {
+                  label: 'Xóa',
+                  danger: true,
+                  onClick: () => navigate(`/families/${contextMenu.family.id}?remove=1`),
+                },
+              ]}
+            />
+          )}
         </>
       )}
       {isCreateOpen && (

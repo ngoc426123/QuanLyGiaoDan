@@ -3,6 +3,7 @@ import { CHANNELS } from '@shared/channels.ts'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import {
   appGetPathsSchema,
+  appOpenDataFolderSchema,
   appCloseWindowSchema,
   appMinimizeWindowSchema,
   appToggleMaximizeSchema,
@@ -46,6 +47,16 @@ export const appHandlers = Object.freeze([
       const { userData, dbFile, logs } = userDataPaths()
 
       return { userData, dbFile, logs }
+    },
+  },
+
+  {
+    channel: CHANNELS.APP.OPEN_DATA_FOLDER,
+    schema: appOpenDataFolderSchema,
+    handle: async () => {
+      const result = await shell.openPath(userDataPaths().dataDir)
+      if (result) throw new AppError(ERROR_CODES.IO_ERROR, 'Không mở được thư mục dữ liệu')
+      return { opened: true }
     },
   },
 

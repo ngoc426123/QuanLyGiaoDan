@@ -2,6 +2,8 @@ import { CHANNELS } from '@shared/channels.ts'
 import { CHANGE_ACTIONS } from '@shared/constants.ts'
 import {
   personCreateSchema,
+  personBulkMoveSchema,
+  personBulkRemoveSchema,
   personGetByIdSchema,
   personListSchema,
   personRemoveSchema,
@@ -48,5 +50,17 @@ export const personHandlers = Object.freeze([
     schema: personRemoveSchema,
     handle: (input) => personService.remove(input),
     event: changed(CHANGE_ACTIONS.REMOVED),
+  },
+  {
+    channel: CHANNELS.PERSON.BULK_MOVE,
+    schema: personBulkMoveSchema,
+    handle: (input) => personService.bulkMove(input),
+    event: () => ({ channel: CHANNELS.EVENTS.PERSON_CHANGED, payload: { action: 'bulkMoved' } }),
+  },
+  {
+    channel: CHANNELS.PERSON.BULK_REMOVE,
+    schema: personBulkRemoveSchema,
+    handle: (input) => personService.bulkRemove(input),
+    event: () => ({ channel: CHANNELS.EVENTS.PERSON_CHANGED, payload: { action: 'bulkRemoved' } }),
   },
 ])

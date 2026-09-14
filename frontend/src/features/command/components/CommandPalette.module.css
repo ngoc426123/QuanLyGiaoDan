@@ -1,0 +1,21 @@
+.list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 var(--space-0);
+  padding: var(--space-0);
+  list-style: none;
+}
+.list button {
+  width: 100%;
+  min-height: var(--control-min);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  text-align: left;
+}
+.list button[data-active] {
+  background: var(--color-bg-selected);
+  border-color: var(--color-border-focus);
+}

@@ -14,3 +14,15 @@ export const dashboardKeys = Object.freeze({
   all: ['dashboard'],
   summary: ['dashboard', 'summary'],
 })
+export const appKeys = Object.freeze({
+  all: ['app'],
+  version: ['app', 'version'],
+})
+export const searchKeys = Object.freeze({
+  all: ['search'],
+  query: (query: string) => ['search', query],
+})
+export const trashKeys = Object.freeze({
+  all: ['trash'],
+  list: () => ['trash', 'list'],
+})

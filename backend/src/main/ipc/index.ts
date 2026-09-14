@@ -7,6 +7,10 @@ import { dashboardHandlers } from './dashboard.ipc.ts'
 import { familyHandlers } from './family.ipc.ts'
 import { familyMemberHandlers } from './family-member.ipc.ts'
 import { personHandlers } from './person.ipc.ts'
+import { reportHandlers } from './report.ipc.ts'
+import { searchHandlers } from './search.ipc.ts'
+import { trashHandlers } from './trash.ipc.ts'
+import { importHandlers } from './import.ipc.ts'
 import { zoneHandlers } from './zone.ipc.ts'
 import { settingHandlers } from './setting.ipc.ts'
 
@@ -70,6 +74,10 @@ export function registerIpcHandlers() {
     familyHandlers,
     personHandlers,
     familyMemberHandlers,
+    reportHandlers,
+    searchHandlers,
+    trashHandlers,
+    importHandlers,
   ]
 
   for (const group of groups) {

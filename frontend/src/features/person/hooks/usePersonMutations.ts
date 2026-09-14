@@ -39,3 +39,13 @@ export function useRemovePerson() {
     },
   })
 }
+
+export function useBulkMovePersons() {
+  const invalidate = useCreateInvalidation()
+  return useMutation({ mutationFn: personApi.bulkMove, onSuccess: invalidate })
+}
+
+export function useBulkRemovePersons() {
+  const invalidate = useCreateInvalidation()
+  return useMutation({ mutationFn: personApi.bulkRemove, onSuccess: invalidate })
+}

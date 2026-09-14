@@ -135,3 +135,21 @@ export function remove({ id }: any) {
     return { id }
   })
 }
+
+export function bulkRemove({ ids }: any) {
+  const timestamp = now()
+  return runInTransaction(() => {
+    if (zoneRepository.countActiveByIds(ids) !== ids.length) {
+      throw new AppError(ERROR_CODES.NOT_FOUND, 'Có giáo họ đã không còn tồn tại')
+    }
+    const familyCount = zoneRepository.countFamiliesByZoneIds(ids)
+    if (familyCount > 0) {
+      throw new AppError(
+        ERROR_CODES.FOREIGN_KEY_VIOLATION,
+        `Không xoá được vì ${familyCount} hộ vẫn thuộc các giáo họ đã chọn`,
+        { familyCount },
+      )
+    }
+    return { count: zoneRepository.softDeleteMany(ids, timestamp) }
+  })
+}

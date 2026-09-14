@@ -1,4 +1,7 @@
 import initSql from './001_init.sql?raw'
+import ftsSql from './002_add_fts.sql?raw'
+import ftsDeleteTriggersSql from './003_add_fts_delete_triggers.sql?raw'
+import ftsSoftDeleteTriggersSql from './004_fix_fts_soft_delete_triggers.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -17,6 +20,13 @@ import initSql from './001_init.sql?raw'
  */
 export const MIGRATIONS = Object.freeze([
   Object.freeze({ version: 1, name: '001_init.sql', sql: initSql }),
+  Object.freeze({ version: 2, name: '002_add_fts.sql', sql: ftsSql }),
+  Object.freeze({ version: 3, name: '003_add_fts_delete_triggers.sql', sql: ftsDeleteTriggersSql }),
+  Object.freeze({
+    version: 4,
+    name: '004_fix_fts_soft_delete_triggers.sql',
+    sql: ftsSoftDeleteTriggersSql,
+  }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

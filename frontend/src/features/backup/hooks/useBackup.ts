@@ -22,3 +22,13 @@ export function useBackup() {
       addToast(error instanceof Error ? error.message : 'Thao tác thất bại.', true),
   })
 }
+
+export function useClearAllData() {
+  const addToast = useToastStore((state) => state.add)
+  return useMutation({
+    mutationFn: backupApi.clearAll,
+    onSuccess: () => addToast('Đã xoá dữ liệu nghiệp vụ. Có thể nhập lại tệp CSV.'),
+    onError: (error) =>
+      addToast(error instanceof Error ? error.message : 'Không thể xoá dữ liệu.', true),
+  })
+}

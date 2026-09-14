@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
@@ -25,6 +25,7 @@ import {
 import { usePersons } from '@/features/person/hooks/usePersons.ts'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
+import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { AppClientError } from '@/shared/invoke.ts'
 import { useRemoveFamily, useUpdateFamily } from '../hooks/useFamilyMutations.ts'
 import { useFamily } from '../hooks/useFamilies.ts'
@@ -34,10 +35,11 @@ import styles from './Family.module.css'
 const listOptions = { page: 1, pageSize: 200, sortBy: 'name', sortDir: 'asc' } as const
 
 export function FamilyDetail({ id }: { id: string | undefined }) {
+  const [params] = useSearchParams()
   const navigate = useNavigate()
   const addToast = useToastStore((state) => state.add)
-  const [isEditOpen, setEditOpen] = useState(false)
-  const [isRemoveOpen, setRemoveOpen] = useState(false)
+  const [isEditOpen, setEditOpen] = useState(params.get('edit') === '1')
+  const [isRemoveOpen, setRemoveOpen] = useState(params.get('remove') === '1')
   const [isAddOpen, setAddOpen] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState<FamilyMember | null>(null)
   const [memberToMove, setMemberToMove] = useState<FamilyMember | null>(null)
@@ -53,6 +55,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const updateMember = useUpdateFamilyMember()
   const moveMember = useMoveFamilyMember()
   const removeMember = useRemoveFamilyMember()
+  const exportCsv = useCsvExport()
 
   useEffect(() => {
     if (family.error instanceof AppClientError && family.error.code === 'NOT_FOUND') {
@@ -87,6 +90,15 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
     <section>
       <Link to="/families">Về danh sách gia đình</Link>
       <PageHeader title="Chi tiết hộ" description={`${record.name} · ${record.zoneName}`}>
+        <Button
+          variant="secondary"
+          disabled={exportCsv.isPending || members.length === 0}
+          onClick={() =>
+            exportCsv.mutate({ report: 'familyMembers', filter: { familyId: record.id } })
+          }
+        >
+          Xuất CSV
+        </Button>
         <Button onClick={() => setEditOpen(true)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>
           Xoá

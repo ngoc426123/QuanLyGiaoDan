@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
@@ -15,9 +15,10 @@ import { ZoneForm } from './ZoneForm.tsx'
 import styles from './Zone.module.css'
 
 export function ZoneDetail({ id }: { id: string | undefined }) {
+  const [params] = useSearchParams()
   const navigate = useNavigate()
-  const [isEditOpen, setEditOpen] = useState(false)
-  const [isRemoveOpen, setRemoveOpen] = useState(false)
+  const [isEditOpen, setEditOpen] = useState(params.get('edit') === '1')
+  const [isRemoveOpen, setRemoveOpen] = useState(params.get('remove') === '1')
   const [removeError, setRemoveError] = useState<any>(null)
   const query = useZone(id)
   const families = useFamilies({

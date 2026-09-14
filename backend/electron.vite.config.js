@@ -11,7 +11,13 @@ export default defineConfig({
       outDir: 'out',
       emptyOutDir: true,
       lib: { entry: 'src/main/index.ts', formats: ['es'] },
-      rollupOptions: { output: { entryFileNames: 'main.js' } },
+      rollupOptions: {
+        input: {
+          main: 'src/main/index.ts',
+          'csv-import.worker': 'src/main/workers/csv-import.worker.ts',
+        },
+        output: { entryFileNames: '[name].js' },
+      },
     },
   },
 

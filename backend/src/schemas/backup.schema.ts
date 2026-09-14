@@ -12,3 +12,11 @@ const noPayloadSchema = z.undefined({ error: 'Kênh này không nhận tham số
 export const backupExportSchema = noPayloadSchema
 
 export const backupImportSchema = noPayloadSchema
+
+export const backupClearAllSchema = z
+  .object({
+    confirmation: z.literal('XÓA DỮ LIỆU', {
+      error: 'Hãy nhập đúng câu XÓA DỮ LIỆU để xác nhận',
+    }),
+  })
+  .strict()

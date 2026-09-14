@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   byIdSchema,
+  bulkIdsSchema,
   idSchema,
   listQueryShape,
   optionalText,
@@ -49,3 +50,5 @@ export const familyUpdateSchema = updateSchema(
 )
 
 export const familyRemoveSchema = byIdSchema('hộ gia đình')
+export const familyBulkMoveSchema = z.object({ ids: bulkIdsSchema, zoneId: idSchema }).strict()
+export const familyBulkRemoveSchema = z.object({ ids: bulkIdsSchema }).strict()

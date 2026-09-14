@@ -31,6 +31,11 @@ export async function exportToFile({ targetPath }: any) {
   return { ...result, exportedAt: now() }
 }
 
+/** Bản sao an toàn trước thao tác xoá hoặc nhập số lượng lớn. */
+export async function createSafetyBackup({ backupDir }: any) {
+  return backupDatabase(getDatabase(), backupDir, now())
+}
+
 /**
  * Nhập dữ liệu từ một file `.db`.
  *

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
@@ -25,11 +25,12 @@ import styles from './Person.module.css'
 const genderLabel = (value: string | null) =>
   value === 'male' ? 'Nam' : value === 'female' ? 'Nữ' : 'Chưa cập nhật'
 export function PersonDetail({ id }: { id: string | undefined }) {
+  const [params] = useSearchParams()
   const navigate = useNavigate()
   const addToast = useToastStore((state) => state.add)
-  const [isEditOpen, setEditOpen] = useState(false)
-  const [isRemoveOpen, setRemoveOpen] = useState(false)
-  const [isMoveOpen, setMoveOpen] = useState(false)
+  const [isEditOpen, setEditOpen] = useState(params.get('edit') === '1')
+  const [isRemoveOpen, setRemoveOpen] = useState(params.get('remove') === '1')
+  const [isMoveOpen, setMoveOpen] = useState(params.get('move') === '1')
   const person = usePerson(id)
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const update = useUpdatePerson()

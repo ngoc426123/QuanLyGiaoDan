@@ -127,3 +127,32 @@ export function remove({ id }: any) {
     return { id, zoneId: family.zoneId }
   })
 }
+
+export function bulkMove({ ids, zoneId }: any) {
+  const timestamp = now()
+  return runInTransaction(() => {
+    assertZoneExists(zoneId)
+    if (familyRepository.countActiveByIds(ids) !== ids.length) {
+      throw new AppError(ERROR_CODES.NOT_FOUND, 'Có hộ gia đình đã không còn tồn tại')
+    }
+    return { count: familyRepository.updateZoneMany(ids, zoneId, timestamp), zoneId }
+  })
+}
+
+export function bulkRemove({ ids }: any) {
+  const timestamp = now()
+  return runInTransaction(() => {
+    if (familyRepository.countActiveByIds(ids) !== ids.length) {
+      throw new AppError(ERROR_CODES.NOT_FOUND, 'Có hộ gia đình đã không còn tồn tại')
+    }
+    const memberCount = familyRepository.countCurrentMembersByIds(ids)
+    if (memberCount > 0) {
+      throw new AppError(
+        ERROR_CODES.CONFLICT,
+        `Không xoá được vì ${memberCount} thành viên vẫn thuộc các hộ đã chọn`,
+        { memberCount },
+      )
+    }
+    return { count: familyRepository.softDeleteMany(ids, timestamp) }
+  })
+}

@@ -1,5 +1,7 @@
 import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
+import * as familyRepository from '#/repositories/family.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
+import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
 import { openMembership } from './family-member.service.ts'
@@ -217,5 +219,54 @@ export function remove({ id }: any) {
     personRepository.softDelete(id, timestamp)
 
     return { id, familyId: membership ? membership.familyId : null }
+  })
+}
+
+export function bulkMove({ ids, familyId, relationship, moveDate }: any) {
+  const timestamp = now()
+  return runInTransaction(() => {
+    if (!familyRepository.exists(familyId)) {
+      throw fieldError('familyId', 'Hộ gia đình được chọn không còn tồn tại')
+    }
+    if (personRepository.countActiveByIds(ids) !== ids.length) {
+      throw new AppError(ERROR_CODES.NOT_FOUND, 'Có giáo dân đã không còn tồn tại')
+    }
+    if (relationship === 'head' && ids.length > 1) {
+      throw fieldError('relationship', 'Chỉ có thể chuyển một người làm chủ hộ mỗi lần')
+    }
+    const currentHead = familyMemberRepository.findCurrentHeadByFamilyId(familyId)
+    if (relationship === 'head' && currentHead && currentHead.personId !== ids[0]) {
+      throw fieldError('relationship', 'Hộ được chọn đã có chủ hộ')
+    }
+    const memberships = familyMemberRepository.findCurrentByPersonIds(ids)
+    if (memberships.some((member: any) => isBefore(moveDate, member.from_date))) {
+      throw fieldError('moveDate', 'Ngày chuyển hộ không được trước ngày vào hộ cũ')
+    }
+    familyMemberRepository.closeCurrentByPersonIds(ids, moveDate, timestamp)
+    familyMemberRepository.insertMany(
+      ids.map((personId: string) => ({
+        id: newId(),
+        familyId,
+        personId,
+        relationship,
+        fromDate: moveDate,
+        toDate: null,
+        note: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })),
+    )
+    return { count: ids.length, familyId }
+  })
+}
+
+export function bulkRemove({ ids }: any) {
+  const timestamp = now()
+  return runInTransaction(() => {
+    if (personRepository.countActiveByIds(ids) !== ids.length) {
+      throw new AppError(ERROR_CODES.NOT_FOUND, 'Có giáo dân đã không còn tồn tại')
+    }
+    familyMemberRepository.softDeleteCurrentByPersonIds(ids, timestamp)
+    return { count: personRepository.softDeleteMany(ids, timestamp) }
   })
 }

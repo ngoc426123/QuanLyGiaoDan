@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -15,11 +15,17 @@ import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { useCreatePerson } from '../hooks/usePersonMutations.ts'
 import { usePersons } from '../hooks/usePersons.ts'
+import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { PersonForm } from './PersonForm.tsx'
+import { PersonBulkActions } from './PersonBulkActions.tsx'
+import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
+import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
 
 export function PersonList() {
   const [params, setParams] = useSearchParams()
-  const [isCreateOpen, setCreateOpen] = useState(false)
+  const [isCreateOpen, setCreateOpen] = useState(params.get('new') === '1')
+  const [contextMenu, setContextMenu] = useState<any>(null)
+  const navigate = useNavigate()
   const search = params.get('q') ?? ''
   const zoneId = params.get('zoneId') ?? ''
   const familyId = params.get('familyId') ?? ''
@@ -46,7 +52,11 @@ export function PersonList() {
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const create = useCreatePerson()
+  const exportCsv = useCsvExport()
   const addToast = useToastStore((state) => state.add)
+  const selectedIds = useSelectionStore(selectedIdsFor('person'))
+  const toggleSelection = useSelectionStore((state) => state.toggle)
+  const clearSelection = useSelectionStore((state) => state.clear)
   const rows = persons.data?.data ?? []
   const updateFilters = (next: Record<string, string>) => {
     const result = new URLSearchParams(params)
@@ -60,6 +70,24 @@ export function PersonList() {
   return (
     <section>
       <PageHeader title="Giáo dân" description="Quản lý hồ sơ và tình trạng gia đình của giáo dân.">
+        <Button
+          variant="secondary"
+          disabled={exportCsv.isPending || rows.length === 0}
+          onClick={() =>
+            exportCsv.mutate({
+              report: 'persons',
+              filter: {
+                search,
+                zoneId: zoneId || undefined,
+                familyId: familyId || undefined,
+                gender: gender || undefined,
+                isAlive: isAlive === '' ? undefined : isAlive === 'true',
+              },
+            })
+          }
+        >
+          Xuất CSV
+        </Button>
         <Button onClick={() => setCreateOpen(true)}>Thêm giáo dân</Button>
       </PageHeader>
       <Input
@@ -144,10 +172,32 @@ export function PersonList() {
       )}
       {rows.length > 0 && (
         <>
+          <PersonBulkActions
+            ids={selectedIds}
+            families={families.data?.data ?? []}
+            onDone={() => clearSelection('person')}
+          />
           <Table
             caption="Danh sách giáo dân"
             rows={rows}
+            onRowActivate={(person: any) => navigate(`/persons/${person.id}`)}
+            onRowDelete={(person: any) => navigate(`/persons/${person.id}?remove=1`)}
+            onRowContextMenu={(person: any, x: number, y: number) =>
+              setContextMenu({ person, x, y })
+            }
             columns={[
+              {
+                key: 'selected',
+                label: 'Chọn',
+                render: (person: any) => (
+                  <input
+                    type="checkbox"
+                    aria-label={`Chọn ${person.fullName}`}
+                    checked={selectedIds.includes(person.id)}
+                    onChange={() => toggleSelection('person', person.id)}
+                  />
+                ),
+              },
               {
                 key: 'fullName',
                 label: 'Họ tên',
@@ -193,6 +243,32 @@ export function PersonList() {
             total={persons.data?.meta?.total ?? 0}
             onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
           />
+          {contextMenu && (
+            <RowContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              onClose={() => setContextMenu(null)}
+              items={[
+                {
+                  label: 'Xem chi tiết',
+                  onClick: () => navigate(`/persons/${contextMenu.person.id}`),
+                },
+                {
+                  label: 'Sửa',
+                  onClick: () => navigate(`/persons/${contextMenu.person.id}?edit=1`),
+                },
+                {
+                  label: 'Chuyển hộ',
+                  onClick: () => navigate(`/persons/${contextMenu.person.id}?move=1`),
+                },
+                {
+                  label: 'Xóa',
+                  danger: true,
+                  onClick: () => navigate(`/persons/${contextMenu.person.id}?remove=1`),
+                },
+              ]}
+            />
+          )}
         </>
       )}
       {isCreateOpen && (

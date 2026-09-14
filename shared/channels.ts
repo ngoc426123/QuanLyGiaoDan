@@ -23,6 +23,7 @@ export const CHANNELS = Object.freeze({
     CREATE: 'zone:create',
     UPDATE: 'zone:update',
     REMOVE: 'zone:remove',
+    BULK_REMOVE: 'zone:bulkRemove',
   }),
 
   /** Gia đình / hộ */
@@ -32,6 +33,8 @@ export const CHANNELS = Object.freeze({
     CREATE: 'family:create',
     UPDATE: 'family:update',
     REMOVE: 'family:remove',
+    BULK_MOVE: 'family:bulkMove',
+    BULK_REMOVE: 'family:bulkRemove',
   }),
 
   /** Giáo dân */
@@ -41,6 +44,8 @@ export const CHANNELS = Object.freeze({
     CREATE: 'person:create',
     UPDATE: 'person:update',
     REMOVE: 'person:remove',
+    BULK_MOVE: 'person:bulkMove',
+    BULK_REMOVE: 'person:bulkRemove',
   }),
 
   /** Thành viên hộ — `move` là nghiệp vụ riêng, không nhồi vào `update` */
@@ -55,6 +60,7 @@ export const CHANNELS = Object.freeze({
   APP: Object.freeze({
     GET_VERSION: 'app:getVersion',
     GET_PATHS: 'app:getPaths',
+    OPEN_DATA_FOLDER: 'app:openDataFolder',
     CLOSE_WINDOW: 'app:closeWindow',
     MINIMIZE_WINDOW: 'app:minimizeWindow',
     TOGGLE_MAXIMIZE: 'app:toggleMaximize',
@@ -68,6 +74,27 @@ export const CHANNELS = Object.freeze({
   BACKUP: Object.freeze({
     EXPORT: 'backup:export',
     IMPORT: 'backup:import',
+    CLEAR_ALL: 'backup:clearAll',
+  }),
+
+  REPORT: Object.freeze({
+    EXPORT_CSV: 'report:exportCsv',
+  }),
+
+  IMPORT: Object.freeze({
+    CHOOSE_CSV: 'import:chooseCsv',
+    COMMIT_CSV: 'import:commitCsv',
+  }),
+
+  SEARCH: Object.freeze({
+    QUERY: 'search:query',
+  }),
+
+  TRASH: Object.freeze({
+    LIST: 'trash:list',
+    RESTORE: 'trash:restore',
+    HARD_REMOVE: 'trash:hardRemove',
+    EMPTY: 'trash:empty',
   }),
 
   SETTING: Object.freeze({

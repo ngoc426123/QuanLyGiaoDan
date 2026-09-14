@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { byIdSchema, listQueryShape, optionalText, updateSchema } from './common.schema.ts'
+import {
+  bulkIdsSchema,
+  byIdSchema,
+  listQueryShape,
+  optionalText,
+  updateSchema,
+} from './common.schema.ts'
 
 /** Schema của nhóm kênh `zone:*`. Một schema cho mỗi kênh, `.strict()`, lỗi tiếng Việt. */
 
@@ -38,3 +44,4 @@ export const zoneUpdateSchema = updateSchema(
 )
 
 export const zoneRemoveSchema = byIdSchema('giáo họ')
+export const zoneBulkRemoveSchema = z.object({ ids: bulkIdsSchema }).strict()

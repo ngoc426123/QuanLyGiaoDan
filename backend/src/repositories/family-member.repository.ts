@@ -200,6 +200,45 @@ export function softDeleteCurrentByPersonId(personId, deletedAt) {
   ).run(deletedAt, deletedAt, personId).changes
 }
 
+export function softDeleteCurrentByPersonIds(personIds, deletedAt) {
+  return prepare(
+    'UPDATE family_members SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
+  ).run(deletedAt, deletedAt, JSON.stringify(personIds)).changes
+}
+
+export function closeCurrentByPersonIds(personIds, toDate, updatedAt) {
+  return prepare(
+    'UPDATE family_members SET to_date = ?, updated_at = ? WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
+  ).run(toDate, updatedAt, JSON.stringify(personIds)).changes
+}
+
+export function findCurrentByPersonIds(personIds) {
+  return prepare(
+    'SELECT person_id, from_date FROM family_members WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
+  ).all(JSON.stringify(personIds))
+}
+
+export function insertMany(records) {
+  const statement = prepare(
+    'INSERT INTO family_members (id, family_id, person_id, relationship, from_date, to_date,' +
+      ' note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  )
+  for (const record of records) {
+    statement.run(
+      record.id,
+      record.familyId,
+      record.personId,
+      record.relationship,
+      record.fromDate,
+      record.toDate,
+      record.note,
+      record.createdAt,
+      record.updatedAt,
+    )
+  }
+  return records.length
+}
+
 export function hardDelete(id) {
   return prepare('DELETE FROM family_members WHERE id = ?').run(id).changes > 0
 }

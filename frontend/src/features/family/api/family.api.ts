@@ -6,5 +6,7 @@ export const familyApi = Object.freeze({
   create: (input: Record<string, unknown>) => invoke(window.api.family.create(input)),
   update: (input: Record<string, unknown>) => invoke(window.api.family.update(input)),
   remove: (id: string) => invoke(window.api.family.remove(id)),
+  bulkMove: (input: Record<string, unknown>) => invoke(window.api.family.bulkMove(input)),
+  bulkRemove: (ids: string[]) => invoke(window.api.family.bulkRemove(ids)),
   onChanged: (listener: (payload: unknown) => void) => window.api.events.onFamilyChanged(listener),
 })

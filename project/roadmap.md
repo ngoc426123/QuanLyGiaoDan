@@ -19,7 +19,7 @@
 | 2     | Tầng dữ liệu           | 2–3 ngày      |     ☑      |
 | 3     | Bộ khung giao diện     | 2–3 ngày      |     ☑      |
 | 4     | Nghiệp vụ lõi (CRUD)   | 5–7 ngày      |     ☑      |
-| 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☐      |
+| 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☑      |
 | 6     | Độ tin cậy             | 2–3 ngày      |     ☐      |
 | 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☐      |
 | 8     | Mở rộng                | sau phát hành |     ☐      |
@@ -34,6 +34,10 @@ Bằng chứng, giới hạn và danh sách file: [`phase-3-review.md`](./phase-
 **☑ Phase 4 (2026-09-14):** đã chuyển đường chạy mã nguồn, build và test sang TypeScript;
 hoàn tất CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ. Người dùng đã xác nhận kiểm tra
 CRUD thực tế. Danh sách lớn dùng phân trang SQL 50 dòng/trang theo quyết định người dùng.
+
+**☑ Phase 5 (2026-09-14):** hoàn tất FTS tìm kiếm tiếng Việt, phím tắt, thao tác hàng loạt,
+thùng rác, cài đặt dữ liệu, xuất/nhập CSV bằng `worker_threads`, và rà soát accessibility.
+Chức năng in giấy được tách khỏi Phase 5 theo yêu cầu người dùng, để thực hiện sau cùng.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 

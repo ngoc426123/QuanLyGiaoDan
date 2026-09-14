@@ -35,6 +35,7 @@ const fileFilterSchema = z
 export const appGetVersionSchema = noPayloadSchema
 
 export const appGetPathsSchema = noPayloadSchema
+export const appOpenDataFolderSchema = noPayloadSchema
 
 export const appCloseWindowSchema = noPayloadSchema
 export const appMinimizeWindowSchema = noPayloadSchema

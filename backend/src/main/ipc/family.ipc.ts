@@ -2,6 +2,8 @@ import { CHANNELS } from '@shared/channels.ts'
 import { CHANGE_ACTIONS } from '@shared/constants.ts'
 import {
   familyCreateSchema,
+  familyBulkMoveSchema,
+  familyBulkRemoveSchema,
   familyGetByIdSchema,
   familyListSchema,
   familyRemoveSchema,
@@ -45,5 +47,17 @@ export const familyHandlers = Object.freeze([
     schema: familyRemoveSchema,
     handle: (input) => familyService.remove(input),
     event: changed(CHANGE_ACTIONS.REMOVED),
+  },
+  {
+    channel: CHANNELS.FAMILY.BULK_MOVE,
+    schema: familyBulkMoveSchema,
+    handle: (input) => familyService.bulkMove(input),
+    event: () => ({ channel: CHANNELS.EVENTS.FAMILY_CHANGED, payload: { action: 'bulkMoved' } }),
+  },
+  {
+    channel: CHANNELS.FAMILY.BULK_REMOVE,
+    schema: familyBulkRemoveSchema,
+    handle: (input) => familyService.bulkRemove(input),
+    event: () => ({ channel: CHANNELS.EVENTS.FAMILY_CHANGED, payload: { action: 'bulkRemoved' } }),
   },
 ])

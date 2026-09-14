@@ -3,20 +3,27 @@
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
 **Ngôn ngữ: chỉ tiếng Việt**, không triển khai i18n — người dùng chốt 2026-09-13 (Q03).
-**Trạng thái: Phase 4 đã hoàn tất** (2026-09-14).
+**Trạng thái: Phase 5 đã hoàn tất** (2026-09-14, người dùng xác nhận).
 Đường chạy đã chuyển sang TypeScript; CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ,
 phân trang SQL, đồng bộ broadcast, kiểm tra xung đột và thông báo lỗi nghiệp vụ đã được hoàn tất.
-Người dùng đã xác nhận Phase 4 sau khi kiểm tra CRUD thực tế.
-**Phase 5 đang chuẩn bị triển khai**: hoàn thiện trải nghiệm, gồm thùng rác, nhập CSV/Excel,
-in/xuất danh sách và các cải tiến thao tác hằng ngày.
+Phase 5 đã hoàn thiện trải nghiệm: thùng rác, tìm kiếm FTS tiếng Việt, thao tác hàng loạt,
+nhập/xuất CSV, cải tiến accessibility và thao tác hằng ngày. CSV nhập bằng `worker_threads`;
+worker đã được kiểm chứng đóng gói và tìm đúng đường dẫn trong `backend/out`. In giấy được để lại
+sau cùng theo yêu cầu người dùng.
 Tiến độ đầy đủ: `project/roadmap.md`.
 
 ## Ghi chú tiếp tục phiên sau — 2026-09-14
 
-Phase 3 và 4 đã được người dùng xác nhận hoàn tất. Q02 đã được chốt ngày 2026-09-14:
+Phase 3, 4 và 5 đã được người dùng xác nhận hoàn tất. Q02 đã được chốt ngày 2026-09-14:
 dùng TypeScript thay cho JavaScript + JSDoc; mọi mã nguồn đang chạy đã chuyển đổi trước CRUD.
 Phase 4 dùng phân trang SQL 50 dòng/trang cho danh sách lớn, không dùng virtual scroll.
-Tiếp tục từ Phase 5, không tự đổi cấu trúc build.
+Tiếp tục từ **Phase 6 — Độ tin cậy** (`plan/phase-6-reliability.md`), không tự đổi cấu trúc build.
+Ưu tiên: log an toàn không chứa dữ liệu cá nhân, lưới bắt lỗi toàn cục, backup định kỳ/dọn backup,
+dọn thùng rác, E2E và đo hiệu năng. Trước mục `activity_logs`, phải hỏi giáo xứ có thực sự cần
+lịch sử chỉnh sửa hay không. Quyết định mã hóa DB (SQLCipher) vẫn phải hỏi trước Phase 7.
+Kiểm chứng cuối Phase 5: `npm run format:check`, `npm run lint`, `npm run typecheck`,
+`npm run build` đạt; backend 75/75 và frontend 27/27 test đạt. Regression CSV xác nhận luồng
+nhập 1.200 dòng → chặn trùng → xóa dữ liệu → nhập lại; lỗi preview nay phải hiện toast.
 Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
 Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
 

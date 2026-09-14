@@ -22,33 +22,38 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 
 ### 1.1. Nhóm `zone:*` — Giáo họ
 
-| Kênh           | Payload vào                                    | Dữ liệu trả về                                     | Ghi chú                                                     |
-| -------------- | ---------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------- |
-| `zone:list`    | `{ search?, page, pageSize, sortBy, sortDir }` | `Zone[]` kèm `familyCount`, `personCount` + `meta` | Đếm bằng `LEFT JOIN` gộp, **không** truy vấn trong vòng lặp |
-| `zone:getById` | `{ id }`                                       | `Zone`                                             | `NOT_FOUND` nếu không tồn tại                               |
-| `zone:create`  | `{ name, holyName?, note? }`                   | `Zone` vừa tạo                                     | Trùng `name` → `CONFLICT`                                   |
-| `zone:update`  | `{ id, expectedUpdatedAt, patch }`             | `Zone` sau cập nhật                                | **Bắt buộc** `expectedUpdatedAt`                            |
-| `zone:remove`  | `{ id }`                                       | `{ id }`                                           | Còn hộ → `FOREIGN_KEY_VIOLATION` (§3 `database-schema.md`)  |
+| Kênh              | Payload vào                                    | Dữ liệu trả về                                     | Ghi chú                                                      |
+| ----------------- | ---------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| `zone:list`       | `{ search?, page, pageSize, sortBy, sortDir }` | `Zone[]` kèm `familyCount`, `personCount` + `meta` | Đếm bằng `LEFT JOIN` gộp, **không** truy vấn trong vòng lặp  |
+| `zone:getById`    | `{ id }`                                       | `Zone`                                             | `NOT_FOUND` nếu không tồn tại                                |
+| `zone:create`     | `{ name, holyName?, note? }`                   | `Zone` vừa tạo                                     | Trùng `name` → `CONFLICT`                                    |
+| `zone:update`     | `{ id, expectedUpdatedAt, patch }`             | `Zone` sau cập nhật                                | **Bắt buộc** `expectedUpdatedAt`                             |
+| `zone:remove`     | `{ id }`                                       | `{ id }`                                           | Còn hộ → `FOREIGN_KEY_VIOLATION` (§3 `database-schema.md`)   |
+| `zone:bulkRemove` | `{ ids }`                                      | `{ count }`                                        | Xoá mềm nhiều giáo họ trong một transaction; chặn khi còn hộ |
 
 ### 1.2. Nhóm `family:*` — Gia đình / hộ
 
-| Kênh             | Payload vào                                             | Dữ liệu trả về                                    | Ghi chú                                                 |
-| ---------------- | ------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
-| `family:list`    | `{ zoneId?, search?, page, pageSize, sortBy, sortDir }` | `Family[]` kèm `memberCount`, `zoneName` + `meta` | Lọc theo giáo họ là truy vấn nóng nhất                  |
-| `family:getById` | `{ id }`                                                | `Family` kèm danh sách thành viên hiện hành       | `NOT_FOUND` nếu không tồn tại                           |
-| `family:create`  | `{ zoneId, name, address?, note? }`                     | `Family` vừa tạo                                  | `zoneId` không tồn tại → `FOREIGN_KEY_VIOLATION`        |
-| `family:update`  | `{ id, expectedUpdatedAt, patch }`                      | `Family` sau cập nhật                             | **Bắt buộc** `expectedUpdatedAt`                        |
-| `family:remove`  | `{ id }`                                                | `{ id }`                                          | Còn thành viên hiện hành → `CONFLICT` kèm số thành viên |
+| Kênh                | Payload vào                                             | Dữ liệu trả về                                    | Ghi chú                                                 |
+| ------------------- | ------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| `family:list`       | `{ zoneId?, search?, page, pageSize, sortBy, sortDir }` | `Family[]` kèm `memberCount`, `zoneName` + `meta` | Lọc theo giáo họ là truy vấn nóng nhất                  |
+| `family:getById`    | `{ id }`                                                | `Family` kèm danh sách thành viên hiện hành       | `NOT_FOUND` nếu không tồn tại                           |
+| `family:create`     | `{ zoneId, name, address?, note? }`                     | `Family` vừa tạo                                  | `zoneId` không tồn tại → `FOREIGN_KEY_VIOLATION`        |
+| `family:update`     | `{ id, expectedUpdatedAt, patch }`                      | `Family` sau cập nhật                             | **Bắt buộc** `expectedUpdatedAt`                        |
+| `family:remove`     | `{ id }`                                                | `{ id }`                                          | Còn thành viên hiện hành → `CONFLICT` kèm số thành viên |
+| `family:bulkMove`   | `{ ids, zoneId }`                                       | `{ count, zoneId }`                               | Chuyển nhiều hộ sang một giáo họ trong một transaction  |
+| `family:bulkRemove` | `{ ids }`                                               | `{ count }`                                       | Xoá mềm nhiều hộ; chặn khi bất kỳ hộ nào còn thành viên |
 
 ### 1.3. Nhóm `person:*` — Giáo dân
 
-| Kênh             | Payload vào                                                                                                                                                         | Dữ liệu trả về                                   | Ghi chú                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
-| `person:list`    | `{ zoneId?, familyId?, gender?, isAlive?, search?, page, pageSize, sortBy, sortDir }`                                                                               | `Person[]` kèm `familyName`, `zoneName` + `meta` | `search` so khớp trên `full_name_ascii`                                |
-| `person:getById` | `{ id }`                                                                                                                                                            | `Person` kèm hộ hiện hành + lịch sử hộ           | `NOT_FOUND` nếu không tồn tại                                          |
-| `person:create`  | `{ fullName, givenName?, holyName?, gender?, birthDate?, baptismDate?, firstCommunionDate?, confirmationDate?, marriageDate?, deathDate?, phone?, note?, family? }` | `Person` vừa tạo                                 | Xem ghi chú dưới bảng                                                  |
-| `person:update`  | `{ id, expectedUpdatedAt, patch }`                                                                                                                                  | `Person` sau cập nhật                            | **Bắt buộc** `expectedUpdatedAt`                                       |
-| `person:remove`  | `{ id }`                                                                                                                                                            | `{ id }`                                         | Xoá mềm người **và** dòng `family_members` hiện hành, cùng transaction |
+| Kênh                | Payload vào                                                                                                                                                         | Dữ liệu trả về                                   | Ghi chú                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `person:list`       | `{ zoneId?, familyId?, gender?, isAlive?, search?, page, pageSize, sortBy, sortDir }`                                                                               | `Person[]` kèm `familyName`, `zoneName` + `meta` | `search` so khớp trên `full_name_ascii`                                |
+| `person:getById`    | `{ id }`                                                                                                                                                            | `Person` kèm hộ hiện hành + lịch sử hộ           | `NOT_FOUND` nếu không tồn tại                                          |
+| `person:create`     | `{ fullName, givenName?, holyName?, gender?, birthDate?, baptismDate?, firstCommunionDate?, confirmationDate?, marriageDate?, deathDate?, phone?, note?, family? }` | `Person` vừa tạo                                 | Xem ghi chú dưới bảng                                                  |
+| `person:update`     | `{ id, expectedUpdatedAt, patch }`                                                                                                                                  | `Person` sau cập nhật                            | **Bắt buộc** `expectedUpdatedAt`                                       |
+| `person:remove`     | `{ id }`                                                                                                                                                            | `{ id }`                                         | Xoá mềm người **và** dòng `family_members` hiện hành, cùng transaction |
+| `person:bulkMove`   | `{ ids, familyId, relationship, moveDate }`                                                                                                                         | `{ count, familyId }`                            | Chuyển nhiều người sang một hộ trong một transaction                   |
+| `person:bulkRemove` | `{ ids }`                                                                                                                                                           | `{ count }`                                      | Xoá mềm nhiều giáo dân cùng các thành viên hộ hiện hành                |
 
 > `person:create` và `person:update` trả thêm `meta.warnings` khi thứ tự ngày bí tích bất
 > thường (`baptism ≤ firstCommunion ≤ confirmation`) — **cảnh báo, không chặn**.
@@ -70,6 +75,30 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 > `family-member:move` không theo mẫu CRUD chuẩn vì nó là **một** thao tác nghiệp vụ chạm hai dòng.
 > Tách thành hai lời gọi `remove` + `add` sẽ để lại khoảng thời gian người không thuộc hộ nào.
 
+### 1.5. Nhóm `report:*` — Xuất danh sách
+
+| Kênh               | Payload vào                                                      | Dữ liệu trả về                                      | Ghi chú                                                    |
+| ------------------ | ---------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
+| `report:exportCsv` | `{ report: 'persons' \| 'families' \| 'familyMembers', filter }` | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Main tự mở hộp thoại lưu và ghi CSV UTF-8 BOM theo bộ lọc. |
+
+`persons` nhận `zoneId`, `familyId`, `gender`, `isAlive`, `search`; `families` nhận `zoneId`,
+`search`; `familyMembers` bắt buộc `familyId`. Đường dẫn tệp không nhận từ Renderer.
+
+### 1.6. Nhóm `search:*` — Tìm toàn văn
+
+| Kênh           | Payload vào | Dữ liệu trả về                                             | Ghi chú                                           |
+| -------------- | ----------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `search:query` | `{ query }` | Tối đa 50 kết quả giáo dân và gia đình, có `type`, `route` | FTS5, tìm không dấu và không phân biệt hoa thường |
+
+### 1.7. Nhóm `trash:*` — Thùng rác
+
+| Kênh               | Payload vào    | Dữ liệu trả về            | Ghi chú                                       |
+| ------------------ | -------------- | ------------------------- | --------------------------------------------- |
+| `trash:list`       | —              | Tối đa 200 bản ghi đã xoá | Gộp giáo họ, gia đình và giáo dân             |
+| `trash:restore`    | `{ type, id }` | `{ type, id, restored }`  | Hộ cần giáo họ nguồn còn tồn tại              |
+| `trash:hardRemove` | `{ type, id }` | `{ type, id, removed }`   | Chỉ áp dụng cho bản ghi đã xoá mềm            |
+| `trash:empty`      | —              | `{ removed }`             | Xoá vĩnh viễn toàn bộ bản ghi trong thùng rác |
+
 ---
 
 ## 2. Nhóm kênh hạ tầng — giống nhau ở mọi dự án
@@ -87,10 +116,11 @@ Khoá `settings` riêng của dự án (gồm `general.parishName`) liệt kê �
 > Riêng của dự án này: app dùng chung cho 2–3 người quản lý giáo xứ nên cần mang dữ liệu
 > qua lại. Kéo từ Phase 6 lên Phase 2 theo yêu cầu người dùng (P16).
 
-| Kênh            | Payload vào | Dữ liệu trả về                                                                                         | Ghi chú                                                    |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| `backup:export` | —           | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Ghi bằng **API backup của SQLite**, an toàn khi DB đang mở |
-| `backup:import` | —           | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | **Thay trọn dữ liệu.** App tự khởi động lại sau ~0,5 giây  |
+| Kênh              | Payload vào                       | Dữ liệu trả về                                                                                         | Ghi chú                                                                  |
+| ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `backup:export`   | —                                 | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Ghi bằng **API backup của SQLite**, an toàn khi DB đang mở               |
+| `backup:import`   | —                                 | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | **Thay trọn dữ liệu.** App tự khởi động lại sau ~0,5 giây                |
+| `backup:clearAll` | `{ confirmation: 'XÓA DỮ LIỆU' }` | `{ zones, families, persons, members, safetyBackup }`                                                  | Backup trước, sau đó xóa toàn bộ dữ liệu nghiệp vụ trong một transaction |
 
 **Cả hai kênh không nhận tham số.** Đường dẫn file do hộp thoại ở Main quyết định — nhận
 đường dẫn từ Renderer nghĩa là DevTools ghi đè được bất kỳ file nào trên máy.

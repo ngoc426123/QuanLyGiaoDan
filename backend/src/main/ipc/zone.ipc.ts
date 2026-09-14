@@ -2,6 +2,7 @@ import { CHANNELS } from '@shared/channels.ts'
 import { CHANGE_ACTIONS } from '@shared/constants.ts'
 import {
   zoneCreateSchema,
+  zoneBulkRemoveSchema,
   zoneGetByIdSchema,
   zoneListSchema,
   zoneRemoveSchema,
@@ -45,5 +46,11 @@ export const zoneHandlers = Object.freeze([
     schema: zoneRemoveSchema,
     handle: (input) => zoneService.remove(input),
     event: changed(CHANGE_ACTIONS.REMOVED),
+  },
+  {
+    channel: CHANNELS.ZONE.BULK_REMOVE,
+    schema: zoneBulkRemoveSchema,
+    handle: (input) => zoneService.bulkRemove(input),
+    event: () => ({ channel: CHANNELS.EVENTS.ZONE_CHANGED, payload: { action: 'bulkRemoved' } }),
   },
 ])

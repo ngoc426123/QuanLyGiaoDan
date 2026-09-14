@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { after, beforeEach, describe, it } from 'node:test'
 import Database from 'better-sqlite3'
 import { applyPragmas, closeDatabase, openDatabase } from '#/db/connection.ts'
-import { migrate } from '#/db/migrator.ts'
+import { LATEST_VERSION, migrate } from '#/db/migrator.ts'
 import { seedDefaultSettings } from '#/db/seed.ts'
 import { inspectDatabaseFile } from '#/db/transfer.ts'
 import * as backupService from '#/services/backup.service.ts'
@@ -62,7 +62,7 @@ describe('backup.service — xuất dữ liệu', () => {
 
     const info = inspectDatabaseFile(target)
     assert.equal(info.recordCounts.zones, 2)
-    assert.equal(info.schemaVersion, 1)
+    assert.equal(info.schemaVersion, LATEST_VERSION)
   })
 
   it('xuất được cả khi đang có dữ liệu ghi dở — dùng API backup của SQLite', async () => {

@@ -6,5 +6,6 @@ export const zoneApi = Object.freeze({
   create: (input: Record<string, unknown>) => invoke(window.api.zone.create(input)),
   update: (input: Record<string, unknown>) => invoke(window.api.zone.update(input)),
   remove: (id: string) => invoke(window.api.zone.remove(id)),
+  bulkRemove: (ids: string[]) => invoke(window.api.zone.bulkRemove(ids)),
   onChanged: (listener: (payload: unknown) => void) => window.api.events.onZoneChanged(listener),
 })

@@ -15,3 +15,14 @@
 .info p {
   color: var(--color-text-muted);
 }
+.shortcuts {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+}
+.shortcuts dt {
+  font-weight: var(--font-weight-medium);
+}
+.shortcuts dd {
+  color: var(--color-text-muted);
+}

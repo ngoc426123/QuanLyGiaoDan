@@ -6,5 +6,7 @@ export const personApi = Object.freeze({
   create: (input: Record<string, unknown>) => invokeWithMeta(window.api.person.create(input)),
   update: (input: Record<string, unknown>) => invokeWithMeta(window.api.person.update(input)),
   remove: (id: string) => invoke(window.api.person.remove(id)),
+  bulkMove: (input: Record<string, unknown>) => invoke(window.api.person.bulkMove(input)),
+  bulkRemove: (ids: string[]) => invoke(window.api.person.bulkRemove(ids)),
   onChanged: (listener: (payload: unknown) => void) => window.api.events.onPersonChanged(listener),
 })

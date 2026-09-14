@@ -31,3 +31,8 @@ export function useRemoveZone() {
     },
   })
 }
+
+export function useBulkRemoveZones() {
+  const invalidate = useInvalidation()
+  return useMutation({ mutationFn: zoneApi.bulkRemove, onSuccess: invalidate })
+}

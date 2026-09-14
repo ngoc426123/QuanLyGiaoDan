@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -12,10 +12,15 @@ import { Table } from '@/components/ui/Table.tsx'
 import { useCreateZone } from '../hooks/useZoneMutations.ts'
 import { useZones } from '../hooks/useZones.ts'
 import { ZoneForm } from './ZoneForm.tsx'
+import { ZoneBulkActions } from './ZoneBulkActions.tsx'
+import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
+import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
 
 export function ZoneList() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isCreateOpen, setCreateOpen] = useState(false)
+  const [contextMenu, setContextMenu] = useState<any>(null)
+  const navigate = useNavigate()
   const search = searchParams.get('q') ?? ''
   const page = Number(searchParams.get('page') ?? '1') || 1
   const filter = useMemo(
@@ -25,6 +30,9 @@ export function ZoneList() {
   const query = useZones(filter)
   const create = useCreateZone()
   const rows = query.data?.data ?? []
+  const selectedIds = useSelectionStore(selectedIdsFor('zone'))
+  const toggleSelection = useSelectionStore((state) => state.toggle)
+  const clearSelection = useSelectionStore((state) => state.clear)
   const updateSearch = (value: string) => setSearchParams(value ? { q: value } : {})
   const setPage = (nextPage: number) => {
     const next = new URLSearchParams(searchParams)
@@ -68,10 +76,26 @@ export function ZoneList() {
       )}
       {rows.length > 0 && (
         <>
+          <ZoneBulkActions ids={selectedIds} onDone={() => clearSelection('zone')} />
           <Table
             caption="Danh sách giáo họ"
             rows={rows}
+            onRowActivate={(zone: any) => navigate(`/zones/${zone.id}`)}
+            onRowDelete={(zone: any) => navigate(`/zones/${zone.id}?remove=1`)}
+            onRowContextMenu={(zone: any, x: number, y: number) => setContextMenu({ zone, x, y })}
             columns={[
+              {
+                key: 'selected',
+                label: 'Chọn',
+                render: (zone: any) => (
+                  <input
+                    type="checkbox"
+                    aria-label={`Chọn ${zone.name}`}
+                    checked={selectedIds.includes(zone.id)}
+                    onChange={() => toggleSelection('zone', zone.id)}
+                  />
+                ),
+              },
               {
                 key: 'name',
                 label: 'Tên giáo họ',
@@ -88,6 +112,22 @@ export function ZoneList() {
             total={query.data?.meta?.total ?? 0}
             onPageChange={setPage}
           />
+          {contextMenu && (
+            <RowContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              onClose={() => setContextMenu(null)}
+              items={[
+                { label: 'Xem chi tiết', onClick: () => navigate(`/zones/${contextMenu.zone.id}`) },
+                { label: 'Sửa', onClick: () => navigate(`/zones/${contextMenu.zone.id}?edit=1`) },
+                {
+                  label: 'Xóa',
+                  danger: true,
+                  onClick: () => navigate(`/zones/${contextMenu.zone.id}?remove=1`),
+                },
+              ]}
+            />
+          )}
         </>
       )}
       {isCreateOpen && (

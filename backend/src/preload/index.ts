@@ -41,6 +41,7 @@ function subscribe(channel, listener) {
 const appApi = Object.freeze({
   getVersion: () => ipcRenderer.invoke(CHANNELS.APP.GET_VERSION),
   getPaths: () => ipcRenderer.invoke(CHANNELS.APP.GET_PATHS),
+  openDataFolder: () => ipcRenderer.invoke(CHANNELS.APP.OPEN_DATA_FOLDER),
   closeWindow: () => ipcRenderer.invoke(CHANNELS.APP.CLOSE_WINDOW),
   minimizeWindow: () => ipcRenderer.invoke(CHANNELS.APP.MINIMIZE_WINDOW),
   toggleMaximize: () => ipcRenderer.invoke(CHANNELS.APP.TOGGLE_MAXIMIZE),
@@ -72,6 +73,7 @@ const eventsApi = Object.freeze({
 const backupApi = Object.freeze({
   exportToFile: () => ipcRenderer.invoke(CHANNELS.BACKUP.EXPORT),
   importFromFile: () => ipcRenderer.invoke(CHANNELS.BACKUP.IMPORT),
+  clearAll: (confirmation) => ipcRenderer.invoke(CHANNELS.BACKUP.CLEAR_ALL, { confirmation }),
 })
 
 /**
@@ -84,6 +86,7 @@ const zoneApi = Object.freeze({
   create: (input) => ipcRenderer.invoke(CHANNELS.ZONE.CREATE, input),
   update: (input) => ipcRenderer.invoke(CHANNELS.ZONE.UPDATE, input),
   remove: (id) => ipcRenderer.invoke(CHANNELS.ZONE.REMOVE, { id }),
+  bulkRemove: (ids) => ipcRenderer.invoke(CHANNELS.ZONE.BULK_REMOVE, { ids }),
 })
 
 const familyApi = Object.freeze({
@@ -92,6 +95,8 @@ const familyApi = Object.freeze({
   create: (input) => ipcRenderer.invoke(CHANNELS.FAMILY.CREATE, input),
   update: (input) => ipcRenderer.invoke(CHANNELS.FAMILY.UPDATE, input),
   remove: (id) => ipcRenderer.invoke(CHANNELS.FAMILY.REMOVE, { id }),
+  bulkMove: (input) => ipcRenderer.invoke(CHANNELS.FAMILY.BULK_MOVE, input),
+  bulkRemove: (ids) => ipcRenderer.invoke(CHANNELS.FAMILY.BULK_REMOVE, { ids }),
 })
 
 const personApi = Object.freeze({
@@ -100,6 +105,8 @@ const personApi = Object.freeze({
   create: (input) => ipcRenderer.invoke(CHANNELS.PERSON.CREATE, input),
   update: (input) => ipcRenderer.invoke(CHANNELS.PERSON.UPDATE, input),
   remove: (id) => ipcRenderer.invoke(CHANNELS.PERSON.REMOVE, { id }),
+  bulkMove: (input) => ipcRenderer.invoke(CHANNELS.PERSON.BULK_MOVE, input),
+  bulkRemove: (ids) => ipcRenderer.invoke(CHANNELS.PERSON.BULK_REMOVE, { ids }),
 })
 
 const familyMemberApi = Object.freeze({
@@ -111,6 +118,23 @@ const familyMemberApi = Object.freeze({
 
 const dashboardApi = Object.freeze({
   getSummary: () => ipcRenderer.invoke(CHANNELS.DASHBOARD.GET_SUMMARY),
+})
+
+const reportApi = Object.freeze({
+  exportCsv: (input) => ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_CSV, input),
+})
+const importApi = Object.freeze({
+  chooseCsv: () => ipcRenderer.invoke(CHANNELS.IMPORT.CHOOSE_CSV),
+  commitCsv: (token) => ipcRenderer.invoke(CHANNELS.IMPORT.COMMIT_CSV, { token }),
+})
+const searchApi = Object.freeze({
+  query: (query) => ipcRenderer.invoke(CHANNELS.SEARCH.QUERY, { query }),
+})
+const trashApi = Object.freeze({
+  list: () => ipcRenderer.invoke(CHANNELS.TRASH.LIST),
+  restore: (input) => ipcRenderer.invoke(CHANNELS.TRASH.RESTORE, input),
+  hardRemove: (input) => ipcRenderer.invoke(CHANNELS.TRASH.HARD_REMOVE, input),
+  empty: () => ipcRenderer.invoke(CHANNELS.TRASH.EMPTY),
 })
 
 const api = Object.freeze({
@@ -125,6 +149,10 @@ const api = Object.freeze({
   person: personApi,
   familyMember: familyMemberApi,
   dashboard: dashboardApi,
+  report: reportApi,
+  import: importApi,
+  search: searchApi,
+  trash: trashApi,
   events: eventsApi,
 })
 

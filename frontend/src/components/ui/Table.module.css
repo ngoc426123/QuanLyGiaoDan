@@ -21,6 +21,13 @@
 .table tbody tr:hover {
   background: var(--color-bg-hover);
 }
+.table tbody tr[data-active='true'] {
+  background: var(--color-bg-selected);
+}
+.keyboardGrid:focus-visible {
+  outline: var(--focus-width) solid var(--color-border-focus);
+  outline-offset: var(--focus-offset);
+}
 .table a {
   display: inline-flex;
   align-items: center;

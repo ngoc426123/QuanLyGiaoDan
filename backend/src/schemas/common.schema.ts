@@ -51,6 +51,13 @@ export const listQueryShape = Object.freeze({
 
 export const PAGE_SIZE = Object.freeze({ default: PAGE_SIZE_DEFAULT, max: PAGE_SIZE_MAX })
 
+/** Khối lượng thao tác hàng loạt bị giới hạn một trang lớn để giữ payload và transaction hữu hạn. */
+export const bulkIdsSchema = z
+  .array(idSchema, { error: 'Danh sách bản ghi không hợp lệ' })
+  .min(1, { error: 'Hãy chọn ít nhất một bản ghi' })
+  .max(PAGE_SIZE_MAX, { error: `Mỗi lần chỉ xử lý tối đa ${PAGE_SIZE_MAX} bản ghi` })
+  .refine((ids) => new Set(ids).size === ids.length, { error: 'Danh sách bản ghi bị trùng' })
+
 /** Payload chỉ gồm `{ id }` — dùng cho `*:getById` và `*:remove`. */
 export function byIdSchema(label) {
   return z.object({ id: idSchema }, { error: 'Dữ liệu ' + label + ' không hợp lệ' }).strict()

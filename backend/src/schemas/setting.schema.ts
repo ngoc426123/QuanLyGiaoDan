@@ -23,6 +23,13 @@ export const settingSetSchema = z.discriminatedUnion(
         value: z.literal('vi', { error: 'Ứng dụng chỉ hỗ trợ tiếng Việt' }),
       })
       .strict(),
+    z.object({ key: z.literal('general.parishName'), value: z.string().trim().max(120) }).strict(),
+    z
+      .object({
+        key: z.literal('data.trashRetentionDays'),
+        value: z.number().int().min(1).max(365),
+      })
+      .strict(),
   ],
   { error: 'Khoá cài đặt không được hỗ trợ' },
 )

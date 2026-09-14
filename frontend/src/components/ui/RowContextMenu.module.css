@@ -1,0 +1,15 @@
+.menu {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  display: grid;
+  gap: var(--space-1);
+  min-width: 180px;
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-base);
+  box-shadow: var(--shadow-popover);
+}
+.menu .button {
+  justify-content: flex-start;
+}

@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/ui.store.ts'
 /** Phím tắt của khung, đăng ký đúng một lần; hành động nghiệp vụ dành cho Phase 4/5.
  * @returns {void}
  */
-export function useShellShortcuts() {
+export function useShellShortcuts({ onCommandPalette }: { onCommandPalette?: () => void } = {}) {
   const navigate = useNavigate()
   const toggle = useUIStore((state) => state.toggleSidebar)
   useEffect(() => {
@@ -13,13 +13,15 @@ export function useShellShortcuts() {
       if (event.target.closest('input, textarea, select, [contenteditable="true"], dialog')) return
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       const key = event.key.toLowerCase()
-      if (!['f', 'b', ','].includes(key)) return
+      if (!['f', 'b', ',', 'k', 'n'].includes(key)) return
       event.preventDefault()
       if (key === 'f') document.getElementById('global-search')?.focus()
       if (key === 'b') toggle()
       if (key === ',') navigate('/settings')
+      if (key === 'k') onCommandPalette?.()
+      if (key === 'n') navigate('/persons?new=1')
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [navigate, toggle])
+  }, [navigate, onCommandPalette, toggle])
 }

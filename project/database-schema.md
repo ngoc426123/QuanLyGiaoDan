@@ -186,6 +186,13 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 
 ---
 
+## 2.6. Chỉ mục tìm toàn văn FTS5
+
+`persons_fts` lập chỉ mục `full_name`, `holy_name`, `note`; `families_fts` lập chỉ mục `name`,
+`address`, `note`. Cả hai là bảng FTS5 external-content, dùng `rowid` của bảng gốc và tokenizer
+`unicode61 remove_diacritics 2`. Trigger insert, update và delete giữ chỉ mục đồng bộ với dữ liệu
+gốc; bản ghi xoá mềm không xuất hiện trong kết quả tìm kiếm.
+
 ## 3. Ma trận quyền xoá
 
 | Xoá bản ghi                         | Hành vi mặc định      | Xử lý ở Service                                                                          |

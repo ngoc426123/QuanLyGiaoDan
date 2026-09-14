@@ -1,10 +1,16 @@
-import { forwardRef } from 'react'
+import { forwardRef, useState } from 'react'
 import { VirtualList } from './VirtualList.tsx'
 import styles from './Table.module.css'
 
-function TableRow({ row, columns }) {
+function TableRow({ row, columns, active, onContextMenu }) {
   return (
-    <tr>
+    <tr
+      data-active={active || undefined}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        onContextMenu?.(row, event.clientX, event.clientY)
+      }}
+    >
       {columns.map((column) => (
         <td key={column.key}>{column.render ? column.render(row) : row[column.key]}</td>
       ))}
@@ -25,7 +31,30 @@ function VirtualRow({ row, columns }) {
   )
 }
 
-export const Table = forwardRef<any, any>(function Table({ columns, rows, caption, ...rest }, ref) {
+export const Table = forwardRef<any, any>(function Table(
+  { columns, rows, caption, onRowActivate, onRowDelete, onRowContextMenu, ...rest },
+  ref,
+) {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const handleKeyDown = (event) => {
+    if (event.target !== event.currentTarget || rows.length === 0) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveIndex((index) => Math.min(index + 1, rows.length - 1))
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveIndex((index) => Math.max(index - 1, 0))
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      onRowActivate?.(rows[activeIndex])
+    }
+    if (event.key === 'Delete') {
+      event.preventDefault()
+      onRowDelete?.(rows[activeIndex])
+    }
+  }
   if (rows.length > 200)
     return (
       <VirtualList
@@ -37,22 +66,30 @@ export const Table = forwardRef<any, any>(function Table({ columns, rows, captio
       />
     )
   return (
-    <table {...rest} ref={ref} className={styles.table}>
-      <caption className={styles.caption}>{caption}</caption>
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key} scope="col">
-              {column.label}
-            </th>
+    <div role="grid" tabIndex={0} className={styles.keyboardGrid} onKeyDown={handleKeyDown}>
+      <table {...rest} ref={ref} className={styles.table}>
+        <caption className={styles.caption}>{caption}</caption>
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key} scope="col">
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <TableRow
+              key={row.id}
+              row={row}
+              columns={columns}
+              active={activeIndex === rows.indexOf(row)}
+              onContextMenu={onRowContextMenu}
+            />
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <TableRow key={row.id} row={row} columns={columns} />
-        ))}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   )
 })

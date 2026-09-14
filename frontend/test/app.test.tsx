@@ -57,6 +57,34 @@ beforeEach(() => {
     backup: {
       exportToFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
       importFromFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
+      clearAll: vi.fn(async () => ({ ok: true, data: {} })),
+    },
+    import: {
+      chooseCsv: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
+      commitCsv: vi.fn(async () => ({ ok: true, data: {} })),
+    },
+    search: {
+      query: vi.fn(async (query) => ({
+        ok: true,
+        data:
+          query === 'khongco'
+            ? []
+            : [
+                {
+                  id: 'person-1',
+                  type: 'person',
+                  title: 'Nguyễn Văn An',
+                  subtitle: '',
+                  route: '/persons/person-1',
+                },
+              ],
+      })),
+    },
+    trash: {
+      list: vi.fn(async () => ({ ok: true, data: [] })),
+      restore: vi.fn(async () => ({ ok: true, data: {} })),
+      hardRemove: vi.fn(async () => ({ ok: true, data: {} })),
+      empty: vi.fn(async () => ({ ok: true, data: {} })),
     },
     dashboard: {
       getSummary: vi.fn(async () => ({
@@ -299,6 +327,20 @@ describe('Khung ứng dụng qua API preload', () => {
     await waitFor(() => expect(button.disabled).toBe(false))
   })
 
+  it('báo lỗi khi CSV không thể preview sau khi người dùng đã xoá dữ liệu', async () => {
+    const user = userEvent.setup()
+    window.api.import.chooseCsv.mockResolvedValue({
+      ok: false,
+      error: { code: 'IO_ERROR', message: 'Không thể đọc tệp CSV thử nghiệm' },
+    })
+    window.location.hash = '/settings'
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Nhập CSV' }))
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Không thể đọc tệp CSV thử nghiệm',
+    )
+  })
+
   it('phím tắt không chạy khi đang nhập', async () => {
     render(<App />)
     fireEvent.keyDown(document.body, { key: 'b', ctrlKey: true })
@@ -316,7 +358,7 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(screen.getByRole('searchbox', { name: 'Tìm kiếm toàn bộ danh bạ' }).value).toBe(
       'khongco',
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Xoá bộ lọc' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Xoá bộ lọc' }))
     expect(screen.getByRole('searchbox', { name: 'Tìm kiếm toàn bộ danh bạ' }).value).toBe('')
   })
 

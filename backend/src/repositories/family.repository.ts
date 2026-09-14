@@ -71,6 +71,17 @@ export function findRawById(id) {
   )
 }
 
+/** Dùng khi nhập CSV để tái sử dụng hộ cùng giáo họ thay vì tạo bản ghi trùng. */
+export function findByZoneAndName(zoneId, name) {
+  return toDomain(
+    prepare(
+      'SELECT ' +
+        SELECT_COLUMNS +
+        ' FROM families WHERE zone_id = ? AND name = ? AND deleted_at IS NULL',
+    ).get(zoneId, name),
+  )
+}
+
 /**
  * Danh sách kèm `zoneName` và `memberCount` bằng **một** câu truy vấn — không lặp
  * `findById` trong vòng lặp (cạm bẫy N+1).
@@ -168,4 +179,28 @@ export function countMembers(familyId) {
     'SELECT COUNT(*) AS total FROM family_members' +
       ' WHERE family_id = ? AND deleted_at IS NULL AND to_date IS NULL',
   ).get(familyId).total
+}
+
+export function countActiveByIds(ids) {
+  return prepare(
+    'SELECT COUNT(*) AS total FROM families WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).get(JSON.stringify(ids)).total
+}
+
+export function updateZoneMany(ids, zoneId, updatedAt) {
+  return prepare(
+    'UPDATE families SET zone_id = ?, updated_at = ? WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).run(zoneId, updatedAt, JSON.stringify(ids)).changes
+}
+
+export function softDeleteMany(ids, deletedAt) {
+  return prepare(
+    'UPDATE families SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))',
+  ).run(deletedAt, deletedAt, JSON.stringify(ids)).changes
+}
+
+export function countCurrentMembersByIds(ids) {
+  return prepare(
+    'SELECT COUNT(*) AS total FROM family_members WHERE deleted_at IS NULL AND to_date IS NULL AND family_id IN (SELECT value FROM json_each(?))',
+  ).get(JSON.stringify(ids)).total
 }

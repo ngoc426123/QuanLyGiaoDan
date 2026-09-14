@@ -61,7 +61,12 @@ describe('migrate', () => {
 
     assert.equal(result.from, 0)
     assert.equal(result.to, LATEST_VERSION)
-    assert.deepEqual(result.applied, ['001_init.sql'])
+    assert.deepEqual(result.applied, [
+      '001_init.sql',
+      '002_add_fts.sql',
+      '003_add_fts_delete_triggers.sql',
+      '004_fix_fts_soft_delete_triggers.sql',
+    ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
     const tables = db
@@ -70,7 +75,23 @@ describe('migrate', () => {
       .map((row) => row.name)
       .sort()
 
-    assert.deepEqual(tables, ['families', 'family_members', 'persons', 'settings', 'zones'])
+    assert.deepEqual(tables, [
+      'families',
+      'families_fts',
+      'families_fts_config',
+      'families_fts_data',
+      'families_fts_docsize',
+      'families_fts_idx',
+      'family_members',
+      'persons',
+      'persons_fts',
+      'persons_fts_config',
+      'persons_fts_data',
+      'persons_fts_docsize',
+      'persons_fts_idx',
+      'settings',
+      'zones',
+    ])
     db.close()
   })
 

@@ -1,10 +1,16 @@
 import { hostname } from 'node:os'
 import { app, BrowserWindow, dialog } from 'electron'
 import { CHANNELS } from '@shared/channels.ts'
-import { backupExportSchema, backupImportSchema } from '#/schemas/backup.schema.ts'
+import {
+  backupClearAllSchema,
+  backupExportSchema,
+  backupImportSchema,
+} from '#/schemas/backup.schema.ts'
 import * as backupService from '#/services/backup.service.ts'
+import * as dataService from '#/services/data.service.ts'
 import { today } from '#/services/clock.ts'
 import { userDataPaths } from '../paths.ts'
+import { broadcast } from './broadcast.ts'
 
 /**
  * Handler nhóm `backup:*` — xuất và nhập toàn bộ cơ sở dữ liệu.
@@ -114,6 +120,19 @@ export const backupHandlers = Object.freeze([
       }, RESTART_DELAY_MS)
 
       return { canceled: false, restarting: true, divergence: (info as any).divergence, ...result }
+    },
+  },
+  {
+    channel: CHANNELS.BACKUP.CLEAR_ALL,
+    schema: backupClearAllSchema,
+    handle: async () => {
+      const { backupDir } = userDataPaths()
+      const safetyBackup = await backupService.createSafetyBackup({ backupDir })
+      const result = { ...dataService.clearAll(), safetyBackup }
+      broadcast(CHANNELS.EVENTS.ZONE_CHANGED, { action: 'cleared' })
+      broadcast(CHANNELS.EVENTS.FAMILY_CHANGED, { action: 'cleared' })
+      broadcast(CHANNELS.EVENTS.PERSON_CHANGED, { action: 'cleared' })
+      return result
     },
   },
 ])

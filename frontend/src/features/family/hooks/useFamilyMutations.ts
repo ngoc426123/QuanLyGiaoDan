@@ -32,3 +32,13 @@ export function useRemoveFamily() {
     },
   })
 }
+
+export function useBulkMoveFamilies() {
+  const invalidate = useInvalidation()
+  return useMutation({ mutationFn: familyApi.bulkMove, onSuccess: invalidate })
+}
+
+export function useBulkRemoveFamilies() {
+  const invalidate = useInvalidation()
+  return useMutation({ mutationFn: familyApi.bulkRemove, onSuccess: invalidate })
+}

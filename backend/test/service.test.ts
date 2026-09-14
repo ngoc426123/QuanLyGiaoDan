@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { after, beforeEach, describe, it } from 'node:test'
 import * as familyMemberService from '#/services/family-member.service.ts'
 import * as familyService from '#/services/family.service.ts'
 import * as personService from '#/services/person.service.ts'
+import * as reportService from '#/services/report.service.ts'
+import * as searchService from '#/services/search.service.ts'
+import * as trashService from '#/services/trash.service.ts'
+import * as csvImportService from '#/services/csv-import.service.ts'
+import * as dataService from '#/services/data.service.ts'
 import * as zoneService from '#/services/zone.service.ts'
 import { disposeDatabase, freshDatabase } from './helpers/database.mjs'
 
@@ -404,5 +412,206 @@ describe('zone.service / family.service', () => {
     const { meta } = zoneService.list({ pageSize: 5000 })
 
     assert.equal(meta.pageSize, 200)
+  })
+})
+
+describe('report.service', () => {
+  it('xuất CSV có BOM, giữ tiếng Việt và chặn công thức bảng tính', () => {
+    const { familyA } = seed()
+    personService.create({
+      fullName: 'Nguyễn, "Văn" An',
+      note: '=SUM(A1:A2)',
+      family: { familyId: familyA.id, relationship: 'head', fromDate: '2010-01-01' },
+    })
+    const directory = mkdtempSync(join(tmpdir(), 'elecrusion-report-'))
+    const filePath = join(directory, 'danh-sach.csv')
+
+    try {
+      const result = reportService.exportCsv({ report: 'persons', filter: {}, filePath })
+      const content = readFileSync(filePath, 'utf8')
+
+      assert.equal(result.rowCount, 1)
+      assert.equal(content.codePointAt(0), 0xfeff)
+      assert.match(content, /"Nguyễn, ""Văn"" An"/)
+      assert.match(content, /"'=SUM\(A1:A2\)"/)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('search.service', () => {
+  it('tìm FTS không dấu trên tên, tên thánh, địa chỉ và dữ liệu Unicode NFD', () => {
+    const zone = zoneService.create({ name: 'Giáo họ Đức Mẹ' })
+    const family = familyService.create({
+      zoneId: zone.id,
+      name: 'Hộ Nguyễn',
+      address: 'Đường Nguyễn Huệ',
+    })
+    const { data: person } = personService.create({ fullName: 'Nguyễn Văn An', holyName: 'Giuse' })
+
+    assert.equal(searchService.query('nguyen van an')[0].id, person.id)
+    assert.equal(
+      searchService.query('NGUYEN').some((row: any) => row.id === person.id),
+      true,
+    )
+    assert.equal(searchService.query('giuse')[0].id, person.id)
+    assert.equal(
+      searchService.query('Nguyễn'.normalize('NFD')).some((row: any) => row.id === person.id),
+      true,
+    )
+    assert.equal(searchService.query('nguyen hue')[0].id, family.id)
+  })
+
+  it('cập nhật bản ghi thì chỉ mục FTS cũng cập nhật', () => {
+    const { data: person } = personService.create({ fullName: 'Tên cũ' })
+    personService.update({
+      id: person.id,
+      expectedUpdatedAt: person.updatedAt,
+      patch: { fullName: 'Tên mới' },
+    })
+
+    assert.equal(searchService.query('cu').length, 0)
+    assert.equal(searchService.query('moi')[0].id, person.id)
+  })
+})
+
+describe('trash.service', () => {
+  it('khôi phục người không khôi phục dòng thành viên hộ đã xoá mềm', () => {
+    const { familyA } = seed()
+    const { data: person } = personService.create({
+      fullName: 'Nguyễn Văn An',
+      family: { familyId: familyA.id, relationship: 'head', fromDate: '2010-01-01' },
+    })
+    personService.remove({ id: person.id })
+
+    trashService.restore({ type: 'person', id: person.id })
+
+    assert.equal(personService.getById(person.id).currentMembership, null)
+  })
+
+  it('chặn khôi phục hộ khi giáo họ nguồn chưa được khôi phục', () => {
+    const zone = zoneService.create({ name: 'Giáo họ đã xoá' })
+    const family = familyService.create({ zoneId: zone.id, name: 'Hộ đã xoá' })
+    familyService.remove({ id: family.id })
+    zoneService.remove({ id: zone.id })
+
+    assert.throws(() => trashService.restore({ type: 'family', id: family.id }), codeIs('CONFLICT'))
+  })
+})
+
+describe('csv-import.service', () => {
+  it('nhập đủ dữ liệu mẫu trong một transaction', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'elecrusion-csv-import-'))
+    const filePath = join(directory, 'du-lieu-kiem-thu-nhap-1200.csv')
+    const headers = [
+      'Giáo họ',
+      'Tên hộ',
+      'Địa chỉ',
+      'Họ tên',
+      'Tên gọi',
+      'Tên thánh',
+      'Giới tính',
+      'Ngày sinh',
+      'Ngày rửa tội',
+      'Ngày rước lễ lần đầu',
+      'Ngày thêm sức',
+      'Ngày hôn phối',
+      'Số điện thoại',
+      'Ghi chú',
+      'Quan hệ',
+      'Ngày vào hộ',
+    ]
+    const rows = Array.from({ length: 1200 }, (_, index) => {
+      const family = Math.floor(index / 4) + 1
+      return [
+        `Giáo họ ${((family - 1) % 15) + 1}`,
+        `Hộ ${family}`,
+        `Địa chỉ ${family}`,
+        `Giáo dân ${index + 1}`,
+        `Dân ${index + 1}`,
+        '',
+        index % 2 === 0 ? 'Nam' : 'Nữ',
+        `19${String(60 + (index % 40)).padStart(2, '0')}-01-01`,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ['Chủ hộ', 'Vợ/Chồng', 'Con', 'Con'][index % 4],
+        '2020-01-01',
+      ]
+    })
+    writeFileSync(filePath, [headers, ...rows].map((row) => row.join(',')).join('\n'), 'utf8')
+
+    try {
+      const result = csvImportService.importCsv({ filePath })
+
+      assert.equal(result.rowCount, 1200)
+      assert.equal(db.prepare('SELECT COUNT(*) AS total FROM zones').get().total, 15)
+      assert.equal(db.prepare('SELECT COUNT(*) AS total FROM families').get().total, 300)
+      assert.equal(db.prepare('SELECT COUNT(*) AS total FROM persons').get().total, 1200)
+      assert.equal(db.prepare('SELECT COUNT(*) AS total FROM family_members').get().total, 1200)
+      assert.throws(
+        () => csvImportService.importCsv({ filePath }),
+        (error) => error.code === 'CONFLICT' && error.details.duplicateCount === 1200,
+      )
+      dataService.clearAll()
+      assert.equal(csvImportService.importCsv({ filePath }).rowCount, 1200)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('thao tác hàng loạt và xoá dữ liệu', () => {
+  it('chuyển 100 giáo dân trong một lần và xoá mềm cả nhóm', () => {
+    const { familyA, familyB } = seed()
+    const ids = Array.from(
+      { length: 100 },
+      (_, index) =>
+        personService.create({
+          fullName: `Giáo dân ${index}`,
+          family: { familyId: familyA.id, relationship: 'other', fromDate: '2020-01-01' },
+        }).data.id,
+    )
+
+    const moved = personService.bulkMove({
+      ids,
+      familyId: familyB.id,
+      relationship: 'other',
+      moveDate: '2021-01-01',
+    })
+    assert.equal(moved.count, 100)
+    assert.equal(
+      db
+        .prepare(
+          'SELECT COUNT(*) AS total FROM family_members WHERE family_id = ? AND to_date IS NULL AND deleted_at IS NULL',
+        )
+        .get(familyB.id).total,
+      100,
+    )
+
+    assert.equal(personService.bulkRemove({ ids }).count, 100)
+    assert.equal(
+      db.prepare('SELECT COUNT(*) AS total FROM persons WHERE deleted_at IS NOT NULL').get().total,
+      100,
+    )
+  })
+
+  it('xoá dữ liệu nghiệp vụ nhưng giữ cấu hình', () => {
+    seed()
+    personService.create({ fullName: 'Giáo dân kiểm thử' })
+    db.prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(
+      'ui.theme',
+      '"light"',
+      '2026-01-01T00:00:00.000Z',
+    )
+    const result = dataService.clearAll()
+    assert.equal(result.zones, 1)
+    assert.equal(result.families, 2)
+    assert.equal(result.persons, 1)
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM settings').get().total > 0, true)
   })
 })
