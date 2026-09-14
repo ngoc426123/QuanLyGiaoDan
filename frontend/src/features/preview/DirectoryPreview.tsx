@@ -19,7 +19,7 @@ export function DirectoryPreview({ domain }: any) {
     )
     .sort(
       (a, b) =>
-        String(a[config.nameKey] ?? '').localeCompare(String(b[config.nameKey] ?? ''), 'vi') *
+        (a[config.nameKey] as string).localeCompare(b[config.nameKey] as string, 'vi') *
         (sort === 'asc' ? 1 : -1),
     )
   return (

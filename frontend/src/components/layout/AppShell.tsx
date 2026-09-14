@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom'
 import { useUIStore } from '@/stores/ui.store.ts'
 import { useTheme } from '@/features/setting/hooks/useTheme.ts'
 import { useSettingEvents } from '@/features/setting/hooks/useSettings.ts'
+import { useZoneEvents } from '@/features/zone/hooks/useZoneEvents.ts'
+import { useFamilyEvents } from '@/features/family/hooks/useFamilyEvents.ts'
 import { useShellShortcuts } from '@/hooks/useShellShortcuts.ts'
 import { AppContent } from './AppContent.tsx'
 import { AppSidebar } from './AppSidebar.tsx'
@@ -18,9 +20,11 @@ export function AppShell() {
   const sidebarWidth = useUIStore((state) => state.sidebarWidth)
   useTheme()
   useSettingEvents()
+  useZoneEvents()
+  useFamilyEvents()
   useShellShortcuts()
   useEffect(() => {
-    content.current?.scrollTo({ top: 0 })
+    if (content.current) content.current.scrollTop = 0
   }, [pathname])
   return (
     <div

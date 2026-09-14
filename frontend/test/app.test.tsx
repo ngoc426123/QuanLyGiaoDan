@@ -36,6 +36,14 @@ beforeEach(() => {
         windowStateListener = callback
         return vi.fn()
       }),
+      onZoneChanged: vi.fn((callback) => {
+        void callback
+        return vi.fn()
+      }),
+      onFamilyChanged: vi.fn((callback) => {
+        void callback
+        return vi.fn()
+      }),
     },
     app: {
       closeWindow: vi.fn(async () => ({ ok: true, data: { closed: true } })),
@@ -46,6 +54,76 @@ beforeEach(() => {
     backup: {
       exportToFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
       importFromFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
+    },
+    zone: {
+      list: vi.fn(async () => ({
+        ok: true,
+        data: {
+          data: [
+            {
+              id: 'zone-1',
+              name: 'Giáo họ Thánh Gia',
+              holyName: 'Thánh Gia',
+              note: null,
+              familyCount: 0,
+              personCount: 0,
+              updatedAt: '2026-09-14T00:00:00.000Z',
+            },
+          ],
+          meta: { total: 1, page: 1, pageSize: 50 },
+        },
+      })),
+      getById: vi.fn(async () => ({
+        ok: true,
+        data: {
+          id: 'zone-1',
+          name: 'Giáo họ Thánh Gia',
+          holyName: 'Thánh Gia',
+          note: null,
+          familyCount: 0,
+          personCount: 0,
+          updatedAt: '2026-09-14T00:00:00.000Z',
+        },
+      })),
+      create: vi.fn(async () => ({ ok: true, data: {} })),
+      update: vi.fn(async () => ({ ok: true, data: {} })),
+      remove: vi.fn(async () => ({ ok: true, data: {} })),
+    },
+    family: {
+      list: vi.fn(async () => ({
+        ok: true,
+        data: {
+          data: [
+            {
+              id: 'family-1',
+              zoneId: 'zone-1',
+              zoneName: 'Giáo họ Thánh Gia',
+              name: 'Hộ Nguyễn',
+              address: null,
+              note: null,
+              memberCount: 0,
+              updatedAt: '2026-09-14T00:00:00.000Z',
+            },
+          ],
+          meta: { total: 1, page: 1, pageSize: 50 },
+        },
+      })),
+      getById: vi.fn(async () => ({
+        ok: true,
+        data: {
+          id: 'family-1',
+          zoneId: 'zone-1',
+          zoneName: 'Giáo họ Thánh Gia',
+          name: 'Hộ Nguyễn',
+          address: null,
+          note: null,
+          members: [],
+          updatedAt: '2026-09-14T00:00:00.000Z',
+        },
+      })),
+      create: vi.fn(async () => ({ ok: true, data: {} })),
+      update: vi.fn(async () => ({ ok: true, data: {} })),
+      remove: vi.fn(async () => ({ ok: true, data: {} })),
     },
   }
 })

@@ -1,5 +1,5 @@
-import { DirectoryPreview } from '@/features/preview/DirectoryPreview.tsx'
+import { FamilyList } from '@/features/family/components/FamilyList.tsx'
 
 export function FamilyListPage() {
-  return <DirectoryPreview domain="families" />
+  return <FamilyList />
 }

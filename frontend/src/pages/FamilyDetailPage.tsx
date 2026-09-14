@@ -1,5 +1,7 @@
-import { DetailPreview } from '@/features/preview/DetailPreview.tsx'
+import { useParams } from 'react-router-dom'
+import { FamilyDetail } from '@/features/family/components/FamilyDetail.tsx'
 
 export function FamilyDetailPage() {
-  return <DetailPreview domain="families" title="Chi tiết hộ" />
+  const { id } = useParams()
+  return <FamilyDetail id={id} />
 }

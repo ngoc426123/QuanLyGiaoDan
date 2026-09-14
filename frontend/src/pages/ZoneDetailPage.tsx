@@ -1,5 +1,7 @@
-import { DetailPreview } from '@/features/preview/DetailPreview.tsx'
+import { useParams } from 'react-router-dom'
+import { ZoneDetail } from '@/features/zone/components/ZoneDetail.tsx'
 
 export function ZoneDetailPage() {
-  return <DetailPreview domain="zones" title="Chi tiết giáo họ" />
+  const { id } = useParams()
+  return <ZoneDetail id={id} />
 }
