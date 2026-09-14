@@ -6,7 +6,6 @@ import { useUIStore } from '../src/stores/ui.store.ts'
 import { useToastStore } from '../src/stores/toast.store.ts'
 import { useFilterStore } from '../src/stores/filter.store.ts'
 import { media } from './setup.ts'
-import { samplePersons } from '../src/features/preview/sampleData.ts'
 
 let settings
 let listener
@@ -41,6 +40,10 @@ beforeEach(() => {
         return vi.fn()
       }),
       onFamilyChanged: vi.fn((callback) => {
+        void callback
+        return vi.fn()
+      }),
+      onPersonChanged: vi.fn((callback) => {
         void callback
         return vi.fn()
       }),
@@ -125,6 +128,42 @@ beforeEach(() => {
       update: vi.fn(async () => ({ ok: true, data: {} })),
       remove: vi.fn(async () => ({ ok: true, data: {} })),
     },
+    person: {
+      list: vi.fn(async () => ({
+        ok: true,
+        data: {
+          data: [
+            {
+              id: 'person-1',
+              fullName: 'Nguyễn Văn An',
+              holyName: 'Giuse',
+              gender: 'male',
+              birthDate: '1990-01-01',
+              familyName: 'Hộ Nguyễn',
+              zoneName: 'Giáo họ Thánh Gia',
+              updatedAt: '2026-09-14T00:00:00.000Z',
+            },
+          ],
+          meta: { total: 1, page: 1, pageSize: 50 },
+        },
+      })),
+      getById: vi.fn(async () => ({
+        ok: true,
+        data: {
+          id: 'person-1',
+          fullName: 'Nguyễn Văn An',
+          holyName: 'Giuse',
+          gender: 'male',
+          birthDate: '1990-01-01',
+          currentMembership: null,
+          membershipHistory: [],
+          updatedAt: '2026-09-14T00:00:00.000Z',
+        },
+      })),
+      create: vi.fn(async () => ({ ok: true, data: {} })),
+      update: vi.fn(async () => ({ ok: true, data: {} })),
+      remove: vi.fn(async () => ({ ok: true, data: {} })),
+    },
   }
 })
 
@@ -144,21 +183,14 @@ describe('Khung ứng dụng qua API preload', () => {
     act(() => windowStateListener({ maximized: false }))
     expect(screen.getByRole('button', { name: 'Phóng to cửa sổ' })).toBeTruthy()
   })
-  it('lỗi render ở trang giáo dân không làm sập sidebar của App Shell', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-    const originalName = samplePersons[1].fullName
-    samplePersons[1].fullName = null
+  it('trang giáo dân dùng dữ liệu thật mà vẫn điều hướng được từ App Shell', async () => {
     window.location.hash = '/persons'
-    try {
-      render(<App />)
-      expect(screen.getByRole('alert')).toBeTruthy()
-      await userEvent.click(
-        within(screen.getByRole('navigation')).getByRole('link', { name: 'Gia đình' }),
-      )
-      expect(screen.getByRole('heading', { name: 'Gia đình', exact: true })).toBeTruthy()
-    } finally {
-      samplePersons[1].fullName = originalName
-    }
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Giáo dân', exact: true })).toBeTruthy()
+    await userEvent.click(
+      within(screen.getByRole('navigation')).getByRole('link', { name: 'Gia đình' }),
+    )
+    expect(screen.getByRole('heading', { name: 'Gia đình', exact: true })).toBeTruthy()
   })
   it('đi đủ 10 route, trang chi tiết đánh dấu đúng mục cha', async () => {
     const user = userEvent.setup()
@@ -190,18 +222,14 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(await screen.findByRole('combobox', { name: 'Chế độ giao diện' })).toBeTruthy()
   })
 
-  it('lọc không dấu, xoá bộ lọc và nhớ bộ lọc khi quay lại', async () => {
+  it('lọc giáo dân được phản ánh vào URL', async () => {
     const user = userEvent.setup()
     window.location.hash = '/persons'
     render(<App />)
-    await user.type(screen.getByRole('searchbox', { name: 'Tìm trong danh sách' }), 'khongco')
-    expect(screen.getByRole('heading', { name: 'Không có kết quả khớp bộ lọc' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Xoá bộ lọc' }))
-    await user.type(screen.getByRole('searchbox', { name: 'Tìm trong danh sách' }), 'dang')
-    expect(screen.getByRole('link', { name: 'Đặng Thị Ngọc' })).toBeTruthy()
-    await user.click(screen.getByRole('link', { name: 'Cài đặt' }))
-    await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Giáo dân' }))
-    expect(screen.getByRole('searchbox', { name: 'Tìm trong danh sách' }).value).toBe('dang')
+    await user.type(screen.getByRole('textbox', { name: 'Tìm trong danh sách' }), 'nguyen')
+    await waitFor(() => expect(window.location.hash).toContain('q=nguyen'))
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Giới tính' }), 'male')
+    await waitFor(() => expect(window.location.hash).toContain('gender=male'))
   })
 
   it('lưu theme, khởi động lại, phản ứng với hệ thống và huỷ listener', async () => {

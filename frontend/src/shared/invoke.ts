@@ -21,3 +21,11 @@ export async function invoke(request: Promise<any>) {
   const { code, message, details } = envelope.error
   throw new AppClientError(code, message, details)
 }
+
+/** Giữ metadata do Main trả về, dùng cho cảnh báo nghiệp vụ không chặn thao tác lưu. */
+export async function invokeWithMeta(request: Promise<any>) {
+  const envelope = await request
+  if (envelope.ok) return { data: envelope.data, meta: envelope.meta }
+  const { code, message, details } = envelope.error
+  throw new AppClientError(code, message, details)
+}

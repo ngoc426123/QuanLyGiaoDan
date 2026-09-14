@@ -1,5 +1,7 @@
-import { DetailPreview } from '@/features/preview/DetailPreview.tsx'
+import { useParams } from 'react-router-dom'
+import { PersonDetail } from '@/features/person/components/PersonDetail.tsx'
 
 export function PersonDetailPage() {
-  return <DetailPreview domain="persons" title="Hồ sơ giáo dân" />
+  const { id } = useParams()
+  return <PersonDetail id={id} />
 }

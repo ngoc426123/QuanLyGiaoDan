@@ -5,6 +5,7 @@ import { useTheme } from '@/features/setting/hooks/useTheme.ts'
 import { useSettingEvents } from '@/features/setting/hooks/useSettings.ts'
 import { useZoneEvents } from '@/features/zone/hooks/useZoneEvents.ts'
 import { useFamilyEvents } from '@/features/family/hooks/useFamilyEvents.ts'
+import { usePersonEvents } from '@/features/person/hooks/usePersonEvents.ts'
 import { useShellShortcuts } from '@/hooks/useShellShortcuts.ts'
 import { AppContent } from './AppContent.tsx'
 import { AppSidebar } from './AppSidebar.tsx'
@@ -22,6 +23,7 @@ export function AppShell() {
   useSettingEvents()
   useZoneEvents()
   useFamilyEvents()
+  usePersonEvents()
   useShellShortcuts()
   useEffect(() => {
     if (content.current) content.current.scrollTop = 0

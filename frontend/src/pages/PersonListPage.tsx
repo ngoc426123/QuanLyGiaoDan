@@ -1,5 +1,5 @@
-import { DirectoryPreview } from '@/features/preview/DirectoryPreview.tsx'
+import { PersonList } from '@/features/person/components/PersonList.tsx'
 
 export function PersonListPage() {
-  return <DirectoryPreview domain="persons" />
+  return <PersonList />
 }
