@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Task runner cho hai package frontend/ và backend/. Không bao giờ được đóng gói.",
   "scripts": {
+    "setup": "npm --prefix frontend install && npm --prefix backend install --ignore-scripts && node backend/node_modules/electron/install.js",
     "dev": "concurrently -k -n FE,BE -c cyan,magenta \"npm:dev:frontend\" \"npm:dev:backend\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "wait-on tcp:127.0.0.1:5173 && npm --prefix backend run dev",
