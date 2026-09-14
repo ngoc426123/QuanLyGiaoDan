@@ -205,6 +205,7 @@ export function PersonList() {
             onSubmit={async (input: any) => {
               const result = await create.mutateAsync(input)
               result.meta?.warnings?.forEach((warning: string) => addToast(warning))
+              setParams({})
               setCreateOpen(false)
               return result
             }}

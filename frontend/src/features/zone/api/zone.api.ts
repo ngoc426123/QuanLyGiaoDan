@@ -1,7 +1,7 @@
-import { invoke } from '@/shared/invoke.ts'
+import { invoke, invokeWithMeta } from '@/shared/invoke.ts'
 
 export const zoneApi = Object.freeze({
-  list: (filter: Record<string, unknown>) => invoke(window.api.zone.list(filter)),
+  list: (filter: Record<string, unknown>) => invokeWithMeta(window.api.zone.list(filter)),
   getById: (id: string) => invoke(window.api.zone.getById(id)),
   create: (input: Record<string, unknown>) => invoke(window.api.zone.create(input)),
   update: (input: Record<string, unknown>) => invoke(window.api.zone.update(input)),

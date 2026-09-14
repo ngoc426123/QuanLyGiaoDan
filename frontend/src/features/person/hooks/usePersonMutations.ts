@@ -4,10 +4,11 @@ import { personApi } from '../api/person.api.ts'
 
 function useCreateInvalidation() {
   const client = useQueryClient()
-  return () => {
+  return async () => {
     client.invalidateQueries({ queryKey: personKeys.lists })
     client.invalidateQueries({ queryKey: familyKeys.lists })
     client.invalidateQueries({ queryKey: zoneKeys.lists })
+    await client.refetchQueries({ queryKey: personKeys.lists, type: 'active' })
   }
 }
 

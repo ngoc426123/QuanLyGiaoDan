@@ -74,20 +74,18 @@ beforeEach(() => {
     zone: {
       list: vi.fn(async () => ({
         ok: true,
-        data: {
-          data: [
-            {
-              id: 'zone-1',
-              name: 'Giáo họ Thánh Gia',
-              holyName: 'Thánh Gia',
-              note: null,
-              familyCount: 0,
-              personCount: 0,
-              updatedAt: '2026-09-14T00:00:00.000Z',
-            },
-          ],
-          meta: { total: 1, page: 1, pageSize: 50 },
-        },
+        data: [
+          {
+            id: 'zone-1',
+            name: 'Giáo họ Thánh Gia',
+            holyName: 'Thánh Gia',
+            note: null,
+            familyCount: 0,
+            personCount: 0,
+            updatedAt: '2026-09-14T00:00:00.000Z',
+          },
+        ],
+        meta: { total: 1, page: 1, pageSize: 50 },
       })),
       getById: vi.fn(async () => ({
         ok: true,
@@ -108,21 +106,19 @@ beforeEach(() => {
     family: {
       list: vi.fn(async () => ({
         ok: true,
-        data: {
-          data: [
-            {
-              id: 'family-1',
-              zoneId: 'zone-1',
-              zoneName: 'Giáo họ Thánh Gia',
-              name: 'Hộ Nguyễn',
-              address: null,
-              note: null,
-              memberCount: 0,
-              updatedAt: '2026-09-14T00:00:00.000Z',
-            },
-          ],
-          meta: { total: 1, page: 1, pageSize: 50 },
-        },
+        data: [
+          {
+            id: 'family-1',
+            zoneId: 'zone-1',
+            zoneName: 'Giáo họ Thánh Gia',
+            name: 'Hộ Nguyễn',
+            address: null,
+            note: null,
+            memberCount: 0,
+            updatedAt: '2026-09-14T00:00:00.000Z',
+          },
+        ],
+        meta: { total: 1, page: 1, pageSize: 50 },
       })),
       getById: vi.fn(async () => ({
         ok: true,
@@ -144,21 +140,19 @@ beforeEach(() => {
     person: {
       list: vi.fn(async () => ({
         ok: true,
-        data: {
-          data: [
-            {
-              id: 'person-1',
-              fullName: 'Nguyễn Văn An',
-              holyName: 'Giuse',
-              gender: 'male',
-              birthDate: '1990-01-01',
-              familyName: 'Hộ Nguyễn',
-              zoneName: 'Giáo họ Thánh Gia',
-              updatedAt: '2026-09-14T00:00:00.000Z',
-            },
-          ],
-          meta: { total: 1, page: 1, pageSize: 50 },
-        },
+        data: [
+          {
+            id: 'person-1',
+            fullName: 'Nguyễn Văn An',
+            holyName: 'Giuse',
+            gender: 'male',
+            birthDate: '1990-01-01',
+            familyName: 'Hộ Nguyễn',
+            zoneName: 'Giáo họ Thánh Gia',
+            updatedAt: '2026-09-14T00:00:00.000Z',
+          },
+        ],
+        meta: { total: 1, page: 1, pageSize: 50 },
       })),
       getById: vi.fn(async () => ({
         ok: true,
@@ -200,6 +194,7 @@ describe('Khung ứng dụng qua API preload', () => {
     window.location.hash = '/persons'
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Giáo dân', exact: true })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Nguyễn Văn An' })).toBeTruthy()
     await userEvent.click(
       within(screen.getByRole('navigation')).getByRole('link', { name: 'Gia đình' }),
     )

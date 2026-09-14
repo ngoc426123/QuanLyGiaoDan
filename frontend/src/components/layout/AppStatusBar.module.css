@@ -9,6 +9,3 @@
   background: var(--color-bg-base);
   border-top: var(--border-width) solid var(--color-border-default);
 }
-.sample {
-  color: var(--color-text-muted);
-}

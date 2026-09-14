@@ -30,9 +30,9 @@ const family = {
 
 beforeEach(() => {
   window.api = {
-    zone: { list: vi.fn(async () => ({ ok: true, data: { data: [zone], meta: { total: 1 } } })) },
+    zone: { list: vi.fn(async () => ({ ok: true, data: [zone], meta: { total: 1 } })) },
     family: {
-      list: vi.fn(async () => ({ ok: true, data: { data: [family], meta: { total: 1 } } })),
+      list: vi.fn(async () => ({ ok: true, data: [family], meta: { total: 1 } })),
       getById: vi.fn(async () => ({
         ok: true,
         data: {
@@ -53,7 +53,7 @@ beforeEach(() => {
       remove: vi.fn(async () => ({ ok: true, data: { id: family.id } })),
     },
     person: {
-      list: vi.fn(async () => ({ ok: true, data: { data: [], meta: { total: 0 } } })),
+      list: vi.fn(async () => ({ ok: true, data: [], meta: { total: 0 } })),
     },
     familyMember: {
       add: vi.fn(async () => ({ ok: true, data: {} })),

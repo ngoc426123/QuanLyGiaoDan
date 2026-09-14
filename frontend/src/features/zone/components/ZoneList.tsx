@@ -97,6 +97,7 @@ export function ZoneList() {
             isPending={create.isPending}
             onSubmit={async (input: any) => {
               await create.mutateAsync(input)
+              setSearchParams({})
               setCreateOpen(false)
             }}
           />

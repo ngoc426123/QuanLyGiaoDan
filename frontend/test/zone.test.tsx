@@ -29,7 +29,7 @@ const zone = {
 beforeEach(() => {
   window.api = {
     zone: {
-      list: vi.fn(async () => ({ ok: true, data: { data: [zone], meta: { total: 1 } } })),
+      list: vi.fn(async () => ({ ok: true, data: [zone], meta: { total: 1 } })),
       getById: vi.fn(async () => ({ ok: true, data: zone })),
       create: vi.fn(async () => ({ ok: true, data: zone })),
       update: vi.fn(async () => ({ ok: true, data: zone })),
@@ -38,10 +38,8 @@ beforeEach(() => {
     family: {
       list: vi.fn(async () => ({
         ok: true,
-        data: {
-          data: [{ id: 'family-1', name: 'Hộ Nguyễn', address: null, memberCount: 2 }],
-          meta: { total: 1 },
-        },
+        data: [{ id: 'family-1', name: 'Hộ Nguyễn', address: null, memberCount: 2 }],
+        meta: { total: 1 },
       })),
     },
     events: { onZoneChanged: vi.fn(() => vi.fn()) },

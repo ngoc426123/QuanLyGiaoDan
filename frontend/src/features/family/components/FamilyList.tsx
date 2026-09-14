@@ -174,6 +174,7 @@ export function FamilyList() {
             isPending={create.isPending}
             onSubmit={async (input: any) => {
               await create.mutateAsync(input)
+              setSearchParams({})
               setCreateOpen(false)
             }}
           />
