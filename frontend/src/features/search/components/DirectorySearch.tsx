@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
@@ -20,20 +20,26 @@ function highlight(value: string, query: string) {
 }
 
 export function DirectorySearch() {
-  const [params, setParams] = useSearchParams()
-  const initial = params.get('q') ?? ''
-  const [input, setInput] = useState(initial)
-  const [query, setQuery] = useState(initial)
+  const location = useLocation()
+  const requestedQuery = typeof location.state?.query === 'string' ? location.state.query : ''
+  const [input, setInput] = useState(requestedQuery)
+  const [query, setQuery] = useState(requestedQuery)
+  const [isComposing, setIsComposing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const result = useDirectorySearch(query)
   useEffect(() => {
+    if (isComposing) return
     const timer = window.setTimeout(() => {
       const next = input.trim()
       setQuery(next)
-      setParams(next ? { q: next } : {})
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [input, setParams])
+  }, [input, isComposing])
+  useEffect(() => {
+    if (typeof location.state?.query !== 'string') return
+    setInput(requestedQuery)
+    setQuery(requestedQuery)
+  }, [location.state?.query, requestedQuery])
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
@@ -52,6 +58,11 @@ export function DirectorySearch() {
         value={input}
         ref={inputRef}
         onChange={(event: any) => setInput(event.target.value)}
+        onCompositionStart={() => setIsComposing(true)}
+        onCompositionEnd={(event: any) => {
+          setInput(event.currentTarget.value)
+          setIsComposing(false)
+        }}
       />
       {input.trim() && result.isLoading && <Skeleton />}
       {result.isError && <ErrorState error={result.error} onRetry={result.refetch} />}
@@ -67,7 +78,6 @@ export function DirectorySearch() {
           onAction={() => {
             setInput('')
             setQuery('')
-            setParams({})
           }}
         >
           Hãy thử từ khoá khác.

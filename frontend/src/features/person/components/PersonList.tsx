@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -20,20 +20,22 @@ import { PersonForm } from './PersonForm.tsx'
 import { PersonBulkActions } from './PersonBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
 import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
+import styles from '@/components/layout/DirectoryWorkspace.module.css'
+import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 
 export function PersonList() {
-  const [params, setParams] = useSearchParams()
-  const [isCreateOpen, setCreateOpen] = useState(params.get('new') === '1')
+  const location = useLocation()
+  const [isCreateOpen, setCreateOpen] = useState(location.state?.action === 'new')
   const [contextMenu, setContextMenu] = useState<any>(null)
   const navigate = useNavigate()
-  const search = params.get('q') ?? ''
-  const zoneId = params.get('zoneId') ?? ''
-  const familyId = params.get('familyId') ?? ''
-  const gender = params.get('gender') ?? ''
-  const isAlive = params.get('isAlive') ?? ''
-  const page = Number(params.get('page') ?? '1') || 1
-  const sortBy = params.get('sortBy') ?? 'givenName'
-  const sortDir = params.get('sortDir') ?? 'asc'
+  const [search, setSearch] = useState('')
+  const [zoneId, setZoneId] = useState('')
+  const [familyId, setFamilyId] = useState('')
+  const [gender, setGender] = useState('')
+  const [isAlive, setIsAlive] = useState('')
+  const [page, setPage] = useState(1)
+  const [sortBy, setSortBy] = useState('givenName')
+  const [sortDir, setSortDir] = useState('asc')
   const filter = useMemo(
     () => ({
       page,
@@ -58,17 +60,26 @@ export function PersonList() {
   const toggleSelection = useSelectionStore((state) => state.toggle)
   const clearSelection = useSelectionStore((state) => state.clear)
   const rows = persons.data?.data ?? []
-  const updateFilters = (next: Record<string, string>) => {
-    const result = new URLSearchParams(params)
-    for (const [key, value] of Object.entries(next))
-      value ? result.set(key, value) : result.delete(key)
-    if (!Object.hasOwn(next, 'page')) result.delete('page')
-    setParams(result)
+  const clearFilters = () => {
+    setSearch('')
+    setZoneId('')
+    setFamilyId('')
+    setGender('')
+    setIsAlive('')
+    setSortBy('givenName')
+    setSortDir('asc')
+    setPage(1)
   }
-  const clearFilters = () => setParams({})
+  const personSearch = useComposedSearch(search, (nextSearch) => {
+    setSearch(nextSearch)
+    setPage(1)
+  })
+  useEffect(() => {
+    if (location.state?.action === 'new') setCreateOpen(true)
+  }, [location.state?.action])
   const hasFilters = Boolean(search || zoneId || familyId || gender || isAlive)
   return (
-    <section>
+    <section className={styles.page}>
       <PageHeader title="Giáo dân" description="Quản lý hồ sơ và tình trạng gia đình của giáo dân.">
         <Button
           variant="secondary"
@@ -90,66 +101,78 @@ export function PersonList() {
         </Button>
         <Button onClick={() => setCreateOpen(true)}>Thêm giáo dân</Button>
       </PageHeader>
-      <Input
-        label="Tìm trong danh sách"
-        value={search}
-        onChange={(event: any) => updateFilters({ q: event.target.value })}
-      />
-      <Select
-        label="Giáo họ"
-        value={zoneId}
-        onChange={(event: any) => updateFilters({ zoneId: event.target.value })}
-      >
-        <option value="">Tất cả giáo họ</option>
-        {(zones.data?.data ?? []).map((zone: any) => (
-          <option key={zone.id} value={zone.id}>
-            {zone.name}
-          </option>
-        ))}
-      </Select>
-      <Select
-        label="Sắp xếp"
-        value={`${sortBy}:${sortDir}`}
-        onChange={(event: any) => {
-          const [nextSortBy, nextSortDir] = event.target.value.split(':')
-          updateFilters({ sortBy: nextSortBy, sortDir: nextSortDir })
-        }}
-      >
-        <option value="givenName:asc">Tên gọi A-Z</option>
-        <option value="fullName:asc">Họ tên A-Z</option>
-        <option value="birthDate:asc">Ngày sinh tăng dần</option>
-        <option value="createdAt:desc">Mới tạo trước</option>
-      </Select>
-      <Select
-        label="Gia đình"
-        value={familyId}
-        onChange={(event: any) => updateFilters({ familyId: event.target.value })}
-      >
-        <option value="">Tất cả gia đình</option>
-        {(families.data?.data ?? []).map((family: any) => (
-          <option key={family.id} value={family.id}>
-            {family.name}
-          </option>
-        ))}
-      </Select>
-      <Select
-        label="Giới tính"
-        value={gender}
-        onChange={(event: any) => updateFilters({ gender: event.target.value })}
-      >
-        <option value="">Tất cả</option>
-        <option value="male">Nam</option>
-        <option value="female">Nữ</option>
-      </Select>
-      <Select
-        label="Tình trạng"
-        value={isAlive}
-        onChange={(event: any) => updateFilters({ isAlive: event.target.value })}
-      >
-        <option value="">Tất cả</option>
-        <option value="true">Còn sống</option>
-        <option value="false">Đã qua đời</option>
-      </Select>
+      <div className={styles.filters}>
+        <Input label="Tìm trong danh sách" {...personSearch} />
+        <Select
+          label="Giáo họ"
+          value={zoneId}
+          onChange={(event: any) => {
+            setZoneId(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Tất cả giáo họ</option>
+          {(zones.data?.data ?? []).map((zone: any) => (
+            <option key={zone.id} value={zone.id}>
+              {zone.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Sắp xếp"
+          value={`${sortBy}:${sortDir}`}
+          onChange={(event: any) => {
+            const [nextSortBy, nextSortDir] = event.target.value.split(':')
+            setSortBy(nextSortBy)
+            setSortDir(nextSortDir)
+            setPage(1)
+          }}
+        >
+          <option value="givenName:asc">Tên gọi A-Z</option>
+          <option value="fullName:asc">Họ tên A-Z</option>
+          <option value="birthDate:asc">Ngày sinh tăng dần</option>
+          <option value="createdAt:desc">Mới tạo trước</option>
+        </Select>
+        <Select
+          label="Gia đình"
+          value={familyId}
+          onChange={(event: any) => {
+            setFamilyId(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Tất cả gia đình</option>
+          {(families.data?.data ?? []).map((family: any) => (
+            <option key={family.id} value={family.id}>
+              {family.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Giới tính"
+          value={gender}
+          onChange={(event: any) => {
+            setGender(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Tất cả</option>
+          <option value="male">Nam</option>
+          <option value="female">Nữ</option>
+        </Select>
+        <Select
+          label="Tình trạng"
+          value={isAlive}
+          onChange={(event: any) => {
+            setIsAlive(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Tất cả</option>
+          <option value="true">Còn sống</option>
+          <option value="false">Đã qua đời</option>
+        </Select>
+      </div>
       {(persons.isLoading || zones.isLoading || families.isLoading) && <Skeleton />}
       {persons.isError && <ErrorState error={persons.error} onRetry={persons.refetch} />}
       {!persons.isLoading && !persons.isError && rows.length === 0 && !hasFilters && (
@@ -181,7 +204,9 @@ export function PersonList() {
             caption="Danh sách giáo dân"
             rows={rows}
             onRowActivate={(person: any) => navigate(`/persons/${person.id}`)}
-            onRowDelete={(person: any) => navigate(`/persons/${person.id}?remove=1`)}
+            onRowDelete={(person: any) =>
+              navigate(`/persons/${person.id}`, { state: { action: 'remove' } })
+            }
             onRowContextMenu={(person: any, x: number, y: number) =>
               setContextMenu({ person, x, y })
             }
@@ -241,7 +266,7 @@ export function PersonList() {
             page={page}
             pageSize={50}
             total={persons.data?.meta?.total ?? 0}
-            onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
+            onPageChange={setPage}
           />
           {contextMenu && (
             <RowContextMenu
@@ -255,16 +280,19 @@ export function PersonList() {
                 },
                 {
                   label: 'Sửa',
-                  onClick: () => navigate(`/persons/${contextMenu.person.id}?edit=1`),
+                  onClick: () =>
+                    navigate(`/persons/${contextMenu.person.id}`, { state: { action: 'edit' } }),
                 },
                 {
                   label: 'Chuyển hộ',
-                  onClick: () => navigate(`/persons/${contextMenu.person.id}?move=1`),
+                  onClick: () =>
+                    navigate(`/persons/${contextMenu.person.id}`, { state: { action: 'move' } }),
                 },
                 {
                   label: 'Xóa',
                   danger: true,
-                  onClick: () => navigate(`/persons/${contextMenu.person.id}?remove=1`),
+                  onClick: () =>
+                    navigate(`/persons/${contextMenu.person.id}`, { state: { action: 'remove' } }),
                 },
               ]}
             />
@@ -281,7 +309,7 @@ export function PersonList() {
             onSubmit={async (input: any) => {
               const result = await create.mutateAsync(input)
               result.meta?.warnings?.forEach((warning: string) => addToast(warning))
-              setParams({})
+              clearFilters()
               setCreateOpen(false)
               return result
             }}

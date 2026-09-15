@@ -32,7 +32,16 @@ function VirtualRow({ row, columns }) {
 }
 
 export const Table = forwardRef<any, any>(function Table(
-  { columns, rows, caption, onRowActivate, onRowDelete, onRowContextMenu, ...rest },
+  {
+    columns,
+    rows,
+    caption,
+    visuallyHiddenCaption = false,
+    onRowActivate,
+    onRowDelete,
+    onRowContextMenu,
+    ...rest
+  },
   ref,
 ) {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -68,7 +77,9 @@ export const Table = forwardRef<any, any>(function Table(
   return (
     <div role="grid" tabIndex={0} className={styles.keyboardGrid} onKeyDown={handleKeyDown}>
       <table {...rest} ref={ref} className={styles.table}>
-        <caption className={styles.caption}>{caption}</caption>
+        <caption className={visuallyHiddenCaption ? styles.srOnly : styles.caption}>
+          {caption}
+        </caption>
         <thead>
           <tr>
             {columns.map((column) => (

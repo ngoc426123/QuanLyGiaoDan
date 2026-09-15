@@ -3,16 +3,23 @@
   border-collapse: collapse;
   text-align: left;
 }
+.keyboardGrid {
+  overflow: auto;
+  border: var(--border-width) solid var(--color-border-default);
+  background: var(--color-bg-base);
+}
 .table th {
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  background: var(--color-bg-subtle);
+  background: #eef2f1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .table th,
 .table td {
-  height: var(--row-height);
-  padding: var(--space-3) var(--space-5);
+  height: 44px;
+  padding: var(--space-2) var(--space-4);
   border-bottom: var(--border-width) solid var(--color-border-default);
 }
 .table tr:last-child td {
@@ -37,8 +44,19 @@
 }
 .caption {
   text-align: left;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   font-weight: var(--font-weight-medium);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .virtualRow {
   display: flex;

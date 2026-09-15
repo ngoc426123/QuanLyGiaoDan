@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -15,14 +15,15 @@ import { ZoneForm } from './ZoneForm.tsx'
 import { ZoneBulkActions } from './ZoneBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
 import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
+import styles from '@/components/layout/DirectoryWorkspace.module.css'
+import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 
 export function ZoneList() {
-  const [searchParams, setSearchParams] = useSearchParams()
   const [isCreateOpen, setCreateOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<any>(null)
   const navigate = useNavigate()
-  const search = searchParams.get('q') ?? ''
-  const page = Number(searchParams.get('page') ?? '1') || 1
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const filter = useMemo(
     () => ({ page, pageSize: 50, search, sortBy: 'name', sortDir: 'asc' }),
     [page, search],
@@ -33,27 +34,23 @@ export function ZoneList() {
   const selectedIds = useSelectionStore(selectedIdsFor('zone'))
   const toggleSelection = useSelectionStore((state) => state.toggle)
   const clearSelection = useSelectionStore((state) => state.clear)
-  const updateSearch = (value: string) => setSearchParams(value ? { q: value } : {})
-  const setPage = (nextPage: number) => {
-    const next = new URLSearchParams(searchParams)
-    if (nextPage === 1) next.delete('page')
-    else next.set('page', String(nextPage))
-    setSearchParams(next)
+  const updateSearch = (value: string) => {
+    setSearch(value)
+    setPage(1)
   }
+  const zoneSearch = useComposedSearch(search, updateSearch)
 
   return (
-    <section>
+    <section className={styles.page}>
       <PageHeader
         title="Giáo họ"
         description="Quản lý giáo họ và số hộ, giáo dân thuộc từng giáo họ."
       >
         <Button onClick={() => setCreateOpen(true)}>Thêm giáo họ</Button>
       </PageHeader>
-      <Input
-        label="Tìm giáo họ"
-        value={search}
-        onChange={(event: any) => updateSearch(event.target.value)}
-      />
+      <div className={styles.filters}>
+        <Input label="Tìm giáo họ" {...zoneSearch} />
+      </div>
       {query.isLoading && <Skeleton />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {!query.isLoading && !query.isError && rows.length === 0 && !search && (
@@ -81,7 +78,9 @@ export function ZoneList() {
             caption="Danh sách giáo họ"
             rows={rows}
             onRowActivate={(zone: any) => navigate(`/zones/${zone.id}`)}
-            onRowDelete={(zone: any) => navigate(`/zones/${zone.id}?remove=1`)}
+            onRowDelete={(zone: any) =>
+              navigate(`/zones/${zone.id}`, { state: { action: 'remove' } })
+            }
             onRowContextMenu={(zone: any, x: number, y: number) => setContextMenu({ zone, x, y })}
             columns={[
               {
@@ -119,11 +118,16 @@ export function ZoneList() {
               onClose={() => setContextMenu(null)}
               items={[
                 { label: 'Xem chi tiết', onClick: () => navigate(`/zones/${contextMenu.zone.id}`) },
-                { label: 'Sửa', onClick: () => navigate(`/zones/${contextMenu.zone.id}?edit=1`) },
+                {
+                  label: 'Sửa',
+                  onClick: () =>
+                    navigate(`/zones/${contextMenu.zone.id}`, { state: { action: 'edit' } }),
+                },
                 {
                   label: 'Xóa',
                   danger: true,
-                  onClick: () => navigate(`/zones/${contextMenu.zone.id}?remove=1`),
+                  onClick: () =>
+                    navigate(`/zones/${contextMenu.zone.id}`, { state: { action: 'remove' } }),
                 },
               ]}
             />
@@ -137,7 +141,7 @@ export function ZoneList() {
             isPending={create.isPending}
             onSubmit={async (input: any) => {
               await create.mutateAsync(input)
-              setSearchParams({})
+              updateSearch('')
               setCreateOpen(false)
             }}
           />

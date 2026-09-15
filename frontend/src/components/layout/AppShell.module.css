@@ -16,7 +16,7 @@
   overflow-y: auto;
   min-height: 0;
   min-width: 0;
-  padding: var(--space-8);
+  padding: var(--space-6);
   background: var(--color-bg-subtle);
 }
 .skip {

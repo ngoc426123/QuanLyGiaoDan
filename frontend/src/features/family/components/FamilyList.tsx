@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -18,17 +18,20 @@ import { FamilyForm } from './FamilyForm.tsx'
 import { FamilyBulkActions } from './FamilyBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
 import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
+import styles from '@/components/layout/DirectoryWorkspace.module.css'
+import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 
 export function FamilyList() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const [isCreateOpen, setCreateOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<any>(null)
   const navigate = useNavigate()
-  const search = searchParams.get('q') ?? ''
-  const zoneId = searchParams.get('zoneId') ?? ''
-  const page = Number(searchParams.get('page') ?? '1') || 1
-  const sortBy = searchParams.get('sortBy') ?? 'name'
-  const sortDir = searchParams.get('sortDir') ?? 'asc'
+  const [search, setSearch] = useState('')
+  const [zoneId, setZoneId] = useState(location.state?.filters?.zoneId ?? '')
+  const [page, setPage] = useState(1)
+  const [sortBy, setSortBy] = useState('name')
+  const [sortDir, setSortDir] = useState('asc')
+  const requestedZoneId = location.state?.filters?.zoneId
   const filter = useMemo(
     () => ({
       page,
@@ -49,29 +52,25 @@ export function FamilyList() {
   const clearSelection = useSelectionStore((state) => state.clear)
   const rows = families.data?.data ?? []
   const zoneRows = zones.data?.data ?? []
-  const updateFilters = (next: {
-    search?: string
-    zoneId?: string
-    sortBy?: string
-    sortDir?: string
-    page?: string
-  }) => {
-    const params = new URLSearchParams(searchParams)
-    const nextSearch = next.search ?? search
-    const nextZoneId = next.zoneId ?? zoneId
-    if (nextSearch) params.set('q', nextSearch)
-    else params.delete('q')
-    if (nextZoneId) params.set('zoneId', nextZoneId)
-    else params.delete('zoneId')
-    for (const [key, value] of Object.entries(next))
-      if (!['search', 'zoneId'].includes(key)) value ? params.set(key, value) : params.delete(key)
-    if (!Object.hasOwn(next, 'page')) params.delete('page')
-    setSearchParams(params)
+  const clearFilters = () => {
+    setSearch('')
+    setZoneId('')
+    setSortBy('name')
+    setSortDir('asc')
+    setPage(1)
   }
-  const clearFilters = () => setSearchParams({})
+  const familySearch = useComposedSearch(search, (nextSearch) => {
+    setSearch(nextSearch)
+    setPage(1)
+  })
+  useEffect(() => {
+    if (typeof requestedZoneId !== 'string') return
+    setZoneId(requestedZoneId)
+    setPage(1)
+  }, [requestedZoneId])
 
   return (
-    <section>
+    <section className={styles.page}>
       <PageHeader title="Gia đình" description="Quản lý hộ gia đình và giáo họ trực thuộc.">
         <Button
           variant="secondary"
@@ -92,35 +91,38 @@ export function FamilyList() {
           Thêm gia đình
         </Button>
       </PageHeader>
-      <Input
-        label="Tìm hộ"
-        value={search}
-        onChange={(event: any) => updateFilters({ search: event.target.value })}
-      />
-      <Select
-        label="Lọc theo giáo họ"
-        value={zoneId}
-        onChange={(event: any) => updateFilters({ zoneId: event.target.value })}
-      >
-        <option value="">Tất cả giáo họ</option>
-        {zoneRows.map((zone: any) => (
-          <option key={zone.id} value={zone.id}>
-            {zone.name}
-          </option>
-        ))}
-      </Select>
-      <Select
-        label="Sắp xếp"
-        value={`${sortBy}:${sortDir}`}
-        onChange={(event: any) => {
-          const [nextSortBy, nextSortDir] = event.target.value.split(':')
-          updateFilters({ sortBy: nextSortBy, sortDir: nextSortDir })
-        }}
-      >
-        <option value="name:asc">Tên hộ A-Z</option>
-        <option value="name:desc">Tên hộ Z-A</option>
-        <option value="createdAt:desc">Mới tạo trước</option>
-      </Select>
+      <div className={styles.filters}>
+        <Input label="Tìm hộ" {...familySearch} />
+        <Select
+          label="Lọc theo giáo họ"
+          value={zoneId}
+          onChange={(event: any) => {
+            setZoneId(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">Tất cả giáo họ</option>
+          {zoneRows.map((zone: any) => (
+            <option key={zone.id} value={zone.id}>
+              {zone.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Sắp xếp"
+          value={`${sortBy}:${sortDir}`}
+          onChange={(event: any) => {
+            const [nextSortBy, nextSortDir] = event.target.value.split(':')
+            setSortBy(nextSortBy)
+            setSortDir(nextSortDir)
+            setPage(1)
+          }}
+        >
+          <option value="name:asc">Tên hộ A-Z</option>
+          <option value="name:desc">Tên hộ Z-A</option>
+          <option value="createdAt:desc">Mới tạo trước</option>
+        </Select>
+      </div>
       {(families.isLoading || zones.isLoading) && <Skeleton />}
       {families.isError && <ErrorState error={families.error} onRetry={families.refetch} />}
       {zones.isError && <ErrorState error={zones.error} onRetry={zones.refetch} />}
@@ -171,7 +173,9 @@ export function FamilyList() {
             caption="Danh sách gia đình"
             rows={rows}
             onRowActivate={(family: any) => navigate(`/families/${family.id}`)}
-            onRowDelete={(family: any) => navigate(`/families/${family.id}?remove=1`)}
+            onRowDelete={(family: any) =>
+              navigate(`/families/${family.id}`, { state: { action: 'remove' } })
+            }
             onRowContextMenu={(family: any, x: number, y: number) =>
               setContextMenu({ family, x, y })
             }
@@ -206,7 +210,7 @@ export function FamilyList() {
             page={page}
             pageSize={50}
             total={families.data?.meta?.total ?? 0}
-            onPageChange={(nextPage) => updateFilters({ page: String(nextPage) })}
+            onPageChange={setPage}
           />
           {contextMenu && (
             <RowContextMenu
@@ -220,12 +224,14 @@ export function FamilyList() {
                 },
                 {
                   label: 'Sửa',
-                  onClick: () => navigate(`/families/${contextMenu.family.id}?edit=1`),
+                  onClick: () =>
+                    navigate(`/families/${contextMenu.family.id}`, { state: { action: 'edit' } }),
                 },
                 {
                   label: 'Xóa',
                   danger: true,
-                  onClick: () => navigate(`/families/${contextMenu.family.id}?remove=1`),
+                  onClick: () =>
+                    navigate(`/families/${contextMenu.family.id}`, { state: { action: 'remove' } }),
                 },
               ]}
             />
@@ -240,7 +246,7 @@ export function FamilyList() {
             isPending={create.isPending}
             onSubmit={async (input: any) => {
               await create.mutateAsync(input)
-              setSearchParams({})
+              clearFilters()
               setCreateOpen(false)
             }}
           />

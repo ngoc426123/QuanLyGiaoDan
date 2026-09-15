@@ -1,10 +1,9 @@
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useZones } from '../hooks/useZones.ts'
 import styles from './Zone.module.css'
 
 export function ZoneQuickFilters() {
   const location = useLocation()
-  const [searchParams] = useSearchParams()
   const query = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const zones = query.data?.data ?? []
 
@@ -18,10 +17,11 @@ export function ZoneQuickFilters() {
         zones.map((zone: any) => (
           <Link
             key={zone.id}
-            to={`/families?zoneId=${zone.id}`}
+            to="/families"
+            state={{ filters: { zoneId: zone.id } }}
             className={styles.quickFilter}
             aria-current={
-              location.pathname === '/families' && searchParams.get('zoneId') === zone.id
+              location.pathname === '/families' && location.state?.filters?.zoneId === zone.id
                 ? 'page'
                 : undefined
             }

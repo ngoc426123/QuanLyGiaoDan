@@ -6,7 +6,7 @@ import styles from './CommandPalette.module.css'
 
 const actions = [
   { label: 'Tổng quan', path: '/' },
-  { label: 'Thêm giáo dân mới', path: '/persons?new=1' },
+  { label: 'Thêm giáo dân mới', path: '/persons', state: { action: 'new' } },
   { label: 'Danh sách giáo dân', path: '/persons' },
   { label: 'Danh sách gia đình', path: '/families' },
   { label: 'Danh sách giáo họ', path: '/zones' },
@@ -34,7 +34,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   function select(index: number) {
     const action = visible[index]
     if (!action) return
-    navigate(action.path)
+    navigate(action.path, { state: action.state })
     onClose()
   }
   return (

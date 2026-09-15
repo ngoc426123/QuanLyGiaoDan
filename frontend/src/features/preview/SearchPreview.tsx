@@ -1,12 +1,13 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
+import { Input } from '@/components/ui/Input.tsx'
 import { samplePersons, sampleFamilies, normalizeSearch } from './sampleData.ts'
 import styles from './Preview.module.css'
 
 export function SearchPreview() {
-  const [params, setParams] = useSearchParams()
-  const query = params.get('q') || ''
+  const [query, setQuery] = useState('')
   const allRows = [
     ...samplePersons.map((row) => ({
       ...row,
@@ -35,6 +36,7 @@ export function SearchPreview() {
         }
         isSample
       />
+      <Input label="Từ khoá" value={query} onChange={(event) => setQuery(event.target.value)} />
       {!query.trim() && (
         <EmptyState title="Bạn muốn tìm ai?">
           Nhập từ khoá vào ô tìm kiếm ở thanh trên và nhấn Enter.
@@ -44,7 +46,7 @@ export function SearchPreview() {
         <EmptyState
           title="Không có kết quả khớp bộ lọc"
           actionLabel="Xoá bộ lọc"
-          onAction={() => setParams({})}
+          onAction={() => setQuery('')}
         >
           Hãy thử từ khoá ngắn hơn.
         </EmptyState>

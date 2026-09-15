@@ -15,7 +15,6 @@ export function AppTopBar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [isAboutOpen, setAboutOpen] = useState(false)
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
-  const query = new URLSearchParams(location.search).get('q') || ''
   useEffect(() => {
     const applyWindowState = (state) => setIsMaximized(state?.maximized === true)
     const unsubscribe = window.api?.events?.onWindowStateChanged?.(applyWindowState)
@@ -28,7 +27,7 @@ export function AppTopBar() {
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = String(new FormData(event.currentTarget).get('search') ?? '').trim()
-    navigate(`/search?q=${encodeURIComponent(query)}`)
+    navigate('/search', { state: { query } })
   }
   function closeWindow() {
     window.api?.app?.closeWindow?.()
@@ -138,14 +137,13 @@ export function AppTopBar() {
       <div className={styles.breadcrumb}>
         Giáo xứ <span aria-hidden="true">/</span> <strong>{routeTitle(location.pathname)}</strong>
       </div>
-      <form key={query} role="search" className={styles.search} onSubmit={search}>
+      <form role="search" className={styles.search} onSubmit={search}>
         <Input
           id="global-search"
           name="search"
           aria-label="Tìm kiếm toàn bộ danh bạ"
           placeholder="Tìm trong danh bạ…"
           type="search"
-          defaultValue={query}
         />
         <Button type="submit" aria-label="Tìm kiếm">
           <Icon name="search" />

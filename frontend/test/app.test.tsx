@@ -258,14 +258,17 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(await screen.findByRole('combobox', { name: 'Chế độ giao diện' })).toBeTruthy()
   })
 
-  it('lọc giáo dân được phản ánh vào URL', async () => {
+  it('lọc giáo dân giữ state trong màn hình, không thêm query vào route', async () => {
     const user = userEvent.setup()
     window.location.hash = '/persons'
     render(<App />)
-    await user.type(screen.getByRole('textbox', { name: 'Tìm trong danh sách' }), 'nguyen')
-    await waitFor(() => expect(window.location.hash).toContain('q=nguyen'))
+    const search = screen.getByRole('textbox', { name: 'Tìm trong danh sách' })
+    await user.type(search, 'nguyen')
+    expect(search.value).toBe('nguyen')
+    expect(window.location.hash).toBe('#/persons')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Giới tính' }), 'male')
-    await waitFor(() => expect(window.location.hash).toContain('gender=male'))
+    expect(screen.getByRole('combobox', { name: 'Giới tính' }).value).toBe('male')
+    expect(window.location.hash).toBe('#/persons')
   })
 
   it('lưu theme, khởi động lại, phản ứng với hệ thống và huỷ listener', async () => {
@@ -352,14 +355,13 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(screen.getByRole('main').closest('[data-collapsed]').dataset.collapsed).toBe('true')
   })
 
-  it('ô tìm kiếm khôi phục từ URL và xoá cùng bộ lọc', async () => {
-    window.location.hash = '/search?q=khongco'
+  it('ô tìm kiếm chuyển từ khoá bằng state nội bộ, không thêm query vào route', async () => {
     render(<App />)
-    expect(screen.getByRole('searchbox', { name: 'Tìm kiếm toàn bộ danh bạ' }).value).toBe(
-      'khongco',
-    )
-    await userEvent.click(await screen.findByRole('button', { name: 'Xoá bộ lọc' }))
-    expect(screen.getByRole('searchbox', { name: 'Tìm kiếm toàn bộ danh bạ' }).value).toBe('')
+    const search = screen.getByRole('searchbox', { name: 'Tìm kiếm toàn bộ danh bạ' })
+    await userEvent.type(search, 'khongco')
+    await userEvent.keyboard('{Enter}')
+    expect(window.location.hash).toBe('#/search')
+    expect((await screen.findByRole('textbox', { name: 'Từ khoá' })).value).toBe('khongco')
   })
 
   it('rời Cài đặt khi đang lưu không giữ lại bản xem trước bị lỗi', async () => {

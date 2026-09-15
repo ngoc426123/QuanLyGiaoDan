@@ -20,15 +20,14 @@ export function Dashboard() {
       <PageHeader
         title="Tổng quan giáo xứ"
         description="Theo dõi số liệu và những bản ghi cần bổ sung."
-      />
-      <div className={styles.actions}>
+      >
         <Link to="/persons">
           <Button variant="primary">Thêm giáo dân</Button>
         </Link>
         <Link to="/families">
           <Button>Thêm hộ</Button>
         </Link>
-      </div>
+      </PageHeader>
       <section className={styles.statistics} aria-label="Số liệu tổng quan">
         <Link to="/persons" className={styles.statistic}>
           <span>Giáo dân đang sống</span>
@@ -47,7 +46,8 @@ export function Dashboard() {
         <h2>Phân bố theo giáo họ</h2>
         {data.zones.length ? (
           <Table
-            caption="Phân bố theo giáo họ"
+            caption="Bảng phân bố theo giáo họ"
+            visuallyHiddenCaption
             rows={data.zones}
             columns={[
               {

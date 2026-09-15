@@ -19,7 +19,7 @@ export function useShellShortcuts({ onCommandPalette }: { onCommandPalette?: () 
       if (key === 'b') toggle()
       if (key === ',') navigate('/settings')
       if (key === 'k') onCommandPalette?.()
-      if (key === 'n') navigate('/persons?new=1')
+      if (key === 'n') navigate('/persons', { state: { action: 'new' } })
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
