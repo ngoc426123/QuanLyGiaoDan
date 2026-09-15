@@ -74,7 +74,7 @@ export function FamilyForm({ initialValue, zones, onSubmit, isPending, submitLab
           {error.message}
         </p>
       )}
-      <Button type="submit" isPending={isPending} disabled={isPending}>
+      <Button type="submit" variant="primary" isPending={isPending} disabled={isPending}>
         {submitLabel}
       </Button>
     </form>

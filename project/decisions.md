@@ -96,6 +96,26 @@ Zustand và bộ test Vitest + React Testing Library + user-event + jsdom.
 | --- | ----------- | ------------- | ---------------- | ---------- |
 | —   | _(chưa có)_ |               |                  |            |
 
+## 5.1. Ngôn ngữ giao diện desktop
+
+**Quyết định P19 (2026-09-15):** giao diện của ứng dụng ưu tiên ngôn ngữ thiết kế Windows
+desktop, không mô phỏng landing page hay biểu mẫu web. Áp dụng khi tạo mới hoặc sửa component
+Renderer Process:
+
+- Dùng font hệ thống `Segoe UI Variable`/`Segoe UI`, không thêm web font hoặc phong cách marketing.
+- Modal có title bar cao 44px, nút đóng dạng biểu tượng, nội dung cuộn độc lập; không dùng header
+  lớn hay nút “Đóng” dạng pill. Hộp xác nhận đặt các lệnh theo hàng ở cuối, căn phải.
+- Modal và context menu là bề mặt phẳng: viền mảnh, bo góc tối đa 4px, bóng vừa đủ tách khỏi nền.
+  Không lồng card trong card; nhóm trường dùng tiêu đề và separator thay cho khung bo góc độc lập.
+- Input, select và date input dùng control cao 32–34px, viền tương phản, bo góc 4px. Khi focus,
+  dùng viền/focus ring theo `--color-border-focus`; không dùng shadow lớn, pill, hoặc hiệu ứng web.
+- Nút hành động chính của form dùng `variant="primary"`, đặt cuối form và căn phải. Nút phụ là
+  secondary; thao tác phá huỷ giữ màu `danger` và được tách rõ khỏi lệnh thông thường.
+- Hover chỉ đổi nền và viền qua token trạng thái, không dùng `filter`. Control disabled phải chuyển
+  về nền trung tính, chữ muted và viền mặc định; không làm mờ action đang mang màu nhấn.
+- Mọi giá trị màu, kích thước, khoảng cách và shadow lấy từ token trong
+  `frontend/src/styles/tokens.css`, bao gồm token control và modal mới thêm.
+
 ## 6. Chi tiết triển khai Phase 3 — 2026-09-13
 
 - `react-router-dom` **6.30.6**: HashRouter, tương thích React 18; `@tanstack/react-query`

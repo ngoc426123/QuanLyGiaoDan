@@ -179,7 +179,7 @@ export function FamilyMemberForm({
         </p>
       )}
       <div className={styles.actions}>
-        <Button type="submit" isPending={isPending} disabled={isPending}>
+        <Button type="submit" variant="primary" isPending={isPending} disabled={isPending}>
           {mode === 'move' ? 'Chuyển hộ' : 'Lưu'}
         </Button>
       </div>

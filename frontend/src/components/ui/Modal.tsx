@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from './Button.tsx'
+import { Icon } from './Icon.tsx'
 import styles from './Modal.module.css'
 
 export const Modal = forwardRef<any, any>(function Modal(
@@ -36,9 +36,15 @@ export const Modal = forwardRef<any, any>(function Modal(
     >
       <header className={styles.header}>
         <h2 id={titleId}>{title}</h2>
-        <Button aria-label="Đóng hộp thoại" onClick={onClose} disabled={!onClose}>
-          Đóng
-        </Button>
+        <button
+          type="button"
+          className={styles.closeButton}
+          aria-label="Đóng hộp thoại"
+          onClick={onClose}
+          disabled={!onClose}
+        >
+          <Icon name="close" />
+        </button>
       </header>
       <div className={styles.body}>{children}</div>
     </dialog>,

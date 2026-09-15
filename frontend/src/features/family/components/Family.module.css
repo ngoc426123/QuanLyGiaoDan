@@ -4,9 +4,13 @@
   gap: var(--space-5);
 }
 
+.form > button {
+  justify-self: end;
+}
+
 .textareaField {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .textarea {
@@ -14,11 +18,36 @@
   min-height: calc(var(--control-height) * 3);
   resize: vertical;
   padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--color-border-default);
-  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   background: var(--color-bg-base);
   font: inherit;
+}
+.textarea:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+.textarea:focus-visible {
+  border-color: var(--color-border-focus);
+  outline: 0;
+  box-shadow: 0 0 0 var(--focus-width)
+    color-mix(in srgb, var(--color-border-focus) 26%, transparent);
+}
+
+.inlineSelect {
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-base);
+}
+
+.inlineSelect:focus-visible {
+  border-color: var(--color-border-focus);
+  outline: 0;
+  box-shadow: 0 0 0 var(--focus-width)
+    color-mix(in srgb, var(--color-border-focus) 26%, transparent);
 }
 
 .error {

@@ -153,6 +153,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
                 label: 'Quan hệ',
                 render: (member: FamilyMember) => (
                   <select
+                    className={styles.inlineSelect}
                     aria-label={`Quan hệ của ${member.personFullName}`}
                     value={member.relationship}
                     disabled={updateMember.isPending}
