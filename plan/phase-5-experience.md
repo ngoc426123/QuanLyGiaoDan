@@ -5,6 +5,10 @@
 >
 > **Ước lượng**: 3–5 ngày · **Tiền đề**: Phase 4 đạt đủ Definition of Done
 
+> **Trạng thái**: Hoàn tất ngày 2026-09-14. Đã kiểm chứng bằng `npm run format:check`,
+> `npm run lint`, `npm run typecheck`, `npm run build`; backend 75/75 và frontend 27/27
+> kiểm thử đạt. Chức năng in giấy ở 5.9 được hoãn lại sau cùng theo quyết định người dùng.
+
 **Đọc trước**: `project/database-schema.md` §3.8, `docs/03-frontend/ui-structure.md` §6–§7.
 
 > **Khác roadmap gốc**: mục 5.11 (import Excel/CSV) được **kéo từ Phase 8 lên đây**.
@@ -160,13 +164,13 @@ Xuất **CSV** cho từng danh sách trên. Dùng `app:showSaveDialog` đã có 
 
 Theo `ui-structure.md` §6:
 
-- [ ] Focus ring rõ ràng ở **cả hai** theme, dùng `:focus-visible`
-- [ ] Bẫy focus trong Modal/Drawer; `Esc` đóng; đóng xong trả focus về nơi kích hoạt
-- [ ] Nút chỉ có icon có `aria-label`
-- [ ] Độ tương phản tối thiểu **4.5:1** ở cả hai theme
-- [ ] Vùng bấm tối thiểu **32 × 32 px**
-- [ ] Toast và lỗi dùng `role="status"` / `role="alert"`
-- [ ] Tôn trọng `prefers-reduced-motion`
+- [x] Focus ring rõ ràng ở **cả hai** theme, dùng `:focus-visible`
+- [x] Bẫy focus trong Modal/Drawer; `Esc` đóng; đóng xong trả focus về nơi kích hoạt
+- [x] Nút chỉ có icon có `aria-label`
+- [x] Độ tương phản tối thiểu **4.5:1** ở cả hai theme
+- [x] Vùng bấm tối thiểu **32 × 32 px**
+- [x] Toast và lỗi dùng `role="status"` / `role="alert"`
+- [x] Tôn trọng `prefers-reduced-motion`
 
 ---
 
@@ -194,17 +198,17 @@ Theo `ui-structure.md` §6:
 
 ## Definition of Done
 
-- [ ] Gõ "nguyen van an" tìm được "Nguyễn Văn An"
-- [ ] Tìm kiếm chạy trên cả họ tên, tên thánh, tên hộ, địa chỉ
-- [ ] Mọi hành động chính làm được bằng bàn phím, **không cần chuột**
-- [ ] Phím tắt tự vô hiệu khi đang gõ trong ô nhập liệu
-- [ ] Xoá rồi khôi phục từ thùng rác — dữ liệu trở về nguyên vẹn
-- [ ] Khôi phục người mà hộ cũ đã bị xoá → không sập, người về trạng thái chưa thuộc hộ
-- [ ] Thao tác hàng loạt trên 100 bản ghi chạy trong 1 transaction, phát 1 event
-- [ ] Độ tương phản đạt 4.5:1 ở cả hai theme
-- [ ] Xuất CSV danh sách giáo dân theo giáo họ mở được bằng Excel, **tiếng Việt không lỗi font** (BOM UTF-8)
-- [ ] _(nếu làm 5.11)_ Import 3.000 dòng không treo UI, có tiến độ, lỗi giữa chừng thì rollback sạch
-- [ ] `npm run lint` + `npm run format:check` sạch, test pass
+- [x] Gõ "nguyen van an" tìm được "Nguyễn Văn An"
+- [x] Tìm kiếm chạy trên cả họ tên, tên thánh, tên hộ, địa chỉ
+- [x] Mọi hành động chính làm được bằng bàn phím, **không cần chuột**
+- [x] Phím tắt tự vô hiệu khi đang gõ trong ô nhập liệu
+- [x] Xoá rồi khôi phục từ thùng rác — dữ liệu trở về nguyên vẹn
+- [x] Khôi phục người mà hộ cũ đã bị xoá → không sập, người về trạng thái chưa thuộc hộ
+- [x] Thao tác hàng loạt trên 100 bản ghi chạy trong 1 transaction, phát 1 event
+- [x] Độ tương phản đạt 4.5:1 ở cả hai theme
+- [x] Xuất CSV danh sách giáo dân theo giáo họ mở được bằng Excel, **tiếng Việt không lỗi font** (BOM UTF-8)
+- [x] _(đã làm 5.11)_ Import 3.000 dòng không treo UI, có tiến độ, lỗi giữa chừng thì rollback sạch
+- [x] `npm run lint` + `npm run format:check` sạch, test pass
 
 ---
 
