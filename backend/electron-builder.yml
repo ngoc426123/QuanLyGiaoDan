@@ -3,6 +3,7 @@
 
 appId: com.elecrusion.app
 productName: Elecrusion
+icon: resources/app-icon.ico
 
 directories:
   output: release
@@ -23,3 +24,8 @@ npmRebuild: false
 
 win:
   target: nsis
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true

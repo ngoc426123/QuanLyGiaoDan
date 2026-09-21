@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, describe, it } from 'node:test'
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 import {
   LATEST_VERSION,
   assertNotDowngrade,
@@ -129,7 +129,7 @@ describe('migrate', () => {
 })
 
 describe('backupDatabase', () => {
-  it('tạo bản sao bằng API backup của SQLite và giữ tối đa 5 bản', async () => {
+  it('tạo bản sao bằng VACUUM INTO và giữ tối đa 5 bản', async () => {
     const backupDir = join(workDir, 'backups')
     const db = new Database(join(workDir, 'source.db'))
     await migrate(db)

@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 
 const database = new Database(process.argv[2])
 database.pragma('journal_mode = WAL')

@@ -11,6 +11,8 @@ export const ConfirmDialog = forwardRef<any, any>(function ConfirmDialog(
     onClose,
     isPending = false,
     confirmDisabled = false,
+    confirmLabel = 'Xác nhận xoá',
+    confirmVariant = 'danger',
     ...rest
   },
   ref,
@@ -23,14 +25,14 @@ export const ConfirmDialog = forwardRef<any, any>(function ConfirmDialog(
           Huỷ
         </Button>
         <Button
-          variant="danger"
+          variant={confirmVariant}
           disabled={isPending || confirmDisabled}
           isPending={isPending}
           onClick={() => {
             if (!isPending) onConfirm()
           }}
         >
-          Xác nhận xoá
+          {confirmLabel}
         </Button>
       </div>
     </Modal>

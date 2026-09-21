@@ -13,8 +13,22 @@ export function BackupSettings() {
   const [preview, setPreview] = useState<any>(null)
   const [isClearOpen, setClearOpen] = useState(false)
   const [confirmation, setConfirmation] = useState('')
-  function run(action) {
-    if (!mutation.isPending) mutation.mutate(action)
+  const [backupAction, setBackupAction] = useState<'export' | 'import' | null>(null)
+  const [backupPassword, setBackupPassword] = useState('')
+  const [backupConfirmation, setBackupConfirmation] = useState('')
+  function run() {
+    if (!mutation.isPending && backupAction) {
+      mutation.mutate(
+        { action: backupAction, password: backupPassword },
+        {
+          onSettled: () => {
+            setBackupAction(null)
+            setBackupPassword('')
+            setBackupConfirmation('')
+          },
+        },
+      )
+    }
   }
   return (
     <section className={styles.panel} aria-labelledby="backup-title">
@@ -24,10 +38,10 @@ export function BackupSettings() {
         liệu hiện tại; ứng dụng sẽ cho bạn đối chiếu trước khi tiếp tục.
       </p>
       <div className={styles.actions}>
-        <Button disabled={mutation.isPending} onClick={() => run('export')}>
+        <Button disabled={mutation.isPending} onClick={() => setBackupAction('export')}>
           Xuất dữ liệu ra file
         </Button>
-        <Button disabled={mutation.isPending} onClick={() => run('import')}>
+        <Button disabled={mutation.isPending} onClick={() => setBackupAction('import')}>
           Nhập dữ liệu từ file
         </Button>
         <Button
@@ -51,6 +65,48 @@ export function BackupSettings() {
         </Button>
       </div>
       {mutation.isPending && <p role="status">Đang xử lý dữ liệu…</p>}
+      {backupAction && (
+        <ConfirmDialog
+          title={backupAction === 'export' ? 'Đặt mật khẩu backup' : 'Nhập mật khẩu backup'}
+          isPending={mutation.isPending}
+          confirmLabel={backupAction === 'export' ? 'Xuất file đã mã hóa' : 'Mở file backup'}
+          confirmVariant="primary"
+          confirmDisabled={
+            backupPassword.length < 12 ||
+            (backupAction === 'export' && backupPassword !== backupConfirmation)
+          }
+          onClose={() => {
+            setBackupAction(null)
+            setBackupPassword('')
+            setBackupConfirmation('')
+          }}
+          onConfirm={run}
+        >
+          <span>
+            {backupAction === 'export'
+              ? 'Mỗi file backup có thể dùng mật khẩu riêng. Hãy lưu mật khẩu này ở nơi an toàn; không thể mở lại file nếu quên.'
+              : 'Nhập mật khẩu đã được đặt riêng cho file backup được chọn.'}
+            <Input
+              label="Mật khẩu backup"
+              type="password"
+              autoComplete={backupAction === 'export' ? 'new-password' : 'current-password'}
+              value={backupPassword}
+              disabled={mutation.isPending}
+              onChange={(event: any) => setBackupPassword(event.target.value)}
+            />
+            {backupAction === 'export' && (
+              <Input
+                label="Xác nhận mật khẩu backup"
+                type="password"
+                autoComplete="new-password"
+                value={backupConfirmation}
+                disabled={mutation.isPending}
+                onChange={(event: any) => setBackupConfirmation(event.target.value)}
+              />
+            )}
+          </span>
+        </ConfirmDialog>
+      )}
       {csvImport.commit.isPending && (
         <p role="status">
           Đang nhập CSV{csvImport.progress?.total ? `: ${csvImport.progress.percent}%` : '…'}

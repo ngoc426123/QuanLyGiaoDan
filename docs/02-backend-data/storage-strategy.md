@@ -200,8 +200,8 @@ Tất cả đặt trong một transaction, và **tắt `foreign_keys` trong lúc
 | Cơ chế | Mô tả |
 |---|---|
 | **Backup tự động trước migration** | Bắt buộc khi DB đã có schema. Giữ tối đa 5 bản gần nhất. |
-| **Backup định kỳ** | Bật qua `data.autoBackup` (mặc định `true`); kiểm tra lúc khởi động theo `data.backupIntervalDays` (mặc định 7 ngày). Dùng API backup của SQLite (an toàn khi DB đang mở), **không** copy file thô bằng `fs`. |
-| **Xuất dữ liệu** | Người dùng chọn tệp `.db` qua hộp thoại của Main Process. API backup SQLite tạo bản xuất; UI cảnh báo đây là bản sao đầy đủ dữ liệu cá nhân. |
+| **Backup định kỳ** | Bật qua `data.autoBackup` (mặc định `true`); kiểm tra lúc khởi động theo `data.backupIntervalDays` (mặc định 7 ngày). Dùng `VACUUM INTO` để tạo bản sao nhất quán của DB SQLCipher, **không** copy file thô bằng `fs`. |
+| **Xuất dữ liệu** | Người dùng chọn tệp `.db` qua hộp thoại của Main Process. `VACUUM INTO` tạo bản xuất nhất quán, sau đó ứng dụng đặt mật khẩu riêng cho file; UI cảnh báo đây là bản sao đầy đủ dữ liệu cá nhân. |
 | **Khôi phục** | Người dùng chọn file `.db` → app soi file ở chế độ chỉ đọc, kiểm tra cấu trúc và `user_version` → hiện đối chiếu dữ liệu sẽ mất → backup dữ liệu hiện tại → thay file → khởi động lại. |
 
 Luồng khôi phục phải từ chối file có `user_version` cao hơn migration cao nhất của bản app đang
@@ -216,8 +216,7 @@ sao an toàn trước khi xóa.
 
 ## 7. Bảo mật dữ liệu
 
-- Mặc định **không mã hoá**. Dữ liệu nằm trong hồ sơ người dùng, đã được OS bảo vệ ở mức tài khoản.
-- Nếu về sau có yêu cầu mã hoá toàn bộ DB: cân nhắc SQLCipher — nhưng đây là quyết định **một chiều**, phải chốt trước khi phát hành.
+- Elecrusion dùng SQLCipher từ Phase 7. Mật khẩu chính chỉ giữ trong bộ nhớ phiên chạy; file backup xuất thủ công được rekey bằng mật khẩu riêng do người dùng đặt. Backup định kỳ nội bộ giữ khóa chính để ứng dụng tự khôi phục được.
 - Thông tin nhạy cảm riêng lẻ (token, mật khẩu dịch vụ ngoài nếu có) **không lưu trong DB**, mà dùng `safeStorage` của Electron (dựa vào keychain/DPAPI của hệ điều hành).
 
 ---

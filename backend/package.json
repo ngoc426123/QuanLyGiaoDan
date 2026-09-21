@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Quản lý giáo dân giáo xứ",
+  "author": "Giáo xứ",
   "main": "out/main.js",
   "type": "module",
   "scripts": {
@@ -13,8 +14,7 @@
     "dist": "electron-builder --win"
   },
   "dependencies": {
-    "better-sqlite3": "13.0.3",
-    "elecrusion-workspace": "file:.."
+    "better-sqlite3-multiple-ciphers": "13.0.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

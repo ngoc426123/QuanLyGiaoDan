@@ -16,11 +16,13 @@ Có → `docs/`. Không → `project/`.
 
 ## Ba tầng tài liệu
 
-| Tầng                | Ở đâu                  | Nội dung                                                                             | Khi sang dự án mới |
-| ------------------- | ---------------------- | ------------------------------------------------------------------------------------ | ------------------ |
-| 1. Template         | `docs/`                | Luật kiến trúc, IPC, bảo mật, SQL, Git — đúng với mọi dự án Electron + SQLite cục bộ | **Copy nguyên xi** |
-| 2. Quyết định dự án | `project/decisions.md` | Cùng stack nhưng mỗi dự án chọn khác: TypeScript? i18n? mã hoá DB? tên app?          | Trả lời lại từ đầu |
-| 3. Nghiệp vụ        | `project/` (còn lại)   | Schema, kênh IPC, màn hình, thuật ngữ                                                | Viết mới hoàn toàn |
+| Tầng                 | Ở đâu                            | Nội dung                                                                             | Khi sang dự án mới       |
+| -------------------- | -------------------------------- | ------------------------------------------------------------------------------------ | ------------------------ |
+| 1. Template          | `docs/`                          | Luật kiến trúc, IPC, bảo mật, SQL, Git — đúng với mọi dự án Electron + SQLite cục bộ | **Copy nguyên xi**       |
+| 2. Quyết định dự án  | `project/decisions.md`           | Cùng stack nhưng mỗi dự án chọn khác: TypeScript? i18n? mã hoá DB? tên app?          | Trả lời lại từ đầu       |
+| 3. Cài đặt ứng dụng  | `project/installation-guide.md`  | Cài, đặt mật khẩu dữ liệu, sao lưu và khôi phục                                      | Phát hành cho người dùng |
+| 4. Ghi chú phát hành | `project/release-notes-0.1.0.md` | Phạm vi bản 0.1.0 và lưu ý bảo mật                                                   | Giao kèm bộ cài          |
+| 3. Nghiệp vụ         | `project/` (còn lại)             | Schema, kênh IPC, màn hình, thuật ngữ                                                | Viết mới hoàn toàn       |
 
 `CLAUDE.md` ở gốc repo trộn cả 3 tầng — bắt buộc, vì Claude tự nạp file đó và nó phải nằm ở gốc.
 Sinh nó từ `docs/CLAUDE.template.md`.

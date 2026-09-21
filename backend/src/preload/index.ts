@@ -72,8 +72,8 @@ const eventsApi = Object.freeze({
  * `importFromFile` thành công thì ứng dụng sẽ tự khởi động lại ngay sau đó.
  */
 const backupApi = Object.freeze({
-  exportToFile: () => ipcRenderer.invoke(CHANNELS.BACKUP.EXPORT),
-  importFromFile: () => ipcRenderer.invoke(CHANNELS.BACKUP.IMPORT),
+  exportToFile: (input) => ipcRenderer.invoke(CHANNELS.BACKUP.EXPORT, input),
+  importFromFile: (input) => ipcRenderer.invoke(CHANNELS.BACKUP.IMPORT, input),
   clearAll: (confirmation) => ipcRenderer.invoke(CHANNELS.BACKUP.CLEAR_ALL, { confirmation }),
 })
 
@@ -162,3 +162,11 @@ const api = Object.freeze({
 })
 
 contextBridge.exposeInMainWorld('api', api)
+
+// Handler chỉ được Main đăng ký trong lúc cửa sổ mở khóa đang mở.
+contextBridge.exposeInMainWorld(
+  'encryption',
+  Object.freeze({
+    unlock: (input) => ipcRenderer.invoke(CHANNELS.ENCRYPTION.UNLOCK, input),
+  }),
+)

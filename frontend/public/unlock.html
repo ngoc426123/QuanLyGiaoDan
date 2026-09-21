@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bảo vệ dữ liệu</title>
+    <style>
+      body {
+        box-sizing: border-box;
+        height: 100vh;
+        margin: 0;
+        padding: 20px 32px;
+        overflow: hidden;
+        color: #1a2730;
+        background: #f7fafb;
+        font: 16px system-ui;
+      }
+      main {
+        max-width: 420px;
+        margin: auto;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 24px;
+      }
+      p {
+        margin: 0;
+      }
+      label {
+        display: block;
+        margin: 18px 0 0;
+        font-weight: 600;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      input {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 6px;
+        padding: 10px;
+        border: 1px solid #72808a;
+        border-radius: 4px;
+        font: inherit;
+      }
+      button {
+        margin-top: 24px;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 4px;
+        background: #0c6b5e;
+        color: white;
+        font: inherit;
+        font-weight: 600;
+      }
+      .error {
+        margin-top: 12px;
+        min-height: 1.5em;
+        color: #a31919;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="title"></h1>
+      <p id="description"></p>
+      <p class="error" id="error"></p>
+      <form>
+        <label
+          >Mật khẩu dữ liệu<input id="password" type="password" minlength="12" required autofocus
+        /></label>
+        <label id="confirmation-label"
+          >Xác nhận mật khẩu<input id="confirmation" type="password" minlength="12" required
+        /></label>
+        <button id="submit" type="submit"></button>
+      </form>
+    </main>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const setup = params.get('setup') === '1'
+      const password = document.querySelector('#password')
+      const confirmation = document.querySelector('#confirmation')
+      const error = document.querySelector('#error')
+      document.querySelector('#title').textContent = setup
+        ? 'Đặt mật khẩu dữ liệu'
+        : 'Mở dữ liệu giáo xứ'
+      document.querySelector('#description').textContent = setup
+        ? 'Mật khẩu này mã hóa cơ sở dữ liệu. Không thể khôi phục dữ liệu nếu quên mật khẩu.'
+        : 'Nhập mật khẩu để mở dữ liệu đã mã hóa.'
+      error.textContent = params.get('message') || ''
+      document.querySelector('#confirmation-label').hidden = !setup
+      confirmation.required = setup
+      password.autocomplete = setup ? 'new-password' : 'current-password'
+      document.querySelector('#submit').textContent = setup
+        ? 'Đặt mật khẩu và mở ứng dụng'
+        : 'Mở ứng dụng'
+      document.querySelector('form').addEventListener('submit', async (event) => {
+        event.preventDefault()
+        if (password.value.length < 12)
+          return (error.textContent = 'Mật khẩu phải có ít nhất 12 ký tự.')
+        if (setup && password.value !== confirmation.value)
+          return (error.textContent = 'Hai mật khẩu không khớp.')
+        const result = await window.encryption.unlock({
+          password: password.value,
+          confirmation: confirmation.value,
+        })
+        if (!result.ok) error.textContent = result.message
+      })
+    </script>
+  </body>
+</html>

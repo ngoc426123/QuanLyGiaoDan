@@ -47,7 +47,7 @@ export const backupHandlers = Object.freeze([
   {
     channel: CHANNELS.BACKUP.EXPORT,
     schema: backupExportSchema,
-    handle: async () => {
+    handle: async ({ password: backupPassword }) => {
       const parent = focusedWindow()
 
       const chosen = await dialog.showSaveDialog(parent, {
@@ -58,7 +58,10 @@ export const backupHandlers = Object.freeze([
 
       if (chosen.canceled || !chosen.filePath) return { canceled: true }
 
-      const result = await backupService.exportToFile({ targetPath: chosen.filePath })
+      const result = await backupService.exportToFile({
+        targetPath: chosen.filePath,
+        backupPassword,
+      })
 
       // `security.md` §3: file xuất ra là bản sao **đầy đủ** hồ sơ giáo dân — tên, ngày
       // sinh, địa chỉ, quan hệ gia đình. Người dùng phải được cảnh báo rõ trước khi gửi
@@ -69,8 +72,7 @@ export const backupHandlers = Object.freeze([
         title: 'Đã xuất dữ liệu',
         message: 'Đã lưu vào ' + result.filePath,
         detail:
-          'File này chứa toàn bộ hồ sơ giáo dân: họ tên, ngày sinh, địa chỉ và quan hệ gia đình. ' +
-          'File không được mã hoá, nên hãy cẩn thận khi sao chép hoặc gửi cho người khác.',
+          'File này được mã hóa bằng mật khẩu backup bạn vừa đặt. Người nhận cần mật khẩu đó để nhập file.',
       })
 
       return { canceled: false, ...result }
@@ -80,7 +82,7 @@ export const backupHandlers = Object.freeze([
   {
     channel: CHANNELS.BACKUP.IMPORT,
     schema: backupImportSchema,
-    handle: async () => {
+    handle: async ({ password: backupPassword }) => {
       const parent = focusedWindow()
       const { dbFile, backupDir } = userDataPaths()
 
@@ -96,7 +98,7 @@ export const backupHandlers = Object.freeze([
 
       // Soi trước khi hỏi: file hỏng hay không phải của ứng dụng thì báo lỗi luôn,
       // đừng bắt người dùng xác nhận một việc chắc chắn thất bại.
-      const info = backupService.inspectFile({ sourcePath, dbFile })
+      const info = backupService.inspectFile({ sourcePath, dbFile, backupPassword })
 
       const confirmed = await dialog.showMessageBox(parent, {
         type: 'warning',
@@ -110,7 +112,12 @@ export const backupHandlers = Object.freeze([
 
       if (confirmed.response !== 1) return { canceled: true }
 
-      const result = await backupService.importFromFile({ dbFile, sourcePath, backupDir })
+      const result = await backupService.importFromFile({
+        dbFile,
+        sourcePath,
+        backupDir,
+        backupPassword,
+      })
 
       // Kết nối đã đóng và file đã bị thay: phải khởi động lại thì mới mở được DB mới và
       // chạy migration nếu file nhập vào có schema cũ hơn.

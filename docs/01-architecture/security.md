@@ -65,7 +65,7 @@ Một gói trong `frontend/` chạy trong sandbox Renderer. Cùng gói đó tron
 
 ## 5. Mã hoá database
 
-**Mặc định: KHÔNG.** Dữ liệu nằm trong hồ sơ người dùng, đã được tài khoản OS bảo vệ. Nếu cần chống mất máy thì giải pháp đúng là **BitLocker** (mã hoá cả ổ), không phải mã hoá một file.
+**Quyết định dự án Elecrusion: CÓ.** Dữ liệu được mã hóa bằng SQLCipher. Người quản lý nhập mật khẩu chính khi mở ứng dụng; mật khẩu không được lưu. Mỗi file backup xuất thủ công có mật khẩu riêng và chỉ mở được khi biết mật khẩu đó.
 
 Chỉ cân nhắc SQLCipher khi ứng dụng lưu dữ liệu mà người dùng khác trên cùng máy tuyệt đối không được xem.
 
@@ -111,11 +111,14 @@ Chỉ cân nhắc SQLCipher khi ứng dụng lưu dữ liệu mà người dùng
 - [ ] Không `dangerouslySetInnerHTML` với nội dung người dùng chưa sanitize
 
 **Phase 7**
-- [ ] CSP production nghiêm ngặt, không `unsafe-eval` / `unsafe-inline`
-- [ ] DevTools không mở được ở bản production
-- [ ] `npm audit` đã chạy và đã xem xét
-- [ ] `package-lock.json` của cả hai package đã commit
-- [ ] Đã chốt câu hỏi mã hoá DB ở mục 5
+- [x] CSP production nghiêm ngặt, không `unsafe-eval` / `unsafe-inline`
+- [x] DevTools không mở được ở bản production
+- [x] `npm audit` đã chạy và đã xem xét
+- [x] `package-lock.json` của cả hai package đã commit
+- [x] Đã chốt câu hỏi mã hoá DB ở mục 5
+
+Kiểm chứng Phase 7 ngày 2026-09-21: E2E chạy trên bản `win-unpacked` và executable đã cài
+đạt; cài đè giữ dữ liệu, còn gỡ cài xóa ứng dụng và registry nhưng giữ database người dùng.
 
 ---
 

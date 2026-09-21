@@ -7,11 +7,15 @@ import { z } from 'zod'
  * nhận từ Renderer. Nếu nhận thì DevTools ghi đè được bất kỳ file nào trên máy.
  */
 
-const noPayloadSchema = z.undefined({ error: 'Kênh này không nhận tham số' })
+const backupPasswordSchema = z
+  .object({
+    password: z.string().min(12, 'Mật khẩu backup phải có ít nhất 12 ký tự.'),
+  })
+  .strict()
 
-export const backupExportSchema = noPayloadSchema
+export const backupExportSchema = backupPasswordSchema
 
-export const backupImportSchema = noPayloadSchema
+export const backupImportSchema = backupPasswordSchema
 
 export const backupClearAllSchema = z
   .object({

@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
  * Idempotent: `INSERT OR IGNORE` nên chạy lại nhiều lần không ghi đè giá trị người dùng
  * đã đổi, cũng không sinh dòng trùng.
  *
- * @param {import('better-sqlite3').Database} db
+ * @param {import('better-sqlite3-multiple-ciphers').Database} db
  * @param {string} timestamp Mốc ISO 8601 UTC
  * @returns {number} Số khoá vừa được thêm mới
  */

@@ -1,8 +1,10 @@
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, dialog, screen } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, screen } from 'electron'
 import { bootstrapDatabase } from '#/db/bootstrap.ts'
 import { closeDatabase } from '#/db/connection.ts'
+import { isPlaintextSqliteDatabase } from '#/db/encryption.ts'
 import { now } from '#/services/clock.ts'
 import { runStartupMaintenance } from '#/services/maintenance.service.ts'
 import { userDataPaths } from './paths.ts'
@@ -33,6 +35,85 @@ const currentDir = dirname(fileURLToPath(import.meta.url))
 let mainWindow = null
 let savedWindowState = null
 let logger: ReturnType<typeof createLogger> | null = null
+let isUnlockingDatabase = false
+let unlockWindow: BrowserWindow | null = null
+
+async function requestDatabasePassword({
+  isSetup,
+  message = '',
+}: {
+  isSetup: boolean
+  message?: string
+}) {
+  const window = new BrowserWindow({
+    width: 520,
+    height: isSetup ? 430 : 350,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    title: 'Bảo vệ dữ liệu',
+    webPreferences: {
+      preload: join(currentDir, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  window.setMenu(null)
+  unlockWindow = window
+
+  return new Promise<string>((resolve, reject) => {
+    let accepted = false
+    const close = () => {
+      ipcMain.removeHandler(CHANNELS.ENCRYPTION.UNLOCK)
+      if (!window.isDestroyed()) window.hide()
+    }
+    ipcMain.handle(CHANNELS.ENCRYPTION.UNLOCK, (event, input: any) => {
+      if (event.sender !== window.webContents || typeof input?.password !== 'string') {
+        return { ok: false, message: 'Yêu cầu không hợp lệ.' }
+      }
+      if (input.password.length < 12 || (isSetup && input.password !== input.confirmation)) {
+        return { ok: false, message: 'Mật khẩu không hợp lệ hoặc xác nhận không khớp.' }
+      }
+      accepted = true
+      resolve(input.password)
+      close()
+      return { ok: true }
+    })
+    window.once('closed', () => {
+      if (unlockWindow === window) unlockWindow = null
+      if (!accepted) reject(new Error('Bạn cần mở khóa dữ liệu để dùng ứng dụng.'))
+    })
+    if (app.isPackaged) {
+      window.loadFile(join(currentDir, '../renderer/unlock.html'), {
+        query: { setup: isSetup ? '1' : '0', message },
+      })
+    } else {
+      const url = new URL('/unlock.html', devServerUrl)
+      url.searchParams.set('setup', isSetup ? '1' : '0')
+      url.searchParams.set('message', message)
+      window.loadURL(url.toString())
+    }
+  })
+}
+
+async function unlockDatabase(dataDir: string, backupDir: string, message = ''): Promise<any> {
+  const dbFile = join(dataDir, 'app.db')
+  const isSetup = !existsSync(dbFile) || isPlaintextSqliteDatabase(dbFile)
+  isUnlockingDatabase = true
+  const password = await requestDatabasePassword({ isSetup, message })
+  try {
+    const database = await bootstrapDatabase({ dataDir, backupDir, timestamp: now(), password })
+    isUnlockingDatabase = false
+    return database
+  } catch (error) {
+    if (isSetup) throw error
+    closeDatabase()
+    unlockWindow?.destroy()
+    unlockWindow = null
+    return unlockDatabase(dataDir, backupDir, 'Mật khẩu không đúng hoặc file dữ liệu bị hỏng.')
+  }
+}
 
 function persistWindow(window) {
   try {
@@ -56,6 +137,7 @@ function createMainWindow() {
     ...bounds,
     frame: false,
     title: 'Danh bạ giáo xứ',
+    icon: join(currentDir, '../resources/app-icon.ico'),
     minWidth: 940,
     minHeight: 600,
     show: false,
@@ -176,6 +258,13 @@ function failFast(err) {
  * chỉ cần một lời gọi `app.getPath('userData')` chạy trước là đường dẫn đã bị chốt.
  */
 function useSeparateDataDirectoryInDev() {
+  // Hook cô lập dữ liệu chỉ dành cho E2E bản đóng gói; luồng khởi động thông thường không đặt biến này.
+  const e2eUserData = process.env.ELECRUSION_E2E_USER_DATA
+  if (e2eUserData) {
+    app.setPath('userData', e2eUserData)
+    return
+  }
+
   if (app.isPackaged) return
 
   const configuredUserData = process.env.ELECRUSION_USER_DATA
@@ -196,25 +285,29 @@ async function startup() {
   const { dataDir, backupDir } = userDataPaths()
   logger = createLogger(userDataPaths().logs)
 
-  await bootstrapDatabase({ dataDir, backupDir, timestamp: now() })
+  await unlockDatabase(dataDir, backupDir)
   const maintenance = await runStartupMaintenance({ backupDir, timestamp: now() })
   logger.info('maintenance.completed', { count: maintenance.trash + maintenance.activities })
 
   applySessionSecurity()
   registerIpcHandlers()
   createMainWindow()
+  unlockWindow?.destroy()
+  unlockWindow = null
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
   })
 }
 
-// Việc đầu tiên của vòng đời, trước cả `whenReady` — `overview.md` §6.1.
+// Phải tách `userData` trước khi lấy single-instance lock để bản dev/E2E không khoá nhầm
+// phiên ứng dụng đã cài của người dùng.
+useSeparateDataDirectoryInDev()
+
+// Việc đầu tiên còn lại của vòng đời, trước cả `whenReady` — `overview.md` §6.1.
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  useSeparateDataDirectoryInDev()
-
   app.on('second-instance', () => {
     if (!mainWindow) return
     if (mainWindow.isMinimized()) mainWindow.restore()
@@ -242,6 +335,6 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
+    if (process.platform !== 'darwin' && !isUnlockingDatabase) app.quit()
   })
 }

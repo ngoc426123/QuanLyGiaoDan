@@ -21,7 +21,7 @@
 | 4     | Nghiệp vụ lõi (CRUD)   | 5–7 ngày      |     ☑      |
 | 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☑      |
 | 6     | Độ tin cậy             | 2–3 ngày      |     ☑      |
-| 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☐      |
+| 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☑      |
 | 8     | Mở rộng                | sau phát hành |     ☐      |
 
 ---
@@ -45,6 +45,12 @@ kiểm thử backend/frontend và ba luồng E2E Electron. Luồng khôi phục 
 khôi phục lại tư cách thành viên hộ cùng giáo dân. Người dùng chấp thuận không cần soak test
 30 phút vì ứng dụng chỉ được dùng theo các phiên ngắn: bật, cập nhật rồi tắt. Kiểm chứng cuối:
 backend 84/84, frontend 31/31, E2E Electron 3/3; format, lint, typecheck và production build đều đạt.
+
+**☑ Phase 7 (2026-09-21):** hoàn tất bộ cài NSIS x64, icon đa kích thước, SQLCipher và
+mật khẩu backup riêng. Quyết định Q05 là phát hành nội bộ unsigned, có hướng dẫn SmartScreen;
+P21 chọn cập nhật thủ công, không dùng auto-update. Kiểm chứng production: E2E trên
+`win-unpacked` và bản cài đạt; cài đè mở lại được dữ liệu cũ; gỡ cài xóa executable và registry
+nhưng giữ database. Bộ cài 116.5 MB, audit không có lỗ hổng; lint, typecheck, format và build đạt.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 

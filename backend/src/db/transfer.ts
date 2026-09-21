@@ -1,9 +1,10 @@
 import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { dirname } from 'node:path'
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { closeDatabase } from './connection.ts'
 import { LATEST_VERSION } from './migrations/index.ts'
+import { configureSqlCipher, rekeySqlCipher } from './encryption.ts'
 
 /**
  * Xuất và nhập **toàn bộ file cơ sở dữ liệu** — nguyên thuỷ ở tầng vòng đời DB, cùng tầng
@@ -31,7 +32,7 @@ const SIDECAR_SUFFIXES = Object.freeze(['-wal', '-shm'])
  * @param {string} filePath
  * @returns {{ schemaVersion: number, tables: string[], sizeBytes: number, recordCounts: Record<string, number> }}
  */
-export function inspectDatabaseFile(filePath) {
+export function inspectDatabaseFile(filePath, password?: string) {
   if (!existsSync(filePath)) {
     throw new AppError(ERROR_CODES.IO_ERROR, 'Không tìm thấy file dữ liệu đã chọn', { filePath })
   }
@@ -40,6 +41,7 @@ export function inspectDatabaseFile(filePath) {
 
   try {
     probe = new Database(filePath, { readonly: true, fileMustExist: true })
+    if (password) configureSqlCipher(probe, password)
   } catch (cause) {
     throw new AppError(
       ERROR_CODES.VALIDATION_ERROR,
@@ -100,24 +102,36 @@ export function inspectDatabaseFile(filePath) {
       { reason: cause.message },
     )
   } finally {
-    probe.close()
+    probe?.close()
   }
 }
 
 /**
- * Xuất ra file bằng **API backup của SQLite** — an toàn ngay cả khi DB đang mở và đang có
- * giao dịch chạy. Copy file thô bằng `fs` lúc DB đang mở sẽ ra bản sao hỏng
- * (`storage-strategy.md` §6).
+ * Xuất bằng `VACUUM INTO` — an toàn khi DB đang mở và tạo file với đúng cấu hình mã hóa
+ * của DB nguồn. Copy file thô bằng `fs` lúc DB đang mở sẽ ra bản sao hỏng.
  *
- * @param {import('better-sqlite3').Database} db Kết nối đang mở
+ * @param {import('better-sqlite3-multiple-ciphers').Database} db Kết nối đang mở
  * @param {string} targetPath
  * @returns {Promise<{ filePath: string, sizeBytes: number }>}
  */
-export async function exportDatabase(db, targetPath) {
+export async function exportDatabase(
+  db,
+  targetPath,
+  options: { sourcePassword?: string; backupPassword?: string } = {},
+) {
   mkdirSync(dirname(targetPath), { recursive: true })
 
   try {
-    await db.backup(targetPath)
+    db.exec(`VACUUM INTO ${quoteSqlString(targetPath)}`)
+    if (options.backupPassword && options.backupPassword !== options.sourcePassword) {
+      const copy = new Database(targetPath)
+      try {
+        configureSqlCipher(copy, options.sourcePassword ?? '')
+        rekeySqlCipher(copy, options.backupPassword)
+      } finally {
+        copy.close()
+      }
+    }
   } catch (cause) {
     throw new AppError(ERROR_CODES.IO_ERROR, 'Không ghi được file dữ liệu ra vị trí đã chọn', {
       filePath: targetPath,
@@ -126,6 +140,10 @@ export async function exportDatabase(db, targetPath) {
   }
 
   return { filePath: targetPath, sizeBytes: statSync(targetPath).size }
+}
+
+function quoteSqlString(value: string) {
+  return "'" + value.replace(/'/g, "''") + "'"
 }
 
 /**
@@ -186,11 +204,15 @@ const COMPARED_TABLES = Object.freeze(['zones', 'families', 'persons'])
  *
  * @param {{ dbFile: string, sourcePath: string }} options
  */
-export function compareDatabases({ dbFile, sourcePath }) {
+export function compareDatabases({ dbFile, sourcePath, sourcePassword, currentPassword }: any) {
   const probe = new Database(sourcePath, { readonly: true, fileMustExist: true })
 
   try {
-    probe.prepare('ATTACH DATABASE ? AS present').run(dbFile)
+    if (sourcePassword) configureSqlCipher(probe, sourcePassword)
+    const attach = currentPassword
+      ? probe.prepare('ATTACH DATABASE ? AS present KEY ?')
+      : probe.prepare('ATTACH DATABASE ? AS present')
+    currentPassword ? attach.run(dbFile, currentPassword) : attach.run(dbFile)
 
     const counts = (schema: string) => {
       const result: any = {}

@@ -8,8 +8,8 @@ import { backupApi } from '../api/backup.api.ts'
 export function useBackup() {
   const addToast = useToastStore((state) => state.add)
   return useMutation({
-    mutationFn: (action: 'export' | 'import') =>
-      action === 'export' ? backupApi.exportToFile() : backupApi.importFromFile(),
+    mutationFn: ({ action, password }: { action: 'export' | 'import'; password: string }) =>
+      action === 'export' ? backupApi.exportToFile(password) : backupApi.importFromFile(password),
     onSuccess: (result: any) => {
       if (result.canceled) return
       addToast(

@@ -355,7 +355,10 @@ describe('Khung ứng dụng qua API preload', () => {
     window.location.hash = '/settings'
     render(<App />)
     const button = screen.getByRole('button', { name: 'Xuất dữ liệu ra file' })
-    await user.dblClick(button)
+    await user.click(button)
+    await user.type(screen.getByLabelText('Mật khẩu backup'), 'mat-khau-backup-2026')
+    await user.type(screen.getByLabelText('Xác nhận mật khẩu backup'), 'mat-khau-backup-2026')
+    await user.click(screen.getByRole('button', { name: 'Xuất file đã mã hóa' }))
     expect(window.api.backup.exportToFile).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'Nhập dữ liệu từ file' }).disabled).toBe(true)
     await act(async () => finish({ ok: true, data: { canceled: true } }))

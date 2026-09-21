@@ -107,6 +107,11 @@ export const CHANNELS = Object.freeze({
     LIST: 'activity-log:list',
   }),
 
+  /** Chỉ dùng cho cửa sổ khóa trước khi Renderer chính được tạo. */
+  ENCRYPTION: Object.freeze({
+    UNLOCK: 'encryption:unlock',
+  }),
+
   /** Broadcast Main → Renderer. Renderer chỉ dùng để invalidate, không ghi đè cache. */
   EVENTS: Object.freeze({
     SETTING_CHANGED: 'event:setting-changed',

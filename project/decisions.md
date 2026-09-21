@@ -29,13 +29,13 @@ Sai lệch khỏi baseline (nếu có) ghi ở đây:
 
 ## 2. Năm câu hỏi khởi đầu
 
-| #   | Câu hỏi                 | Trả lời                                                    | Ngày       | Trạng thái   |
-| --- | ----------------------- | ---------------------------------------------------------- | ---------- | ------------ |
-| Q01 | **Domain nghiệp vụ**    | **Quản lý giáo dân giáo xứ** — nguồn đặc tả `diagrams.jpg` | 2026-09-12 | **Hiệu lực** |
-| Q02 | Chuyển sang TypeScript? | Dùng TypeScript ESM thay cho JavaScript + JSDoc            | 2026-09-14 | Đã chốt      |
-| Q03 | Đa ngôn ngữ (i18n)?     | Chỉ tiếng Việt, không thêm i18n — người dùng chốt          | 2026-09-13 | Đã chốt      |
-| Q04 | Mã hoá database?        | Dùng SQLCipher, triển khai đầu Phase 7. **Một chiều**      | 2026-09-21 | Đã chốt      |
-| Q05 | Chứng chỉ ký số?        | _(chưa)_ — hạn chót trước Phase 7                          |            | Bỏ ngỏ       |
+| #   | Câu hỏi                 | Trả lời                                                                                                                           | Ngày       | Trạng thái    |
+| --- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------- |
+| Q01 | **Domain nghiệp vụ**    | **Quản lý giáo dân giáo xứ** — nguồn đặc tả `diagrams.jpg`                                                                        | 2026-09-12 | **Hiệu lực**  |
+| Q02 | Chuyển sang TypeScript? | Dùng TypeScript ESM thay cho JavaScript + JSDoc                                                                                   | 2026-09-14 | Đã chốt       |
+| Q03 | Đa ngôn ngữ (i18n)?     | Chỉ tiếng Việt, không thêm i18n — người dùng chốt                                                                                 | 2026-09-13 | Đã chốt       |
+| Q04 | Mã hoá database?        | Dùng SQLCipher. Mật khẩu chính mở DB; từng file backup dùng mật khẩu riêng, tối thiểu 12 ký tự. Không lưu mật khẩu. **Một chiều** | 2026-09-21 | Đã triển khai |
+| Q05 | Chứng chỉ ký số?        | Phát hành nội bộ **không ký số**. Chỉ cài bộ cài do người phụ trách giáo xứ cung cấp; hướng dẫn SmartScreen là bắt buộc.          | 2026-09-21 | Đã chốt       |
 
 > **Q01 đã đóng đúng quy trình ngày 2026-09-12.** Chín bước cập nhật docs ở
 > `plan/00-domain-lock-in.md` §8 đã chạy xong: `database-schema.md`, `ipc-channels.md`,
@@ -67,6 +67,7 @@ Sai lệch khỏi baseline (nếu có) ghi ở đây:
 | P17 | 2026-09-13 | Sắp xếp danh sách giáo dân theo cột **`given_name_ascii`** (bỏ dấu), không theo `given_name`                                                                                                        | Collation BINARY của SQLite xếp "Bé" trước "Ánh" — sai bảng chữ cái tiếng Việt. Phát hiện khi chạy thật ở Phase 2. `001_init.sql` **chưa phát hành** nên sửa thẳng, không cần migration `002`                                                                                                                                                                                   | Dễ                                                                                                | Hiệu lực   |
 | P18 | 2026-09-13 | **Mỗi người một máy.** Nhập dữ liệu là **thay trọn** — chấp nhận dữ liệu trong file thắng, không gộp — nhưng bắt buộc hiện **bảng đối chiếu** trước khi ghi                                         | Gộp hai bản SQLite tách rời cần theo vết từng thao tác (CRDT hoặc nhật ký đồng bộ), đắt hơn nhiều lần so với toàn bộ Phase 2. Người dùng chọn cách đơn giản và tự quản lý quy trình, đổi lại phải thấy rõ mình sắp mất gì: số bản ghi chỉ có trên máy mình, số bản ghi bản mình mới hơn                                                                                         | Trung bình — muốn gộp thật thì phải thiết kế lại đồng bộ                                          | Hiệu lực   |
 | P20 | 2026-09-21 | Lưu và hiển thị `activity_logs` cho Giáo họ, Hộ, Giáo dân và Thành viên hộ                                                                                                                          | Giáo xứ cần xem lịch sử chỉnh sửa; log chẩn đoán không chứa dữ liệu cá nhân không đáp ứng nhu cầu này                                                                                                                                                                                                                                                                           | Trung bình — migration mới, lịch sử cũ không thể tạo lại                                          | Hiệu lực   |
+| P21 | 2026-09-21 | Không dùng auto-update; cập nhật nội bộ bằng cách cài đè bộ cài mới do người phụ trách giáo xứ cung cấp                                                                                             | Ứng dụng dùng nội bộ, không có hạ tầng phát hành hoặc nhu cầu cập nhật tự động. Cài đè đã được kiểm thử để giữ dữ liệu người dùng.                                                                                                                                                                                                                                              | Dễ — thêm `electron-updater` khi có kênh phát hành tin cậy                                        | Hiệu lực   |
 
 ---
 

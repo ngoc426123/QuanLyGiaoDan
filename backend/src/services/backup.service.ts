@@ -1,5 +1,11 @@
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
-import { getDatabase } from '#/db/connection.ts'
+import {
+  closeDatabase,
+  getDatabase,
+  getDatabasePasswordOrNull,
+  openDatabase,
+} from '#/db/connection.ts'
+import { rekeySqlCipher } from '#/db/encryption.ts'
 import { LATEST_VERSION, backupDatabase } from '#/db/migrator.ts'
 import {
   compareDatabases,
@@ -25,8 +31,11 @@ import { now } from './clock.ts'
  * @param {{ targetPath: string }} options
  * @returns {Promise<{ filePath: string, sizeBytes: number, exportedAt: string }>}
  */
-export async function exportToFile({ targetPath }: any) {
-  const result = await exportDatabase(getDatabase(), targetPath)
+export async function exportToFile({ targetPath, backupPassword }: any) {
+  const result = await exportDatabase(getDatabase(), targetPath, {
+    sourcePassword: getDatabasePasswordOrNull() ?? undefined,
+    backupPassword,
+  })
 
   return { ...result, exportedAt: now() }
 }
@@ -54,7 +63,8 @@ export async function createSafetyBackup({ backupDir }: any) {
  * @param {{ dbFile: string, sourcePath: string, backupDir: string }} options
  * @returns {Promise<{ sourcePath: string, safetyBackup: string, schemaVersion: number, recordCounts: Record<string, number> }>}
  */
-export async function importFromFile({ dbFile, sourcePath, backupDir }: any) {
+export async function importFromFile({ dbFile, sourcePath, backupDir, backupPassword }: any) {
+  const mainPassword = getDatabasePasswordOrNull()
   if (resolveSame(dbFile, sourcePath)) {
     throw new AppError(
       ERROR_CODES.VALIDATION_ERROR,
@@ -62,7 +72,7 @@ export async function importFromFile({ dbFile, sourcePath, backupDir }: any) {
     )
   }
 
-  const info = inspectDatabaseFile(sourcePath)
+  const info = inspectDatabaseFile(sourcePath, backupPassword)
 
   if (info.schemaVersion > LATEST_VERSION) {
     throw new AppError(
@@ -77,6 +87,17 @@ export async function importFromFile({ dbFile, sourcePath, backupDir }: any) {
   const safetyBackup = await backupDatabase(getDatabase(), backupDir, now())
 
   replaceDatabaseFile({ dbFile, sourcePath })
+
+  // Backup có thể dùng mật khẩu riêng. Trước khi khởi động lại, đổi nó về mật khẩu chính
+  // của ứng dụng để lần mở tiếp theo chỉ cần một mật khẩu dữ liệu.
+  if (mainPassword) {
+    const imported = openDatabase(dbFile, { password: backupPassword })
+    try {
+      rekeySqlCipher(imported, mainPassword)
+    } finally {
+      closeDatabase()
+    }
+  }
 
   return {
     sourcePath,
@@ -100,12 +121,20 @@ function resolveSame(left, right) {
  *
  * @param {{ sourcePath: string, dbFile?: string }} options
  */
-export function inspectFile({ sourcePath, dbFile }: any) {
-  const info = inspectDatabaseFile(sourcePath)
+export function inspectFile({ sourcePath, dbFile, backupPassword }: any) {
+  const info = inspectDatabaseFile(sourcePath, backupPassword)
 
   if (!dbFile) return info
 
-  return { ...info, divergence: compareDatabases({ dbFile, sourcePath }) }
+  return {
+    ...info,
+    divergence: compareDatabases({
+      dbFile,
+      sourcePath,
+      sourcePassword: backupPassword,
+      currentPassword: getDatabasePasswordOrNull() ?? undefined,
+    }),
+  }
 }
 
 /** Một dòng đếm: "12 giáo họ · 340 hộ · 1204 giáo dân". */

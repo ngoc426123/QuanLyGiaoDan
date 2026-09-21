@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { LATEST_VERSION, MIGRATIONS } from './migrations/index.ts'
+import { configureSqlCipher } from './encryption.ts'
 
 /**
  * Migration — `storage-strategy.md` §5.
@@ -30,12 +31,13 @@ export { LATEST_VERSION }
  * @param {string} dbFile
  * @returns {number}
  */
-export function readSchemaVersion(dbFile) {
+export function readSchemaVersion(dbFile, password?: string) {
   if (!existsSync(dbFile)) return 0
 
   const probe = new Database(dbFile, { readonly: true })
 
   try {
+    if (password) configureSqlCipher(probe, password)
     return probe.pragma('user_version', { simple: true })
   } finally {
     probe.close()
@@ -79,10 +81,11 @@ function pruneBackups(backupDir) {
 }
 
 /**
- * Sao lưu bằng **API backup của SQLite**, không copy file thô bằng `fs` — copy thô khi DB
- * đang mở sẽ ra bản backup hỏng (`storage-strategy.md` §6).
+ * Sao lưu bằng `VACUUM INTO`, không copy file thô bằng `fs` — copy thô khi DB đang mở sẽ
+ * ra bản backup hỏng. `Database#backup` của SQLite không hỗ trợ DB SQLCipher sang file đích
+ * mới, trong khi `VACUUM INTO` tạo một bản sao nhất quán với cùng cấu hình mã hóa.
  *
- * @param {import('better-sqlite3').Database} db
+ * @param {import('better-sqlite3-multiple-ciphers').Database} db
  * @param {string} backupDir
  * @param {string} timestamp Mốc ISO UTC, dùng đặt tên file
  * @returns {Promise<string>} Đường dẫn file backup
@@ -94,10 +97,14 @@ export async function backupDatabase(db, backupDir, timestamp) {
   const stamp = timestamp.replace(/[:.]/g, '-')
   const target = join(backupDir, `${BACKUP_PREFIX}${stamp}${BACKUP_SUFFIX}`)
 
-  await db.backup(target)
+  db.exec(`VACUUM INTO ${quoteSqlString(target)}`)
   pruneBackups(backupDir)
 
   return target
+}
+
+function quoteSqlString(value: string) {
+  return "'" + value.replace(/'/g, "''") + "'"
 }
 
 /**
@@ -106,7 +113,7 @@ export async function backupDatabase(db, backupDir, timestamp) {
  *
  * Gọi **sau** `assertNotDowngrade`.
  *
- * @param {import('better-sqlite3').Database} db Kết nối ghi, chưa set pragma
+ * @param {import('better-sqlite3-multiple-ciphers').Database} db Kết nối ghi, chưa set pragma
  * @param {{ backupDir?: string, timestamp?: string }} [options]
  * @returns {Promise<{ from: number, to: number, applied: string[], backupFile: string | null }>}
  */

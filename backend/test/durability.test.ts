@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
 import { after, describe, it } from 'node:test'
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 
 const directory = mkdtempSync(join(tmpdir(), 'elecrusion-durability-'))
 

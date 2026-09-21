@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, beforeEach, describe, it } from 'node:test'
-import Database from 'better-sqlite3'
+import Database from 'better-sqlite3-multiple-ciphers'
 import { applyPragmas, closeDatabase, openDatabase } from '#/db/connection.ts'
 import { LATEST_VERSION, migrate } from '#/db/migrator.ts'
 import { seedDefaultSettings } from '#/db/seed.ts'
@@ -65,7 +65,7 @@ describe('backup.service — xuất dữ liệu', () => {
     assert.equal(info.schemaVersion, LATEST_VERSION)
   })
 
-  it('xuất được cả khi đang có dữ liệu ghi dở — dùng API backup của SQLite', async () => {
+  it('xuất được cả khi đang có dữ liệu ghi dở bằng VACUUM INTO', async () => {
     zoneService.create({ name: 'Giáo họ A' })
 
     const target = join(workDir, 'xuat-2.db')

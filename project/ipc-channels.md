@@ -124,8 +124,8 @@ Khoá `settings` riêng của dự án (gồm `general.parishName`) liệt kê �
 
 | Kênh              | Payload vào                       | Dữ liệu trả về                                                                                         | Ghi chú                                                                  |
 | ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `backup:export`   | —                                 | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Ghi bằng **API backup của SQLite**, an toàn khi DB đang mở               |
-| `backup:import`   | —                                 | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | **Thay trọn dữ liệu.** App tự khởi động lại sau ~0,5 giây                |
+| `backup:export`   | `{ password }`                    | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Xuất nhất quán bằng `VACUUM INTO`, rồi đặt mật khẩu riêng cho file       |
+| `backup:import`   | `{ password }`                    | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | Mở bằng mật khẩu file, thay trọn rồi rekey về mật khẩu chính             |
 | `backup:clearAll` | `{ confirmation: 'XÓA DỮ LIỆU' }` | `{ zones, families, persons, members, safetyBackup }`                                                  | Backup trước, sau đó xóa toàn bộ dữ liệu nghiệp vụ trong một transaction |
 
 **Cả hai kênh không nhận tham số.** Đường dẫn file do hộp thoại ở Main quyết định — nhận
