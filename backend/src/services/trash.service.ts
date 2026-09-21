@@ -2,6 +2,9 @@ import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import * as trashRepository from '#/repositories/trash.repository.ts'
 import { now } from './clock.ts'
+import { record as recordActivity } from './activity-log.service.ts'
+import * as personRepository from '#/repositories/person.repository.ts'
+import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
 
 export function list() {
   return trashRepository.findMany().map((row: any) => ({
@@ -20,7 +23,16 @@ export function restore(input: any) {
         throw new AppError(ERROR_CODES.CONFLICT, 'Hãy khôi phục giáo họ của hộ này trước')
       }
     }
-    return { ...input, restored: trashRepository.restore(input.type, input.id, now()) }
+    const timestamp = now()
+    const deletedPerson =
+      input.type === 'person' ? personRepository.findDeletedAtById(input.id) : null
+    const restored = trashRepository.restore(input.type, input.id, timestamp)
+    if (restored && deletedPerson?.deleted_at) {
+      familyMemberRepository.restoreCurrentByPersonId(input.id, deletedPerson.deleted_at, timestamp)
+    }
+    if (restored)
+      recordActivity({ entityType: input.type, entityId: input.id, action: 'restored', timestamp })
+    return { ...input, restored }
   })
 }
 

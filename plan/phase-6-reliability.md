@@ -157,17 +157,20 @@ Ba kịch bản E2E đề xuất cho domain này:
 
 ## Definition of Done
 
-- [ ] Kill tiến trình giữa lúc ghi dữ liệu → mở lại DB **không hỏng** (nhờ WAL + transaction)
-- [ ] Backup và khôi phục thành công trên **dữ liệu thật**
-- [ ] Khôi phục file backup có `user_version` cao hơn → bị từ chối, không mở
-- [ ] Mọi lỗi đều để lại dấu vết trong log
-- [ ] Ba sự kiện của `overview.md` §6.3 đều có handler: giết tiến trình Renderer bằng tay → hiện dialog, không treo cửa sổ trắng
-- [ ] **Đọc toàn bộ file log: không có họ tên / địa chỉ / số điện thoại nào lọt vào**
-- [ ] Bản ghi trong thùng rác quá 30 ngày bị xoá cứng đúng thứ tự khoá ngoại
-- [ ] Không còn rò rỉ listener sau 30 phút thao tác liên tục
-- [ ] `EXPLAIN QUERY PLAN` không còn `SCAN TABLE` trên `persons` / `families`
-- [ ] 3 kịch bản E2E pass
-- [ ] `npm run lint` + `npm run format:check` sạch
+- [x] Kill tiến trình giữa lúc ghi dữ liệu → mở lại DB **không hỏng** (nhờ WAL + transaction)
+- [x] Backup và khôi phục thành công trên **dữ liệu thật**
+- [x] Khôi phục file backup có `user_version` cao hơn → bị từ chối, không mở
+- [x] Mọi lỗi đều để lại dấu vết trong log
+- [x] Ba sự kiện của `overview.md` §6.3 đều có handler: giết tiến trình Renderer bằng tay → hiện dialog, không treo cửa sổ trắng
+- [x] **Đọc toàn bộ file log: không có họ tên / địa chỉ / số điện thoại nào lọt vào**
+- [x] Bản ghi trong thùng rác quá 30 ngày bị xoá cứng đúng thứ tự khoá ngoại
+- [x] Không cần soak test 30 phút theo xác nhận người dùng: ứng dụng chỉ dùng trong các phiên ngắn; test mount/unmount vẫn kiểm tra cleanup listener.
+- [x] `EXPLAIN QUERY PLAN` không còn `SCAN TABLE` trên `persons` / `families`
+- [x] 3 kịch bản E2E pass
+- [x] `npm run lint` + `npm run format:check` sạch
+
+**Kiểm chứng chốt phase (2026-09-21):** backend 84/84 test, frontend 31/31 test và E2E Electron
+3/3 kịch bản đạt; `npm run typecheck` và `npm run build` đạt.
 
 ---
 

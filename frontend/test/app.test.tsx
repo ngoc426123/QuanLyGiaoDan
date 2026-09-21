@@ -10,6 +10,7 @@ import { media } from './setup.ts'
 let settings
 let listener
 let windowStateListener
+let appErrorListener
 let unsubscribe
 beforeEach(() => {
   settings = { 'ui.theme': 'system', 'ui.density': 'comfortable', 'general.language': 'vi' }
@@ -45,6 +46,10 @@ beforeEach(() => {
       }),
       onPersonChanged: vi.fn((callback) => {
         void callback
+        return vi.fn()
+      }),
+      onAppError: vi.fn((callback) => {
+        appErrorListener = callback
         return vi.fn()
       }),
     },
@@ -294,6 +299,26 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
+  it('mount và unmount lặp lại luôn huỷ toàn bộ listener sự kiện', async () => {
+    const cleanups = Array.from({ length: 5 }, () => vi.fn())
+    const subscribe = (index: number) => vi.fn(() => cleanups[index])
+    window.api.events.onSettingChanged = subscribe(0)
+    window.api.events.onZoneChanged = subscribe(1)
+    window.api.events.onFamilyChanged = subscribe(2)
+    window.api.events.onPersonChanged = subscribe(3)
+    window.api.events.onAppError = subscribe(4)
+
+    for (let index = 0; index < 10; index += 1) {
+      const view = render(<App />)
+      await screen.findByRole('main')
+      view.unmount()
+    }
+
+    for (let index = 0; index < cleanups.length; index += 1) {
+      expect(cleanups[index]).toHaveBeenCalledTimes(10)
+    }
+  })
+
   it('lưu thất bại trả theme cũ, hiện đúng thông điệp từ Main', async () => {
     const user = userEvent.setup()
     window.api.setting.set.mockResolvedValue({
@@ -309,6 +334,13 @@ describe('Khung ứng dụng qua API preload', () => {
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'))
     expect(screen.getByRole('alert').textContent).toContain('Không ghi được cấu hình thử nghiệm')
     expect(localStorage.getItem('elecrusion.theme')).toBe('system')
+  })
+
+  it('hiển thị toast khi Main báo lỗi nền', async () => {
+    render(<App />)
+    await screen.findByRole('main')
+    act(() => appErrorListener({ message: 'Tác vụ nền thử nghiệm gặp lỗi.' }))
+    expect(screen.getByRole('alert').textContent).toContain('Tác vụ nền thử nghiệm gặp lỗi.')
   })
 
   it('khoá cả hai nút dữ liệu trong một mutation, không gọi lần hai', async () => {

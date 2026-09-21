@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   'data.autoBackup': true,
   'data.backupIntervalDays': 7,
   'data.trashRetentionDays': 30,
+  'data.lastVacuumAt': null,
 })
 
 /**

@@ -184,9 +184,24 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 | `relative`    | Họ hàng    |
 | `other`       | Khác       |
 
+### 2.6. `activity_logs` — Lịch sử chỉnh sửa
+
+| Cột           | Kiểu | Ràng buộc                                      | Mô tả                                                |
+| ------------- | ---- | ---------------------------------------------- | ---------------------------------------------------- |
+| `id`          | TEXT | PK                                             | UUID v4                                              |
+| `entity_type` | TEXT | `zone` / `family` / `person` / `family_member` | Loại bản ghi thay đổi                                |
+| `entity_id`   | TEXT | NOT NULL                                       | ID bản ghi nghiệp vụ                                 |
+| `action`      | TEXT | `created` / `updated` / `removed` / `restored` | Thao tác đã thực hiện                                |
+| `changes`     | TEXT | JSON                                           | Với cập nhật: `{ field: [giá trị cũ, giá trị mới] }` |
+| `created_at`  | TEXT | NOT NULL                                       | ISO 8601 UTC                                         |
+
+`activity_logs` là append-only: không có `updated_at` hoặc `deleted_at`. Nhật ký hết hạn được
+xóa cứng cùng chu kỳ `data.trashRetentionDays`. Index `(entity_type, entity_id, created_at DESC)`
+phục vụ màn hình lịch sử của hồ sơ.
+
 ---
 
-## 2.6. Chỉ mục tìm toàn văn FTS5
+## 2.7. Chỉ mục tìm toàn văn FTS5
 
 `persons_fts` lập chỉ mục `full_name`, `holy_name`, `note`; `families_fts` lập chỉ mục `name`,
 `address`, `note`. Cả hai là bảng FTS5 external-content, dùng `rowid` của bảng gốc và tokenizer
@@ -231,6 +246,7 @@ Bảng dưới chỉ liệt kê **các khoá riêng** của dự án.
 | `data.autoBackup`         | `true`           | Tự động sao lưu                                            |
 | `data.backupIntervalDays` | `7`              | Chu kỳ sao lưu (ngày)                                      |
 | `data.trashRetentionDays` | `30`             | Số ngày giữ bản ghi trong thùng rác                        |
+| `data.lastVacuumAt`       | `null`           | Mốc chạy `VACUUM` gần nhất, nội bộ để dọn DB mỗi 30 ngày   |
 
 ---
 
@@ -251,9 +267,9 @@ Bảng dưới chỉ liệt kê **các khoá riêng** của dự án.
 
 ## 7. Hoãn — không bỏ
 
-| Hạng mục                    | Trạng thái            | Ghi chú                                                                                                                                                                                                          |
-| --------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `history` trong diagram gốc | **Hoãn sang Phase 6** | Thiết kế lại thành `activity_logs (id, entity_type, entity_id, action, changes, created_at)` — append-only, xoá cứng theo `data.trashRetentionDays`. Lý do và điều kiện xác nhận: `plan/00-domain-lock-in.md` §7 |
+| Hạng mục                    | Trạng thái                  | Ghi chú                                                                                 |
+| --------------------------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| `history` trong diagram gốc | **Đã triển khai ở Phase 6** | Thiết kế thành `activity_logs`, append-only và xóa cứng theo `data.trashRetentionDays`. |
 
 ---
 

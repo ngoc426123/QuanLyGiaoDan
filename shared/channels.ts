@@ -61,6 +61,7 @@ export const CHANNELS = Object.freeze({
     GET_VERSION: 'app:getVersion',
     GET_PATHS: 'app:getPaths',
     OPEN_DATA_FOLDER: 'app:openDataFolder',
+    OPEN_LOG_FOLDER: 'app:openLogFolder',
     CLOSE_WINDOW: 'app:closeWindow',
     MINIMIZE_WINDOW: 'app:minimizeWindow',
     TOGGLE_MAXIMIZE: 'app:toggleMaximize',
@@ -100,6 +101,10 @@ export const CHANNELS = Object.freeze({
   SETTING: Object.freeze({
     GET_ALL: 'setting:getAll',
     SET: 'setting:set',
+  }),
+
+  ACTIVITY_LOG: Object.freeze({
+    LIST: 'activity-log:list',
   }),
 
   /** Broadcast Main → Renderer. Renderer chỉ dùng để invalidate, không ghi đè cache. */

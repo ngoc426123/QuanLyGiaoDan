@@ -42,6 +42,7 @@ const appApi = Object.freeze({
   getVersion: () => ipcRenderer.invoke(CHANNELS.APP.GET_VERSION),
   getPaths: () => ipcRenderer.invoke(CHANNELS.APP.GET_PATHS),
   openDataFolder: () => ipcRenderer.invoke(CHANNELS.APP.OPEN_DATA_FOLDER),
+  openLogFolder: () => ipcRenderer.invoke(CHANNELS.APP.OPEN_LOG_FOLDER),
   closeWindow: () => ipcRenderer.invoke(CHANNELS.APP.CLOSE_WINDOW),
   minimizeWindow: () => ipcRenderer.invoke(CHANNELS.APP.MINIMIZE_WINDOW),
   toggleMaximize: () => ipcRenderer.invoke(CHANNELS.APP.TOGGLE_MAXIMIZE),
@@ -136,6 +137,9 @@ const trashApi = Object.freeze({
   hardRemove: (input) => ipcRenderer.invoke(CHANNELS.TRASH.HARD_REMOVE, input),
   empty: () => ipcRenderer.invoke(CHANNELS.TRASH.EMPTY),
 })
+const activityLogApi = Object.freeze({
+  list: (input) => ipcRenderer.invoke(CHANNELS.ACTIVITY_LOG.LIST, input),
+})
 
 const api = Object.freeze({
   setting: Object.freeze({
@@ -153,6 +157,7 @@ const api = Object.freeze({
   import: importApi,
   search: searchApi,
   trash: trashApi,
+  activityLog: activityLogApi,
   events: eventsApi,
 })
 

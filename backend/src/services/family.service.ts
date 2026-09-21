@@ -3,6 +3,7 @@ import * as familyRepository from '#/repositories/family.repository.ts'
 import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import * as zoneRepository from '#/repositories/zone.repository.ts'
+import { record as recordActivity } from './activity-log.service.ts'
 import { now } from './clock.ts'
 import {
   assertFound,
@@ -72,7 +73,7 @@ export function create(input: any) {
   return runInTransaction(() => {
     assertZoneExists(patch.zoneId)
 
-    return familyRepository.insert({
+    const family = familyRepository.insert({
       id: newId(),
       zoneId: patch.zoneId,
       name: patch.name,
@@ -82,6 +83,8 @@ export function create(input: any) {
       createdAt: timestamp,
       updatedAt: timestamp,
     })
+    recordActivity({ entityType: 'family', entityId: family.id, action: 'created', timestamp })
+    return family
   })
 }
 
@@ -95,7 +98,19 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
 
     if (normalized.zoneId) assertZoneExists(normalized.zoneId)
 
-    return assertFound(familyRepository.update(id, normalized, timestamp), NOT_FOUND_MESSAGE)
+    const updated = assertFound(
+      familyRepository.update(id, normalized, timestamp),
+      NOT_FOUND_MESSAGE,
+    )
+    recordActivity({
+      entityType: 'family',
+      entityId: id,
+      action: 'updated',
+      before: current,
+      after: updated,
+      timestamp,
+    })
+    return updated
   })
 }
 
@@ -123,6 +138,7 @@ export function remove({ id }: any) {
     }
 
     familyRepository.softDelete(id, timestamp)
+    recordActivity({ entityType: 'family', entityId: id, action: 'removed', timestamp })
 
     return { id, zoneId: family.zoneId }
   })
@@ -135,7 +151,10 @@ export function bulkMove({ ids, zoneId }: any) {
     if (familyRepository.countActiveByIds(ids) !== ids.length) {
       throw new AppError(ERROR_CODES.NOT_FOUND, 'Có hộ gia đình đã không còn tồn tại')
     }
-    return { count: familyRepository.updateZoneMany(ids, zoneId, timestamp), zoneId }
+    const count = familyRepository.updateZoneMany(ids, zoneId, timestamp)
+    for (const id of ids)
+      recordActivity({ entityType: 'family', entityId: id, action: 'updated', timestamp })
+    return { count, zoneId }
   })
 }
 
@@ -153,6 +172,9 @@ export function bulkRemove({ ids }: any) {
         { memberCount },
       )
     }
-    return { count: familyRepository.softDeleteMany(ids, timestamp) }
+    const count = familyRepository.softDeleteMany(ids, timestamp)
+    for (const id of ids)
+      recordActivity({ entityType: 'family', entityId: id, action: 'removed', timestamp })
+    return { count }
   })
 }

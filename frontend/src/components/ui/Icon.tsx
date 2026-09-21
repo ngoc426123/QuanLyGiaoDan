@@ -14,6 +14,8 @@ const paths = {
   minimize: 'M5 12h14',
   maximize: 'M5 5h14v14H5z',
   restore: 'M8 8h11v11H8z M5 16V5h11',
+  calendar:
+    'M7 3v3 M17 3v3 M4 9h16 M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8 13h.01 M12 13h.01 M16 13h.01 M8 17h.01 M12 17h.01',
 }
 
 export const Icon = forwardRef<any, any>(function Icon({ name, ...rest }, ref) {

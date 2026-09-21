@@ -3,7 +3,6 @@ import { Icon } from '@/components/ui/Icon.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { useUIStore } from '@/stores/ui.store.ts'
 import { navigation } from './navigation.ts'
-import { ZoneQuickFilters } from '@/features/zone/components/ZoneQuickFilters.tsx'
 import styles from './AppSidebar.module.css'
 
 function SidebarLink({ item }) {
@@ -40,7 +39,6 @@ export function AppSidebar() {
           <SidebarLink key={item.path} item={item} />
         ))}
       </nav>
-      <ZoneQuickFilters />
       <div className={styles.footer}>
         <span className={styles.label}>Dữ liệu trên máy của bạn</span>
         <Button aria-label="Thu gọn hoặc mở rộng thanh bên" onClick={toggleSidebar}>

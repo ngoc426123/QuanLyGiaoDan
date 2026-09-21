@@ -2,6 +2,7 @@ import initSql from './001_init.sql?raw'
 import ftsSql from './002_add_fts.sql?raw'
 import ftsDeleteTriggersSql from './003_add_fts_delete_triggers.sql?raw'
 import ftsSoftDeleteTriggersSql from './004_fix_fts_soft_delete_triggers.sql?raw'
+import activityLogsSql from './005_add_activity_logs.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -27,6 +28,7 @@ export const MIGRATIONS = Object.freeze([
     name: '004_fix_fts_soft_delete_triggers.sql',
     sql: ftsSoftDeleteTriggersSql,
   }),
+  Object.freeze({ version: 5, name: '005_add_activity_logs.sql', sql: activityLogsSql }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

@@ -1,4 +1,5 @@
 import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
+import { record as recordActivity } from './activity-log.service.ts'
 import * as familyRepository from '#/repositories/family.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
@@ -174,10 +175,18 @@ export function create(input: any) {
     })
 
     if (input.family) {
-      openMembership({ ...input.family, personId: created.id }, timestamp)
+      const membership = openMembership({ ...input.family, personId: created.id }, timestamp)
+      recordActivity({
+        entityType: 'family_member',
+        entityId: membership.id,
+        action: 'created',
+        timestamp,
+      })
     }
 
-    return personRepository.findById(created.id)
+    const person = personRepository.findById(created.id)
+    recordActivity({ entityType: 'person', entityId: created.id, action: 'created', timestamp })
+    return person
   })
 
   return withMeta(person, warnings)
@@ -196,7 +205,19 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
     // với các ngày bí tích đang có sẵn trong DB.
     warnings = validateDates({ ...current, ...normalized })
 
-    return assertFound(personRepository.update(id, normalized, timestamp), NOT_FOUND_MESSAGE)
+    const updated = assertFound(
+      personRepository.update(id, normalized, timestamp),
+      NOT_FOUND_MESSAGE,
+    )
+    recordActivity({
+      entityType: 'person',
+      entityId: id,
+      action: 'updated',
+      before: current,
+      after: updated,
+      timestamp,
+    })
+    return updated
   })
 
   return withMeta(person, warnings)
@@ -217,6 +238,15 @@ export function remove({ id }: any) {
 
     familyMemberRepository.softDeleteCurrentByPersonId(id, timestamp)
     personRepository.softDelete(id, timestamp)
+    if (membership) {
+      recordActivity({
+        entityType: 'family_member',
+        entityId: membership.id,
+        action: 'removed',
+        timestamp,
+      })
+    }
+    recordActivity({ entityType: 'person', entityId: id, action: 'removed', timestamp })
 
     return { id, familyId: membership ? membership.familyId : null }
   })
@@ -256,6 +286,17 @@ export function bulkMove({ ids, familyId, relationship, moveDate }: any) {
         updatedAt: timestamp,
       })),
     )
+    for (const membership of memberships) {
+      recordActivity({
+        entityType: 'family_member',
+        entityId: membership.id,
+        action: 'updated',
+        timestamp,
+      })
+    }
+    for (const personId of ids) {
+      recordActivity({ entityType: 'person', entityId: personId, action: 'updated', timestamp })
+    }
     return { count: ids.length, familyId }
   })
 }
@@ -266,7 +307,19 @@ export function bulkRemove({ ids }: any) {
     if (personRepository.countActiveByIds(ids) !== ids.length) {
       throw new AppError(ERROR_CODES.NOT_FOUND, 'Có giáo dân đã không còn tồn tại')
     }
+    const memberships = familyMemberRepository.findCurrentByPersonIds(ids)
     familyMemberRepository.softDeleteCurrentByPersonIds(ids, timestamp)
-    return { count: personRepository.softDeleteMany(ids, timestamp) }
+    const count = personRepository.softDeleteMany(ids, timestamp)
+    for (const membership of memberships) {
+      recordActivity({
+        entityType: 'family_member',
+        entityId: membership.id,
+        action: 'removed',
+        timestamp,
+      })
+    }
+    for (const personId of ids)
+      recordActivity({ entityType: 'person', entityId: personId, action: 'removed', timestamp })
+    return { count }
   })
 }

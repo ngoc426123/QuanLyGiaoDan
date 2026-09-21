@@ -7,6 +7,7 @@ import { useZoneEvents } from '@/features/zone/hooks/useZoneEvents.ts'
 import { useFamilyEvents } from '@/features/family/hooks/useFamilyEvents.ts'
 import { usePersonEvents } from '@/features/person/hooks/usePersonEvents.ts'
 import { useShellShortcuts } from '@/hooks/useShellShortcuts.ts'
+import { useAppErrors } from '@/hooks/useAppErrors.ts'
 import { AppContent } from './AppContent.tsx'
 import { AppSidebar } from './AppSidebar.tsx'
 import { AppTopBar } from './AppTopBar.tsx'
@@ -26,6 +27,7 @@ export function AppShell() {
   useZoneEvents()
   useFamilyEvents()
   usePersonEvents()
+  useAppErrors()
   useShellShortcuts({
     onCommandPalette: () => setCommandPaletteOpen(true),
   })

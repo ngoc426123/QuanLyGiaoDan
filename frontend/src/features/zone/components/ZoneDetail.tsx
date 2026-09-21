@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
+import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
 import { useRemoveZone, useUpdateZone } from '../hooks/useZoneMutations.ts'
 import { useZone } from '../hooks/useZones.ts'
 import { ZoneForm } from './ZoneForm.tsx'
@@ -90,6 +91,10 @@ export function ZoneDetail({ id }: { id: string | undefined }) {
             ]}
           />
         )}
+      </section>
+      <section className={styles.section} aria-labelledby="activity-heading">
+        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <ActivityLog entityType="zone" entityId={zone.id} />
       </section>
       {isEditOpen && (
         <Modal title="Sửa giáo họ" onClose={() => setEditOpen(false)}>

@@ -2,6 +2,7 @@ import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import * as familyRepository from '#/repositories/family.repository.ts'
 import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
+import { record as recordActivity } from './activity-log.service.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
 import {
@@ -107,7 +108,16 @@ export function openMembership(input, timestamp, options: any = {}) {
 export function add(input: any) {
   const timestamp = now()
 
-  return runInTransaction(() => openMembership(input, timestamp))
+  return runInTransaction(() => {
+    const member = openMembership(input, timestamp)
+    recordActivity({
+      entityType: 'family_member',
+      entityId: member.id,
+      action: 'created',
+      timestamp,
+    })
+    return member
+  })
 }
 
 export function update({ id, expectedUpdatedAt, patch }: any) {
@@ -125,7 +135,19 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
       assertHeadAvailable(current.familyId, normalized.relationship, id)
     }
 
-    return assertFound(familyMemberRepository.update(id, normalized, timestamp), NOT_FOUND_MESSAGE)
+    const updated = assertFound(
+      familyMemberRepository.update(id, normalized, timestamp),
+      NOT_FOUND_MESSAGE,
+    )
+    recordActivity({
+      entityType: 'family_member',
+      entityId: id,
+      action: 'updated',
+      before: current,
+      after: updated,
+      timestamp,
+    })
+    return updated
   })
 }
 
@@ -171,6 +193,21 @@ export function move({ personId, toFamilyId, relationship, moveDate }: any) {
       { skipCurrentCheck: true },
     )
 
+    recordActivity({
+      entityType: 'family_member',
+      entityId: current.id,
+      action: 'updated',
+      before: current,
+      after: { ...current, toDate: moveDate },
+      timestamp,
+    })
+    recordActivity({
+      entityType: 'family_member',
+      entityId: opened.id,
+      action: 'created',
+      timestamp,
+    })
+
     return { closed: familyMemberRepository.findById(current.id), opened }
   })
 }
@@ -184,6 +221,7 @@ export function remove({ id }: any) {
     if (!member) return { id }
 
     familyMemberRepository.softDelete(id, timestamp)
+    recordActivity({ entityType: 'family_member', entityId: id, action: 'removed', timestamp })
 
     return { id, familyId: member.familyId, personId: member.personId }
   })

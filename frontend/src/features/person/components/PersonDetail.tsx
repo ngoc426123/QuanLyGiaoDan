@@ -17,9 +17,9 @@ import {
 } from '@/features/family-member/familyMember.types.ts'
 import { AppClientError } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
-import { useRemovePerson, useUpdatePerson } from '../hooks/usePersonMutations.ts'
+import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
+import { useRemovePerson } from '../hooks/usePersonMutations.ts'
 import { usePerson } from '../hooks/usePersons.ts'
-import { PersonForm } from './PersonForm.tsx'
 import styles from './Person.module.css'
 
 const genderLabel = (value: string | null) =>
@@ -28,12 +28,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const location = useLocation()
   const navigate = useNavigate()
   const addToast = useToastStore((state) => state.add)
-  const [isEditOpen, setEditOpen] = useState(location.state?.action === 'edit')
   const [isRemoveOpen, setRemoveOpen] = useState(location.state?.action === 'remove')
   const [isMoveOpen, setMoveOpen] = useState(location.state?.action === 'move')
   const person = usePerson(id)
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
-  const update = useUpdatePerson()
   const remove = useRemovePerson()
   const moveMember = useMoveFamilyMember()
   useEffect(() => {
@@ -51,7 +49,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
     <section>
       <Link to="/persons">Về danh sách giáo dân</Link>
       <PageHeader title="Hồ sơ giáo dân" description={record.fullName}>
-        <Button onClick={() => setEditOpen(true)}>Sửa</Button>
+        <Button onClick={() => navigate(`/persons/${record.id}/edit`)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>
           Xoá
         </Button>
@@ -152,26 +150,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           <EmptyState title="Chưa có lịch sử hộ">Chưa có lần gán hoặc chuyển hộ nào.</EmptyState>
         )}
       </section>
-      {isEditOpen && (
-        <Modal title="Sửa hồ sơ giáo dân" onClose={() => setEditOpen(false)}>
-          <PersonForm
-            initialValue={record}
-            families={families.data?.data ?? []}
-            submitLabel="Lưu thay đổi"
-            isPending={update.isPending}
-            onSubmit={async (patch: any) => {
-              const result = await update.mutateAsync({
-                id: record.id,
-                expectedUpdatedAt: record.updatedAt,
-                patch,
-              })
-              result.meta?.warnings?.forEach((warning: string) => addToast(warning))
-              setEditOpen(false)
-              return result
-            }}
-          />
-        </Modal>
-      )}
+      <section className={styles.section} aria-labelledby="activity-heading">
+        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <ActivityLog entityType="person" entityId={record.id} />
+      </section>
       {isRemoveOpen && (
         <ConfirmDialog
           title="Xoá giáo dân"

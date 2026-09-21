@@ -1,27 +1,32 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
-import { Input } from '@/components/ui/Input.tsx'
+import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { relationshipOptions } from '@/features/family-member/familyMember.types.ts'
+import { calendarToday } from '@/shared/calendar.ts'
 import { useBulkMovePersons, useBulkRemovePersons } from '../hooks/usePersonMutations.ts'
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 export function PersonBulkActions({ ids, families, onDone }: any) {
   const [isMoveOpen, setMoveOpen] = useState(false)
   const [isRemoveOpen, setRemoveOpen] = useState(false)
   const [familyId, setFamilyId] = useState('')
   const [relationship, setRelationship] = useState('other')
-  const [moveDate, setMoveDate] = useState(today)
+  const [moveDate, setMoveDate] = useState(calendarToday)
   const move = useBulkMovePersons()
   const remove = useBulkRemovePersons()
   if (ids.length === 0) return null
   return (
     <section aria-label="Thao tác hàng loạt">
       <p>Đã chọn {ids.length} giáo dân</p>
-      <Button variant="secondary" onClick={() => setMoveOpen(true)}>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          setMoveDate(calendarToday())
+          setMoveOpen(true)
+        }}
+      >
         Chuyển vào hộ
       </Button>
       <Button variant="danger" onClick={() => setRemoveOpen(true)}>
@@ -57,12 +62,7 @@ export function PersonBulkActions({ ids, families, onDone }: any) {
                 </option>
               ))}
           </Select>
-          <Input
-            label="Ngày chuyển hộ"
-            type="date"
-            value={moveDate}
-            onChange={(event: any) => setMoveDate(event.target.value)}
-          />
+          <DateInput label="Ngày chuyển hộ" value={moveDate} onChange={setMoveDate} />
           <Button
             isPending={move.isPending}
             disabled={!familyId || !moveDate}

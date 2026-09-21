@@ -1,0 +1,47 @@
+.control {
+  position: relative;
+}
+
+.textInput {
+  padding-right: calc(var(--control-height) + var(--space-2));
+}
+
+.pickerButton {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  display: grid;
+  width: calc(var(--control-height) - var(--space-1));
+  height: calc(var(--control-height) - var(--space-1));
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.pickerButton:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+}
+
+.pickerButton:focus-visible {
+  outline: var(--focus-width) solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+
+.pickerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.nativePicker {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -4,11 +4,14 @@ import { app, BrowserWindow, dialog, screen } from 'electron'
 import { bootstrapDatabase } from '#/db/bootstrap.ts'
 import { closeDatabase } from '#/db/connection.ts'
 import { now } from '#/services/clock.ts'
+import { runStartupMaintenance } from '#/services/maintenance.service.ts'
 import { userDataPaths } from './paths.ts'
 import { registerIpcHandlers } from './ipc/index.ts'
+import { broadcast } from './ipc/broadcast.ts'
 import { applySessionSecurity, devServerUrl, hardenWebContents } from './security.ts'
 import { readWindowState, restoreWindowState, saveWindowState } from './window-manager.ts'
 import { CHANNELS } from '@shared/channels.ts'
+import { createLogger } from './logger.ts'
 
 /**
  * Điểm vào của Main Process. Thứ tự khởi động là bắt buộc — `overview.md` §6.1:
@@ -29,6 +32,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url))
 /** @type {BrowserWindow | null} */
 let mainWindow = null
 let savedWindowState = null
+let logger: ReturnType<typeof createLogger> | null = null
 
 function persistWindow(window) {
   try {
@@ -65,6 +69,7 @@ function createMainWindow() {
   })
 
   const window = mainWindow
+  let isUnresponsiveDialogOpen = false
   const sendWindowState = () => {
     if (!window.isDestroyed()) {
       window.webContents.send(CHANNELS.EVENTS.WINDOW_STATE_CHANGED, {
@@ -80,17 +85,58 @@ function createMainWindow() {
   window.on('close', () => persistWindow(window))
   window.on('maximize', sendWindowState)
   window.on('unmaximize', sendWindowState)
-  mainWindow.on('closed', () => {
+  window.on('closed', () => {
     mainWindow = null
   })
 
-  hardenWebContents(mainWindow.webContents)
+  hardenWebContents(window.webContents)
+  window.webContents.on('render-process-gone', (_event, details) => {
+    logger?.error('renderer.gone', details)
+    dialog
+      .showMessageBox(window, {
+        type: 'error',
+        title: 'Ứng dụng gặp sự cố',
+        message: 'Giao diện đã gặp sự cố. Bạn có thể tải lại hoặc thoát ứng dụng.',
+        buttons: ['Tải lại', 'Thoát'],
+      })
+      .then(({ response }) => (response === 0 ? mainWindow?.reload() : app.quit()))
+  })
+  window.webContents.on('unresponsive', () => {
+    logger?.warn('renderer.unresponsive')
+    if (isUnresponsiveDialogOpen) return
+    isUnresponsiveDialogOpen = true
+    dialog
+      .showMessageBox(window, {
+        type: 'warning',
+        title: 'Giao diện đang không phản hồi',
+        message: 'Ứng dụng đang chờ phản hồi từ giao diện.',
+        detail: 'Bạn có thể tiếp tục chờ, tải lại giao diện hoặc thoát ứng dụng.',
+        buttons: ['Tiếp tục chờ', 'Tải lại', 'Thoát'],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 1) window.reload()
+        if (response === 2) app.quit()
+      })
+      .finally(() => {
+        isUnresponsiveDialogOpen = false
+      })
+  })
+  window.webContents.on('responsive', () => logger?.info('renderer.responsive'))
+  window.webContents.on('preload-error', (_event, _preloadPath, error) => {
+    logger?.error('preload.error', error)
+    dialog.showErrorBox(
+      'Không tải được giao diện',
+      'Ứng dụng sẽ đóng vì thành phần giao tiếp an toàn không thể khởi tạo.',
+    )
+    app.exit(1)
+  })
 
   if (app.isPackaged) {
     mainWindow.loadFile(join(currentDir, '../renderer/index.html'))
   } else {
     mainWindow.loadURL(devServerUrl)
-    mainWindow.webContents.openDevTools({ mode: 'detach' })
+    if (!process.env.ELECRUSION_E2E) mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
 }
 
@@ -132,6 +178,12 @@ function failFast(err) {
 function useSeparateDataDirectoryInDev() {
   if (app.isPackaged) return
 
+  const configuredUserData = process.env.ELECRUSION_USER_DATA
+  if (configuredUserData) {
+    app.setPath('userData', configuredUserData)
+    return
+  }
+
   app.setPath('userData', join(app.getPath('appData'), app.getName() + '-dev'))
 }
 
@@ -142,8 +194,11 @@ function useSeparateDataDirectoryInDev() {
 async function startup() {
   savedWindowState = readWindowState(join(app.getPath('userData'), 'window-state.json'))
   const { dataDir, backupDir } = userDataPaths()
+  logger = createLogger(userDataPaths().logs)
 
   await bootstrapDatabase({ dataDir, backupDir, timestamp: now() })
+  const maintenance = await runStartupMaintenance({ backupDir, timestamp: now() })
+  logger.info('maintenance.completed', { count: maintenance.trash + maintenance.activities })
 
   applySessionSecurity()
   registerIpcHandlers()
@@ -167,6 +222,18 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.whenReady().then(startup).catch(failFast)
+
+  process.on('uncaughtException', (error) => {
+    logger?.error('process.uncaughtException', error)
+    dialog.showErrorBox('Ứng dụng gặp sự cố', 'Ứng dụng sẽ đóng để bảo vệ dữ liệu.')
+    app.exit(1)
+  })
+  process.on('unhandledRejection', (reason) => {
+    logger?.error('process.unhandledRejection', reason)
+    broadcast(CHANNELS.EVENTS.APP_ERROR, {
+      message: 'Một tác vụ nền gặp lỗi. Dữ liệu đã lưu không bị ảnh hưởng.',
+    })
+  })
 
   // Đóng kết nối tường minh — `storage-strategy.md` §4. `before-quit` bắn trước khi
   // cửa sổ bị huỷ, nên đây là chỗ cuối cùng còn chắc chắn chạy được.

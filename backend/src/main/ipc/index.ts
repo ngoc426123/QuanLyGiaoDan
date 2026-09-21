@@ -13,6 +13,7 @@ import { trashHandlers } from './trash.ipc.ts'
 import { importHandlers } from './import.ipc.ts'
 import { zoneHandlers } from './zone.ipc.ts'
 import { settingHandlers } from './setting.ipc.ts'
+import { activityLogHandlers } from './activity-log.ipc.ts'
 
 /**
  * Bộ đăng ký handler IPC — `docs/01-architecture/ipc-communication.md` §8.
@@ -67,6 +68,7 @@ function register({ channel, schema, handle, withMeta, event }: any) {
 export function registerIpcHandlers() {
   const groups = [
     settingHandlers,
+    activityLogHandlers,
     appHandlers,
     backupHandlers,
     dashboardHandlers,

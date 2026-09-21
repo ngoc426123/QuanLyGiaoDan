@@ -11,6 +11,7 @@ import * as searchService from '#/services/search.service.ts'
 import * as trashService from '#/services/trash.service.ts'
 import * as csvImportService from '#/services/csv-import.service.ts'
 import * as dataService from '#/services/data.service.ts'
+import * as activityLogService from '#/services/activity-log.service.ts'
 import * as zoneService from '#/services/zone.service.ts'
 import { disposeDatabase, freshDatabase } from './helpers/database.mjs'
 
@@ -477,7 +478,7 @@ describe('search.service', () => {
 })
 
 describe('trash.service', () => {
-  it('khôi phục người không khôi phục dòng thành viên hộ đã xoá mềm', () => {
+  it('khôi phục người đưa lại dòng thành viên hộ đã xoá cùng lúc', () => {
     const { familyA } = seed()
     const { data: person } = personService.create({
       fullName: 'Nguyễn Văn An',
@@ -487,7 +488,7 @@ describe('trash.service', () => {
 
     trashService.restore({ type: 'person', id: person.id })
 
-    assert.equal(personService.getById(person.id).currentMembership, null)
+    assert.equal(personService.getById(person.id).currentMembership?.familyId, familyA.id)
   })
 
   it('chặn khôi phục hộ khi giáo họ nguồn chưa được khôi phục', () => {
@@ -497,6 +498,30 @@ describe('trash.service', () => {
     zoneService.remove({ id: zone.id })
 
     assert.throws(() => trashService.restore({ type: 'family', id: family.id }), codeIs('CONFLICT'))
+  })
+})
+
+describe('activity-log.service', () => {
+  it('ghi thay đổi theo cùng transaction và giữ giá trị cũ, mới của trường sửa', () => {
+    const zone = zoneService.create({ name: 'Giáo họ cũ' })
+    const updated = zoneService.update({
+      id: zone.id,
+      expectedUpdatedAt: zone.updatedAt,
+      patch: { name: 'Giáo họ mới' },
+    })
+
+    const history = activityLogService.list({ entityType: 'zone', entityId: zone.id })
+    assert.equal(history.length, 2)
+    assert.equal(history[0].action, 'updated')
+    assert.deepEqual(history[0].changes.name, ['Giáo họ cũ', 'Giáo họ mới'])
+    assert.equal(updated.name, 'Giáo họ mới')
+  })
+
+  it('xóa dữ liệu kiểm thử cũng xóa nhật ký nghiệp vụ liên quan', () => {
+    zoneService.create({ name: 'Giáo họ kiểm thử' })
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM activity_logs').get().total, 1)
+    dataService.clearAll()
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM activity_logs').get().total, 0)
   })
 })
 

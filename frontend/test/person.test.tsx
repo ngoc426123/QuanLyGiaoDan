@@ -1,9 +1,9 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { PersonDetail } from '../src/features/person/components/PersonDetail.tsx'
+import { EditPersonPage } from '../src/features/person/components/PersonFormPage.tsx'
 import { createQueryClient } from '../src/shared/queryClient.ts'
 
 const person = {
@@ -18,6 +18,7 @@ const person = {
   note: null,
   currentMembership: null,
   membershipHistory: [],
+  familyId: 'family-1',
   updatedAt: '2026-09-14T00:00:00.000Z',
 }
 
@@ -30,6 +31,7 @@ beforeEach(() => {
     },
     family: { list: vi.fn(async () => ({ ok: true, data: [], meta: { total: 0 } })) },
     familyMember: { move: vi.fn() },
+    activityLog: { list: vi.fn(async () => ({ ok: true, data: [] })) },
   }
 })
 
@@ -38,13 +40,14 @@ describe('Giáo dân', () => {
     const user = userEvent.setup()
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <MemoryRouter initialEntries={[`/persons/${person.id}`]}>
-          <PersonDetail id={person.id} />
+        <MemoryRouter initialEntries={[`/persons/${person.id}/edit`]}>
+          <Routes>
+            <Route path="/persons/:id/edit" element={<EditPersonPage />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    await user.click(await screen.findByRole('button', { name: 'Sửa' }))
-    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+    await user.click(await screen.findByRole('button', { name: 'Lưu thay đổi' }))
     await waitFor(() =>
       expect(window.api.person.update).toHaveBeenCalledWith({
         id: person.id,

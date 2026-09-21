@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
-import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Pagination } from '@/components/ui/Pagination.tsx'
 import { Select } from '@/components/ui/Select.tsx'
@@ -12,11 +11,8 @@ import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
-import { useToastStore } from '@/stores/toast.store.ts'
-import { useCreatePerson } from '../hooks/usePersonMutations.ts'
 import { usePersons } from '../hooks/usePersons.ts'
 import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
-import { PersonForm } from './PersonForm.tsx'
 import { PersonBulkActions } from './PersonBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
 import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
@@ -24,8 +20,6 @@ import styles from '@/components/layout/DirectoryWorkspace.module.css'
 import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 
 export function PersonList() {
-  const location = useLocation()
-  const [isCreateOpen, setCreateOpen] = useState(location.state?.action === 'new')
   const [contextMenu, setContextMenu] = useState<any>(null)
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -53,9 +47,7 @@ export function PersonList() {
   const persons = usePersons(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
-  const create = useCreatePerson()
   const exportCsv = useCsvExport()
-  const addToast = useToastStore((state) => state.add)
   const selectedIds = useSelectionStore(selectedIdsFor('person'))
   const toggleSelection = useSelectionStore((state) => state.toggle)
   const clearSelection = useSelectionStore((state) => state.clear)
@@ -74,9 +66,6 @@ export function PersonList() {
     setSearch(nextSearch)
     setPage(1)
   })
-  useEffect(() => {
-    if (location.state?.action === 'new') setCreateOpen(true)
-  }, [location.state?.action])
   const hasFilters = Boolean(search || zoneId || familyId || gender || isAlive)
   return (
     <section className={styles.page}>
@@ -99,7 +88,7 @@ export function PersonList() {
         >
           Xuất CSV
         </Button>
-        <Button onClick={() => setCreateOpen(true)}>Thêm giáo dân</Button>
+        <Button onClick={() => navigate('/persons/new')}>Thêm giáo dân</Button>
       </PageHeader>
       <div className={styles.filters}>
         <Input label="Tìm trong danh sách" {...personSearch} />
@@ -179,7 +168,7 @@ export function PersonList() {
         <EmptyState
           title="Chưa có giáo dân"
           actionLabel="Thêm giáo dân"
-          onAction={() => setCreateOpen(true)}
+          onAction={() => navigate('/persons/new')}
         >
           Hãy thêm hồ sơ giáo dân đầu tiên.
         </EmptyState>
@@ -280,8 +269,7 @@ export function PersonList() {
                 },
                 {
                   label: 'Sửa',
-                  onClick: () =>
-                    navigate(`/persons/${contextMenu.person.id}`, { state: { action: 'edit' } }),
+                  onClick: () => navigate(`/persons/${contextMenu.person.id}/edit`),
                 },
                 {
                   label: 'Chuyển hộ',
@@ -298,23 +286,6 @@ export function PersonList() {
             />
           )}
         </>
-      )}
-      {isCreateOpen && (
-        <Modal title="Thêm giáo dân" onClose={() => setCreateOpen(false)}>
-          <PersonForm
-            families={families.data?.data ?? []}
-            allowFamilyAssignment
-            submitLabel="Tạo giáo dân"
-            isPending={create.isPending}
-            onSubmit={async (input: any) => {
-              const result = await create.mutateAsync(input)
-              result.meta?.warnings?.forEach((warning: string) => addToast(warning))
-              clearFilters()
-              setCreateOpen(false)
-              return result
-            }}
-          />
-        </Modal>
       )}
     </section>
   )

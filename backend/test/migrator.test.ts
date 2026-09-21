@@ -66,6 +66,7 @@ describe('migrate', () => {
       '002_add_fts.sql',
       '003_add_fts_delete_triggers.sql',
       '004_fix_fts_soft_delete_triggers.sql',
+      '005_add_activity_logs.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -76,6 +77,7 @@ describe('migrate', () => {
       .sort()
 
     assert.deepEqual(tables, [
+      'activity_logs',
       'families',
       'families_fts',
       'families_fts_config',

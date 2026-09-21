@@ -4,6 +4,7 @@ import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import {
   appGetPathsSchema,
   appOpenDataFolderSchema,
+  appOpenLogFolderSchema,
   appCloseWindowSchema,
   appMinimizeWindowSchema,
   appToggleMaximizeSchema,
@@ -56,6 +57,15 @@ export const appHandlers = Object.freeze([
     handle: async () => {
       const result = await shell.openPath(userDataPaths().dataDir)
       if (result) throw new AppError(ERROR_CODES.IO_ERROR, 'Không mở được thư mục dữ liệu')
+      return { opened: true }
+    },
+  },
+  {
+    channel: CHANNELS.APP.OPEN_LOG_FOLDER,
+    schema: appOpenLogFolderSchema,
+    handle: async () => {
+      const result = await shell.openPath(userDataPaths().logs)
+      if (result) throw new AppError(ERROR_CODES.IO_ERROR, 'Không mở được thư mục log')
       return { opened: true }
     },
   },

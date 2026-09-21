@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
+import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
@@ -219,6 +220,10 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
           />
         )}
       </details>
+      <section className={styles.section} aria-labelledby="activity-heading">
+        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <ActivityLog entityType="family" entityId={record.id} />
+      </section>
       {isEditOpen && (
         <Modal title="Sửa gia đình" onClose={() => setEditOpen(false)}>
           <FamilyForm

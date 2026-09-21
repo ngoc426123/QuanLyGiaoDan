@@ -3,6 +3,7 @@ backend/out
 backend/renderer
 backend/release
 frontend/dist
+frontend/test-results
 .phase3-qa
 package-lock.json
 # docs/ là template dùng chung — CẤM định dạng lại ở dự án này

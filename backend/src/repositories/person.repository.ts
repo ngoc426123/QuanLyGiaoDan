@@ -130,6 +130,12 @@ export function findRawById(id) {
   )
 }
 
+export function findDeletedAtById(id) {
+  return prepare('SELECT deleted_at FROM persons WHERE id = ? AND deleted_at IS NOT NULL').get(
+    id,
+  ) as { deleted_at: string } | undefined
+}
+
 export function findMany(filter: any = {}) {
   const { where, params } = buildFilter(filter)
   const { limit, offset } = paginate(filter)

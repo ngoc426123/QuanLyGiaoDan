@@ -8,6 +8,7 @@ import { AppShell } from '@/components/layout/AppShell.tsx'
 import { DashboardPage } from '@/pages/DashboardPage.tsx'
 import { PersonListPage } from '@/pages/PersonListPage.tsx'
 import { PersonDetailPage } from '@/pages/PersonDetailPage.tsx'
+import { CreatePersonPage, EditPersonPage } from '@/features/person/components/PersonFormPage.tsx'
 import { FamilyListPage } from '@/pages/FamilyListPage.tsx'
 import { FamilyDetailPage } from '@/pages/FamilyDetailPage.tsx'
 import { ZoneListPage } from '@/pages/ZoneListPage.tsx'
@@ -22,6 +23,8 @@ function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="persons" element={<PersonListPage />} />
+        <Route path="persons/new" element={<CreatePersonPage />} />
+        <Route path="persons/:id/edit" element={<EditPersonPage />} />
         <Route path="persons/:id" element={<PersonDetailPage />} />
         <Route path="families" element={<FamilyListPage />} />
         <Route path="families/:id" element={<FamilyDetailPage />} />

@@ -200,6 +200,15 @@ export function softDeleteCurrentByPersonId(personId, deletedAt) {
   ).run(deletedAt, deletedAt, personId).changes
 }
 
+/** Khôi phục dòng hộ bị xoá cùng lúc với hồ sơ giáo dân, nếu hộ nguồn còn hoạt động. */
+export function restoreCurrentByPersonId(personId, deletedAt, updatedAt) {
+  return prepare(
+    'UPDATE family_members SET deleted_at = NULL, updated_at = ?' +
+      ' WHERE person_id = ? AND deleted_at = ? AND to_date IS NULL' +
+      ' AND EXISTS (SELECT 1 FROM families WHERE id = family_members.family_id AND deleted_at IS NULL)',
+  ).run(updatedAt, personId, deletedAt).changes
+}
+
 export function softDeleteCurrentByPersonIds(personIds, deletedAt) {
   return prepare(
     'UPDATE family_members SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
@@ -214,7 +223,7 @@ export function closeCurrentByPersonIds(personIds, toDate, updatedAt) {
 
 export function findCurrentByPersonIds(personIds) {
   return prepare(
-    'SELECT person_id, from_date FROM family_members WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
+    'SELECT id, person_id, from_date FROM family_members WHERE deleted_at IS NULL AND to_date IS NULL AND person_id IN (SELECT value FROM json_each(?))',
   ).all(JSON.stringify(personIds))
 }
 

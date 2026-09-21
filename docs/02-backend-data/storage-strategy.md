@@ -199,12 +199,18 @@ Tất cả đặt trong một transaction, và **tắt `foreign_keys` trong lúc
 
 | Cơ chế | Mô tả |
 |---|---|
-| **Backup tự động trước migration** | Bắt buộc. Giữ tối đa 5 bản gần nhất. |
-| **Backup định kỳ** | Tuỳ chọn trong Cài đặt: hằng ngày/tuần. Dùng API backup của SQLite (an toàn khi DB đang mở), **không** copy file thô bằng `fs`. |
-| **Xuất dữ liệu** | Cho phép xuất ra JSON/CSV — phục vụ người dùng mang dữ liệu đi nơi khác (R6). |
-| **Khôi phục** | Người dùng chọn file `.db` → app kiểm tra `user_version` tương thích → thay thế file → khởi động lại. |
+| **Backup tự động trước migration** | Bắt buộc khi DB đã có schema. Giữ tối đa 5 bản gần nhất. |
+| **Backup định kỳ** | Bật qua `data.autoBackup` (mặc định `true`); kiểm tra lúc khởi động theo `data.backupIntervalDays` (mặc định 7 ngày). Dùng API backup của SQLite (an toàn khi DB đang mở), **không** copy file thô bằng `fs`. |
+| **Xuất dữ liệu** | Người dùng chọn tệp `.db` qua hộp thoại của Main Process. API backup SQLite tạo bản xuất; UI cảnh báo đây là bản sao đầy đủ dữ liệu cá nhân. |
+| **Khôi phục** | Người dùng chọn file `.db` → app soi file ở chế độ chỉ đọc, kiểm tra cấu trúc và `user_version` → hiện đối chiếu dữ liệu sẽ mất → backup dữ liệu hiện tại → thay file → khởi động lại. |
 
-**Quy tắc dọn dẹp**: Giới hạn số bản backup (theo số lượng hoặc dung lượng), tự xoá bản cũ nhất, để không âm thầm chiếm đầy ổ đĩa người dùng.
+Luồng khôi phục phải từ chối file có `user_version` cao hơn migration cao nhất của bản app đang
+chạy. Sau khi xác nhận, app phải đóng kết nối SQLite trước khi thay `app.db`, đồng thời xoá
+`app.db-wal` và `app.db-shm` cũ để WAL của cơ sở dữ liệu trước đó không ghép vào file mới.
+
+**Quy tắc dọn dẹp**: Giới hạn số bản backup (hiện tại là 5), tự xoá bản cũ nhất, để không âm
+thầm chiếm đầy ổ đĩa người dùng. Thao tác xoá toàn bộ dữ liệu nghiệp vụ cũng phải tạo một bản
+sao an toàn trước khi xóa.
 
 ---
 

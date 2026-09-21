@@ -106,6 +106,12 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 `app:*` và `setting:*` đã đặc tả sẵn ở `docs/01-architecture/ipc-communication.md` §5.
 Không chép lại ở đây.
 
+## 2a. Nhóm `activity-log:*`
+
+| Kênh                | Payload vào                | Dữ liệu trả về | Ghi chú                                           |
+| ------------------- | -------------------------- | -------------- | ------------------------------------------------- |
+| `activity-log:list` | `{ entityType, entityId }` | Mảng nhật ký   | Đọc lịch sử chỉnh sửa append-only của một bản ghi |
+
 Khoá `settings` riêng của dự án (gồm `general.parishName`) liệt kê ở
 [`database-schema.md`](./database-schema.md) §5.
 

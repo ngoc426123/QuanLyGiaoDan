@@ -4,6 +4,7 @@ import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { AppClientError } from '@/shared/invoke.ts'
+import { calendarToday } from '@/shared/calendar.ts'
 import {
   relationshipOptions,
   type FamilyChoice,
@@ -57,7 +58,7 @@ export function FamilyMemberForm({
     relationship: 'other',
     fromDate: '',
     toFamilyId: '',
-    moveDate: '',
+    moveDate: mode === 'move' ? calendarToday() : '',
     ...initialValue,
   })
   const [search, setSearch] = useState('')

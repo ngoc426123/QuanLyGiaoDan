@@ -52,13 +52,35 @@ describe('Component dùng chung', () => {
     expect(click).not.toHaveBeenCalled()
   })
 
-  it('DateInput giữ chuỗi ngày lịch, kể cả khi xoá', () => {
+  it('DateInput hiển thị ngày theo dd/mm/yyyy và trả về chuỗi ngày lịch', () => {
     const change = vi.fn()
     render(<DateInput label="Ngày sinh" value="2026-09-13" onChange={change} />)
-    fireEvent.change(screen.getByLabelText('Ngày sinh'), { target: { value: '2026-01-01' } })
+    expect((screen.getByLabelText('Ngày sinh') as HTMLInputElement).value).toBe('13/09/2026')
+    fireEvent.change(screen.getByLabelText('Ngày sinh'), { target: { value: '01/01/2026' } })
     expect(change).toHaveBeenLastCalledWith('2026-01-01')
+    change.mockClear()
+    fireEvent.change(screen.getByLabelText('Ngày sinh'), { target: { value: '31/02/2026' } })
+    expect(change).not.toHaveBeenCalled()
+    expect((screen.getByLabelText('Ngày sinh') as HTMLInputElement).checkValidity()).toBe(false)
     fireEvent.change(screen.getByLabelText('Ngày sinh'), { target: { value: '' } })
     expect(change).toHaveBeenLastCalledWith('')
+  })
+
+  it('DateInput cho phép chọn ngày từ bộ chọn lịch', () => {
+    const change = vi.fn()
+    render(<DateInput label="Ngày sinh" value="" onChange={change} />)
+    fireEvent.change(
+      screen
+        .getByRole('textbox', { name: 'Ngày sinh' })
+        .parentElement!.querySelector('input[type="date"]')!,
+      {
+        target: { value: '2026-09-21' },
+      },
+    )
+    expect(change).toHaveBeenLastCalledWith('2026-09-21')
+    expect((screen.getByRole('textbox', { name: 'Ngày sinh' }) as HTMLInputElement).value).toBe(
+      '21/09/2026',
+    )
   })
 
   it.each([Modal, Drawer])('hộp thoại mở, đóng qua cancel, trả focus về nút', async (Component) => {

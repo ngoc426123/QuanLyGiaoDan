@@ -3,13 +3,14 @@ import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { useSettingMutation, useSettings } from '../hooks/useSettings.ts'
-import { useOpenDataFolder } from '@/features/app/hooks/useAppInfo.ts'
+import { useOpenDataFolder, useOpenLogFolder } from '@/features/app/hooks/useAppInfo.ts'
 import styles from './AppearanceSettings.module.css'
 
 export function DataSettings() {
   const settings = useSettings()
   const mutation = useSettingMutation()
   const openDataFolder = useOpenDataFolder()
+  const openLogFolder = useOpenLogFolder()
   const [parishName, setParishName] = useState<string | null>(null)
   const [retentionDays, setRetentionDays] = useState<string | null>(null)
   if (settings.isPending) return <Skeleton />
@@ -52,6 +53,13 @@ export function DataSettings() {
         onClick={() => openDataFolder.mutate()}
       >
         Mở thư mục dữ liệu
+      </Button>
+      <Button
+        variant="secondary"
+        disabled={openLogFolder.isPending}
+        onClick={() => openLogFolder.mutate()}
+      >
+        Mở thư mục log
       </Button>
     </section>
   )

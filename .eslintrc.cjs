@@ -67,6 +67,11 @@ module.exports = {
       extends: ['plugin:react/recommended', 'plugin:react/jsx-runtime', 'prettier'],
       rules: { 'react/prop-types': 'off' },
     },
+    {
+      files: ['frontend/e2e/**/*.ts', 'frontend/playwright.config.ts'],
+      env: { browser: true, node: true },
+      parser: '@typescript-eslint/parser',
+    },
     // ── Renderer ────────────────────────────────────────────────────────────
     {
       files: ['frontend/src/**/*.{ts,tsx}'],

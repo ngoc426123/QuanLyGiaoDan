@@ -20,7 +20,7 @@
 | 3     | Bộ khung giao diện     | 2–3 ngày      |     ☑      |
 | 4     | Nghiệp vụ lõi (CRUD)   | 5–7 ngày      |     ☑      |
 | 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☑      |
-| 6     | Độ tin cậy             | 2–3 ngày      |     ☐      |
+| 6     | Độ tin cậy             | 2–3 ngày      |     ☑      |
 | 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☐      |
 | 8     | Mở rộng                | sau phát hành |     ☐      |
 
@@ -38,6 +38,13 @@ CRUD thực tế. Danh sách lớn dùng phân trang SQL 50 dòng/trang theo quy
 **☑ Phase 5 (2026-09-14):** hoàn tất FTS tìm kiếm tiếng Việt, phím tắt, thao tác hàng loạt,
 thùng rác, cài đặt dữ liệu, xuất/nhập CSV bằng `worker_threads`, và rà soát accessibility.
 Chức năng in giấy được tách khỏi Phase 5 theo yêu cầu người dùng, để thực hiện sau cùng.
+
+**☑ Phase 6 (2026-09-21):** hoàn tất log chẩn đoán an toàn, lưới lỗi Main/Renderer,
+backup định kỳ, dọn dữ liệu hết hạn, VACUUM định kỳ, activity log, kiểm tra query plan,
+kiểm thử backend/frontend và ba luồng E2E Electron. Luồng khôi phục từ thùng rác được sửa để
+khôi phục lại tư cách thành viên hộ cùng giáo dân. Người dùng chấp thuận không cần soak test
+30 phút vì ứng dụng chỉ được dùng theo các phiên ngắn: bật, cập nhật rồi tắt. Kiểm chứng cuối:
+backend 84/84, frontend 31/31, E2E Electron 3/3; format, lint, typecheck và production build đều đạt.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 

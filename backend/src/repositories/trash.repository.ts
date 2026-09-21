@@ -44,3 +44,12 @@ export function empty() {
   prepare('DELETE FROM families WHERE deleted_at IS NOT NULL').run()
   return prepare('DELETE FROM zones WHERE deleted_at IS NOT NULL').run().changes
 }
+
+export function purgeBefore(cutoff: string) {
+  prepare(
+    'DELETE FROM family_members WHERE deleted_at IS NOT NULL AND (deleted_at < ? OR person_id IN (SELECT id FROM persons WHERE deleted_at < ?) OR family_id IN (SELECT id FROM families WHERE deleted_at < ?))',
+  ).run(cutoff, cutoff, cutoff)
+  prepare('DELETE FROM persons WHERE deleted_at < ?').run(cutoff)
+  prepare('DELETE FROM families WHERE deleted_at < ?').run(cutoff)
+  return prepare('DELETE FROM zones WHERE deleted_at < ?').run(cutoff).changes
+}

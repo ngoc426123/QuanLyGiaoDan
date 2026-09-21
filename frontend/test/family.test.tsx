@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FamilyDetail } from '../src/features/family/components/FamilyDetail.tsx'
 import { FamilyList } from '../src/features/family/components/FamilyList.tsx'
 import { createQueryClient } from '../src/shared/queryClient.ts'
+import { calendarToday } from '../src/shared/calendar.ts'
 
 function renderFeature(view: ReactNode, path = '/families') {
   return render(
@@ -112,5 +113,14 @@ describe('Gia đình', () => {
         patch: { zoneId: zone.id, name: family.name, address: '', note: '' },
       }),
     )
+  })
+
+  it('điền ngày hôm nay khi mở form chuyển hộ', async () => {
+    const user = userEvent.setup()
+    renderFeature(<FamilyDetail id={family.id} />, `/families/${family.id}`)
+    await user.click(await screen.findByRole('button', { name: 'Chuyển hộ' }))
+    const input = (await screen.findByLabelText('Ngày chuyển hộ')) as HTMLInputElement
+    const [year, month, day] = calendarToday().split('-')
+    expect(input.value).toBe(`${day}/${month}/${year}`)
   })
 })

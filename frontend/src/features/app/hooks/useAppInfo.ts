@@ -15,3 +15,12 @@ export function useOpenDataFolder() {
       addToast(error instanceof Error ? error.message : 'Không mở được thư mục.', true),
   })
 }
+
+export function useOpenLogFolder() {
+  const addToast = useToastStore((state) => state.add)
+  return useMutation({
+    mutationFn: appApi.openLogFolder,
+    onError: (error) =>
+      addToast(error instanceof Error ? error.message : 'Không mở được thư mục log.', true),
+  })
+}

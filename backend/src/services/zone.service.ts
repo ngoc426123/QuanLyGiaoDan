@@ -1,6 +1,7 @@
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import * as zoneRepository from '#/repositories/zone.repository.ts'
+import { record as recordActivity } from './activity-log.service.ts'
 import { now } from './clock.ts'
 import {
   assertFound,
@@ -77,7 +78,7 @@ export function create(input: any) {
   return runInTransaction(() => {
     assertNameAvailable(patch.name)
 
-    return zoneRepository.insert({
+    const zone = zoneRepository.insert({
       id: newId(),
       name: patch.name,
       nameAscii: patch.nameAscii,
@@ -86,6 +87,8 @@ export function create(input: any) {
       createdAt: timestamp,
       updatedAt: timestamp,
     })
+    recordActivity({ entityType: 'zone', entityId: zone.id, action: 'created', timestamp })
+    return zone
   })
 }
 
@@ -103,7 +106,16 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
 
     if (normalized.name) assertNameAvailable(normalized.name, id)
 
-    return assertFound(zoneRepository.update(id, normalized, timestamp), NOT_FOUND_MESSAGE)
+    const updated = assertFound(zoneRepository.update(id, normalized, timestamp), NOT_FOUND_MESSAGE)
+    recordActivity({
+      entityType: 'zone',
+      entityId: id,
+      action: 'updated',
+      before: current,
+      after: updated,
+      timestamp,
+    })
+    return updated
   })
 }
 
@@ -131,6 +143,7 @@ export function remove({ id }: any) {
     }
 
     zoneRepository.softDelete(id, timestamp)
+    recordActivity({ entityType: 'zone', entityId: id, action: 'removed', timestamp })
 
     return { id }
   })
@@ -150,6 +163,9 @@ export function bulkRemove({ ids }: any) {
         { familyCount },
       )
     }
-    return { count: zoneRepository.softDeleteMany(ids, timestamp) }
+    const count = zoneRepository.softDeleteMany(ids, timestamp)
+    for (const id of ids)
+      recordActivity({ entityType: 'zone', entityId: id, action: 'removed', timestamp })
+    return { count }
   })
 }

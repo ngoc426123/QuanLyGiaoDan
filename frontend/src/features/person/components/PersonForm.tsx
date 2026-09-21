@@ -46,12 +46,12 @@ function toFormValue(initialValue: any) {
   return value
 }
 
-function toPayload(value: any) {
+function toPayload(value: any, allowFamilyAssignment: boolean) {
   const payload: any = {}
   for (const key of editableFields) {
     payload[key] = key === 'fullName' ? value[key] : value[key] || null
   }
-  if (value.familyId) {
+  if (allowFamilyAssignment && value.familyId) {
     payload.family = {
       familyId: value.familyId,
       relationship: value.relationship,
@@ -77,7 +77,7 @@ export function PersonForm({
     event.preventDefault()
     setError(null)
     try {
-      await onSubmit(toPayload(value))
+      await onSubmit(toPayload(value, allowFamilyAssignment))
     } catch (nextError) {
       setError(nextError)
     }
