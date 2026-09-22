@@ -36,6 +36,7 @@ const dateFields = Object.freeze({
 
 const personExtensions = Object.freeze({
   email: optionalText(254, 'Email'),
+  occupation: optionalText(120, 'Nghề nghiệp'),
   secondaryPhone: optionalText(20, 'Số liên hệ thay thế'),
   residenceStatus: z.enum(['permanent', 'temporary', 'moved_away']).nullish(),
   pastoralStatus: z.enum(['ordinary', 'catechism', 'catechist', 'needs_visit']).nullish(),

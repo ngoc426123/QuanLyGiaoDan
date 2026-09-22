@@ -71,6 +71,7 @@ describe('migrate', () => {
       '006_add_person_extensions_and_sacraments.sql',
       '007_add_sacrament_place.sql',
       '008_add_marriages.sql',
+      '009_add_person_occupation.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -105,6 +106,11 @@ describe('migrate', () => {
       db.prepare("SELECT name FROM pragma_table_info('sacraments') WHERE name = 'place'").get()
         .name,
       'place',
+    )
+    assert.equal(
+      db.prepare("SELECT name FROM pragma_table_info('persons') WHERE name = 'occupation'").get()
+        .name,
+      'occupation',
     )
     db.close()
   })

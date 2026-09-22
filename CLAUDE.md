@@ -3,7 +3,7 @@
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
 **Ngôn ngữ: chỉ tiếng Việt**, không triển khai i18n — người dùng chốt 2026-09-13 (Q03).
-**Trạng thái: Phase 7 đã hoàn tất** (2026-09-22, người dùng xác nhận).
+**Trạng thái: Phase 8 đã hoàn tất** (2026-09-22, người dùng xác nhận).
 Đường chạy đã chuyển sang TypeScript; CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ,
 phân trang SQL, đồng bộ broadcast, kiểm tra xung đột và thông báo lỗi nghiệp vụ đã được hoàn tất.
 Phase 5 đã hoàn thiện trải nghiệm: thùng rác, tìm kiếm FTS tiếng Việt, thao tác hàng loạt,
@@ -14,8 +14,10 @@ Tiến độ đầy đủ: `project/roadmap.md`.
 
 ## Ghi chú tiếp tục phiên sau — 2026-09-22
 
-Phase 3 đến 7 đã hoàn tất. Q02 đã chốt TypeScript ESM; danh sách lớn vẫn phân trang SQL 50
+Phase 3 đến 8 đã hoàn tất. Q02 đã chốt TypeScript ESM; danh sách lớn vẫn phân trang SQL 50
 dòng/trang. Phase 7 hoàn tất với bộ cài NSIS x64 và shortcut Desktop mang tên **Quan Ly Giao Dan**.
+Phase 8 đã bổ sung trường hồ sơ giáo dân, quản lý bí tích khai tâm và menu Hôn phối riêng cho
+bản ghi chung của hai giáo dân.
 
 Mã hoá SQLCipher được giữ lại: lần đầu tạo mật khẩu dữ liệu, sau đó Windows DPAPI lưu khóa theo
 tài khoản để ứng dụng tự mở dữ liệu. Xuất, nhập hoặc xóa toàn bộ dữ liệu yêu cầu nhập lại mật khẩu
@@ -23,14 +25,13 @@ hai lần kèm mã xác nhận ngẫu nhiên 6 số. Backup mới dùng mật kh
 riêng vẫn nhập được. Dữ liệu phát hành nằm tại `%APPDATA%\Quan Ly Giao Dan`; bản cập nhật tự đổi
 tên nguyên thư mục `elecrusion` cũ một lần để giữ database, backup, log và khóa DPAPI.
 
-Kiểm chứng cuối: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` và
-đóng gói NSIS đạt; backend 89/89 test đạt; E2E Electron production đạt 4/4 (1 kịch bản cài đè để
-kiểm tra riêng). Soak test 30 phút được miễn theo xác nhận người dùng; ứng dụng chỉ cần ổn định trong
-các phiên ngắn. In giấy vẫn để sau cùng theo yêu cầu người dùng.
+Kiểm chứng cuối: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` đạt;
+backend 91/91 test và frontend 32/32 test đạt. Soak test 30 phút được miễn theo xác nhận người dùng;
+ứng dụng chỉ cần ổn định trong các phiên ngắn. In giấy vẫn để sau cùng theo yêu cầu người dùng.
 
-Tiếp theo là **Phase 8 — Mở rộng** khi có yêu cầu mới. Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp
-trên `develop`, không tạo worktree. Đã được phép thêm package và bộ test; **không tự ý commit hoặc
-push**.
+Giai đoạn tiếp theo là **enhance và bổ sung tính năng mới** theo yêu cầu. Tiếp tục chỉ dùng tiếng
+Việt, làm trực tiếp trên `develop`, không tạo worktree. Đã được phép thêm package và bộ test;
+**không tự ý commit hoặc push**.
 
 File này chứa ràng buộc **bắt buộc**. Chi tiết tra ở `docs/` (template) và `project/` (nghiệp vụ)
 — bảng điều hướng ở cuối.

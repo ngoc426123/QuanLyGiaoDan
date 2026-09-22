@@ -122,6 +122,7 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 | `death_date`       | TEXT | NULL                                  | `NULL` = còn sống                                                           |
 | `phone`            | TEXT | NULL, CHECK(length ≤ 20)              | Số điện thoại                                                               |
 | `email`            | TEXT | NULL, CHECK(length ≤ 254)             | Email cá nhân                                                               |
+| `occupation`       | TEXT | NULL, CHECK(length ≤ 120)             | Nghề nghiệp; có thể để trống                                                |
 | `secondary_phone`  | TEXT | NULL, CHECK(length ≤ 20)              | Số liên hệ thay thế                                                         |
 | `residence_status` | TEXT | NULL, CHECK enum                      | `permanent` / `temporary` / `moved_away`                                    |
 | `pastoral_status`  | TEXT | NULL, CHECK enum                      | `ordinary` / `catechism` / `catechist` / `needs_visit`                      |

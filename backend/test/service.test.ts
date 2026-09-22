@@ -118,6 +118,7 @@ describe('person.service', () => {
     const { data: person } = personService.create({
       fullName: 'Trần Thị Hồng',
       email: 'hong@example.test',
+      occupation: 'Giáo viên',
       secondaryPhone: '0900000000',
       residenceStatus: 'temporary',
       pastoralStatus: 'catechism',
@@ -134,6 +135,7 @@ describe('person.service', () => {
     })
 
     assert.equal(person.email, 'hong@example.test')
+    assert.equal(person.occupation, 'Giáo viên')
     assert.equal(person.pastoralStatus, 'catechism')
     assert.deepEqual(
       person.sacraments.map((row) => [row.type, row.date, row.minister, row.place]),

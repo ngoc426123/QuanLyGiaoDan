@@ -13,6 +13,7 @@ const emptyValue = {
   birthDate: '',
   phone: '',
   email: '',
+  occupation: '',
   secondaryPhone: '',
   residenceStatus: '',
   pastoralStatus: '',
@@ -42,6 +43,7 @@ const editableFields = [
   'birthDate',
   'phone',
   'email',
+  'occupation',
   'secondaryPhone',
   'residenceStatus',
   'pastoralStatus',
@@ -176,6 +178,13 @@ export function PersonForm({
           error={fieldErrors.email}
           onChange={(event: any) => set('email', event.target.value)}
           maxLength={254}
+        />
+        <Input
+          label="Nghề nghiệp"
+          value={value.occupation}
+          error={fieldErrors.occupation}
+          onChange={(event: any) => set('occupation', event.target.value)}
+          maxLength={120}
         />
         <Input
           label="Số liên hệ thay thế"

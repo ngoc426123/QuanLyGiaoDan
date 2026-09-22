@@ -98,6 +98,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           <dd>{record.email || 'Chưa cập nhật'}</dd>
         </div>
         <div>
+          <dt>Nghề nghiệp</dt>
+          <dd>{record.occupation || 'Chưa cập nhật'}</dd>
+        </div>
+        <div>
           <dt>Số liên hệ thay thế</dt>
           <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
         </div>

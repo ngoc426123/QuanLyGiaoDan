@@ -25,6 +25,7 @@ Cột **Không dùng** quan trọng ngang cột định danh — nó chặn vi�
 | Tên gọi              | `givenName`          | Tên gọi                | `shortName`, `nickName`               |
 | Họ tên không dấu     | `fullNameAscii`      | _(không hiện)_         | `slug`, `searchKey`                   |
 | Ngày sinh            | `birthDate`          | Ngày sinh              | `dob`, `dateOfBirth`                  |
+| Nghề nghiệp          | `occupation`         | Nghề nghiệp            | `job`, `profession`, `work`           |
 | Ngày rửa tội         | `baptismDate`        | Ngày rửa tội           | `dateRT`                              |
 | Ngày rước lễ lần đầu | `firstCommunionDate` | Ngày rước lễ lần đầu   | `dateRL`                              |
 | Ngày thêm sức        | `confirmationDate`   | Ngày thêm sức          | `dateTS`                              |

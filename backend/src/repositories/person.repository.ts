@@ -13,7 +13,7 @@ const SORT_COLUMNS = Object.freeze({
 const SELECT_COLUMNS =
   'p.id, p.full_name, p.given_name, p.full_name_ascii, p.given_name_ascii,' +
   ' p.holy_name, p.gender,' +
-  ' p.birth_date, p.death_date, p.phone, p.email, p.secondary_phone, p.residence_status,' +
+  ' p.birth_date, p.death_date, p.phone, p.email, p.occupation, p.secondary_phone, p.residence_status,' +
   ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.created_at, p.updated_at'
 
 const UPDATABLE = Object.freeze({
@@ -27,6 +27,7 @@ const UPDATABLE = Object.freeze({
   deathDate: 'death_date',
   phone: 'phone',
   email: 'email',
+  occupation: 'occupation',
   secondaryPhone: 'secondary_phone',
   residenceStatus: 'residence_status',
   pastoralStatus: 'pastoral_status',
@@ -64,6 +65,7 @@ export function toDomain(row) {
     deathDate: row.death_date ?? null,
     phone: row.phone ?? null,
     email: row.email ?? null,
+    occupation: row.occupation ?? null,
     secondaryPhone: row.secondary_phone ?? null,
     residenceStatus: row.residence_status ?? null,
     pastoralStatus: row.pastoral_status ?? null,
@@ -174,9 +176,9 @@ export function insert(record) {
   prepare(
     'INSERT INTO persons (id, full_name, given_name, full_name_ascii, given_name_ascii,' +
       ' holy_name, gender,' +
-      ' birth_date, death_date, phone, email, secondary_phone, residence_status, pastoral_status,' +
+      ' birth_date, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
       ' pastoral_note, source, note, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,
@@ -189,6 +191,7 @@ export function insert(record) {
     record.deathDate,
     record.phone,
     record.email,
+    record.occupation,
     record.secondaryPhone,
     record.residenceStatus,
     record.pastoralStatus,
