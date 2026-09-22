@@ -325,5 +325,14 @@ Nguyên tắc chốt: **chỉ cho sắp xếp theo cột đã có index**, đún
 | **Không** thêm index cho `gender`                | Độ chọn lọc thấp (2 giá trị); SQLite sẽ bỏ qua index, quét theo `deleted_at` vẫn nhanh hơn                                                                         |
 | `givenName` cho phép NULL                        | Sắp ASC thì NULL đứng trước — đúng mong muốn: người chưa điền tên gọi nổi lên đầu để dễ bổ sung                                                                    |
 
+## 9. Chỉ mục Dashboard
+
+Migration `010_add_dashboard_indexes.sql` thêm hai chỉ mục partial không đổi dữ liệu:
+
+| Chỉ mục                   | Mục đích                                                                  |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `idx_persons_birth_month` | Lọc giáo dân còn sống có sinh nhật trong tháng trên Dashboard.            |
+| `idx_persons_phone`       | Nhóm các số điện thoại đã nhập để báo hiệu bản ghi cần kiểm tra thủ công. |
+
 > Sắp xếp theo **tên gọi** chứ không theo họ là quyết định domain (P03 — hợp với tên tiếng Việt).
 > Tìm kiếm không dấu dùng `full_name_ascii`, không dùng `full_name`.

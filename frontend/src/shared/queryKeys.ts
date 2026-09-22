@@ -13,7 +13,7 @@ export const zoneKeys = domainKeys('zone')
 export const settingKeys = domainKeys('setting')
 export const dashboardKeys = Object.freeze({
   all: ['dashboard'],
-  summary: ['dashboard', 'summary'],
+  summary: (month: string) => ['dashboard', 'summary', month],
 })
 export const appKeys = Object.freeze({
   all: ['app'],

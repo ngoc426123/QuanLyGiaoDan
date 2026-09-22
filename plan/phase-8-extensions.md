@@ -12,19 +12,23 @@
 
 ## 1. Ứng viên
 
-| Hạng mục                           | Ghi chú                                                                                | Điều kiện tiên quyết                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Sổ bộ bí tích đầy đủ**           | Tách bảng `sacraments` + `marriages`, in được chứng thư Rửa tội / Hôn phối             | Xem §2 — **thay đổi lớn nhất**                                                   |
-| **Phân cấp giáo họ**               | Thêm `parent_id` vào `zones` để có giáo họ → giáo khu / xóm giáo                       | Migration rebuild nhẹ                                                            |
-| **Ảnh giáo dân**                   | Tính năng đính kèm: `attachments/năm/tháng/<uuid>.jpg`, DB lưu đường dẫn **tương đối** | Đọc `security.md` §4 trước                                                       |
-| **Đoàn thể / chức vụ**             | Ban hành giáo, ca đoàn, Legio, trùm khu — bảng `memberships` riêng                     | Đây có thể là ý đồ thật của cột `relationship` trong `person_zone` ở diagram gốc |
-| Đa cửa sổ                          | Kiểm chứng cơ chế broadcast event đã dựng từ Phase 1                                   | `expectedUpdatedAt` đã làm đúng từ Phase 2                                       |
-| Xuất JSON đầy đủ                   | Cho người dùng mang dữ liệu đi nơi khác. Chạy trong `worker_threads`                   |                                                                                  |
-| Đa ngôn ngữ (i18n)                 | **Q03** — chốt trước khi bắt đầu, ảnh hưởng cách viết **mọi** chuỗi hiển thị           | Với domain này gần như chắc chắn **không cần**                                   |
-| Thông báo bổn mạng / sinh nhật     | Danh sách "tháng này ai mừng bổn mạng" — nhu cầu thật của giáo xứ                      | Index trên `birth_date` đã có từ Phase 2                                         |
-| Thống kê theo năm                  | Số rửa tội / hôn phối / qua đời theo năm                                               |                                                                                  |
-| Tray icon, khởi động cùng hệ thống |                                                                                        |                                                                                  |
-| Đồng bộ nhiều máy                  | **Thay đổi kiến trúc lớn** — cần thiết kế lại, không làm tuỳ hứng                      |                                                                                  |
+| Hạng mục                             | Trạng thái            | Ghi chú / điều kiện                                                                                                                              |
+| ------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Báo cáo mục vụ theo tháng            | **Đã làm 2026-09-22** | Dashboard có sinh nhật, Rửa tội, Rước lễ lần đầu, Thêm sức, Hôn phối và qua đời. Chọn được tháng bất kỳ.                                         |
+| Kiểm tra chất lượng dữ liệu          | **Đã làm 2026-09-22** | Nêu hộ thiếu chủ hộ, người chưa thuộc hộ, thiếu ngày sinh và số điện thoại trùng; chỉ báo để người quản lý tự xử lý.                             |
+| **In/xuất danh sách nghiệp vụ**      | Ưu tiên kế tiếp       | Danh sách theo giáo họ/hộ, trẻ trong độ tuổi giáo lý, người cao tuổi và sinh nhật tháng. Xem xét in/Excel định dạng tốt trước khi làm chứng thư. |
+| Báo cáo năm và bộ lọc nâng cao       | Chờ phản hồi          | Mở rộng thống kê bí tích, hôn phối và qua đời theo năm; chỉ thêm chỉ số được văn phòng sử dụng thật.                                             |
+| Phát hiện tên gần giống              | Chờ phản hồi          | Chỉ gợi ý hồ sơ cần xem xét, tuyệt đối không tự gộp người. Cần thống nhất ngưỡng và cách hiển thị trước.                                         |
+| **Sổ bộ bí tích đầy đủ / chứng thư** | Cần quyết định        | Thêm số sổ/trang/thứ tự, người đỡ đầu/nhân chứng rồi in chứng thư Rửa tội/Hôn phối. Xem §2 — thay đổi lớn nhất.                                  |
+| Bổn mạng                             | Cần làm rõ domain     | Cần lịch tên thánh hoặc ngày bổn mạng được giáo xứ chốt; `holyName` hiện không đủ suy ra ngày chính xác.                                         |
+| **Đoàn thể / chức vụ**               | Cần xác nhận nhu cầu  | Ban hành giáo, ca đoàn, Legio, giáo lý viên, trùm khu — bảng `memberships` riêng.                                                                |
+| **Phân cấp giáo họ**                 | Chờ nhu cầu           | Thêm `parent_id` vào `zones` để có giáo họ → giáo khu/xóm giáo; cần migration.                                                                   |
+| **Ảnh giáo dân**                     | Chờ nhu cầu           | Đính kèm tại `attachments/năm/tháng/<uuid>.jpg`, DB lưu đường dẫn tương đối; đọc `security.md` §4 trước.                                         |
+| Đa cửa sổ                            | Chờ nhu cầu           | Cơ chế broadcast và `expectedUpdatedAt` đã có nhưng cần kịch bản thao tác thực tế.                                                               |
+| Xuất JSON đầy đủ                     | Chờ nhu cầu           | Để chuyển dữ liệu; chạy trong `worker_threads`.                                                                                                  |
+| Tray icon, khởi động cùng hệ thống   | Chờ nhu cầu           | Chỉ làm khi quy trình vận hành thật cần ứng dụng chạy nền.                                                                                       |
+| Đa ngôn ngữ (i18n)                   | Không ưu tiên         | Q03 hiện chốt chỉ tiếng Việt; đây là thay đổi xuyên suốt nếu được mở lại.                                                                        |
+| Đồng bộ nhiều máy                    | Không làm tuỳ hứng    | Thay đổi kiến trúc và mô hình đe doạ; cần thiết kế lại trước khi triển khai.                                                                     |
 
 ---
 

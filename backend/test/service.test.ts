@@ -13,6 +13,7 @@ import * as trashService from '#/services/trash.service.ts'
 import * as csvImportService from '#/services/csv-import.service.ts'
 import * as dataService from '#/services/data.service.ts'
 import * as activityLogService from '#/services/activity-log.service.ts'
+import * as dashboardService from '#/services/dashboard.service.ts'
 import * as zoneService from '#/services/zone.service.ts'
 import { disposeDatabase, freshDatabase } from './helpers/database.mjs'
 
@@ -43,6 +44,48 @@ function seed() {
 }
 
 const codeIs = (code) => (error) => error.code === code
+
+describe('dashboard.service', () => {
+  it('tổng hợp sinh nhật, bí tích và các hồ sơ cần kiểm tra theo tháng', () => {
+    const birthday = personService.create({
+      fullName: 'Nguyễn Văn An',
+      birthDate: '2000-09-12',
+      phone: '0901000000',
+      sacraments: [{ type: 'baptism', date: '2026-09-05', minister: null }],
+    }).data
+    personService.create({
+      fullName: 'Trần Thị Bình',
+      birthDate: '1992-09-23',
+      phone: '0901000000',
+      sacraments: [{ type: 'confirmation', date: '2026-09-15', minister: null }],
+    })
+    personService.create({ fullName: 'Lê Văn Cường' })
+    personService.create({
+      fullName: 'Phạm Thị Dung',
+      birthDate: '1940-01-01',
+      deathDate: '2026-09-18',
+    })
+    const spouse = personService.create({ fullName: 'Hoàng Thị Em' }).data
+    marriageService.create({ personId: birthday.id, spouseId: spouse.id, date: '2026-09-20' })
+
+    const summary = dashboardService.getSummary({ month: '2026-09' })
+
+    assert.deepEqual(
+      summary.pastoral.birthdays.map((person) => person.fullName),
+      ['Nguyễn Văn An', 'Trần Thị Bình'],
+    )
+    assert.deepEqual(summary.pastoral.counts, {
+      baptisms: 1,
+      firstCommunions: 0,
+      confirmations: 1,
+      marriages: 1,
+      deaths: 1,
+    })
+    assert.equal(summary.dataQuality.personsWithoutBirthDate.total, 2)
+    assert.equal(summary.dataQuality.duplicatePhones.total, 1)
+    assert.equal(summary.dataQuality.duplicatePhones.groups[0].persons.length, 2)
+  })
+})
 
 describe('person.service', () => {
   it('tạo người và gán vào hộ trong cùng một transaction', () => {

@@ -67,4 +67,18 @@ describe('kế hoạch truy vấn nóng', () => {
 
     assert.equal(hasFullScan(details, 'persons'), false, details.join('\n'))
   })
+
+  it('lọc sinh nhật theo tháng dùng chỉ mục biểu thức của Dashboard', () => {
+    const details = plan(
+      'SELECT p.id FROM persons p WHERE p.deleted_at IS NULL AND p.death_date IS NULL' +
+        ' AND p.birth_date IS NOT NULL AND substr(p.birth_date, 6, 2) = ?' +
+        ' ORDER BY substr(p.birth_date, 9, 2) ASC LIMIT 12',
+      ['09'],
+    )
+
+    assert.ok(
+      details.some((detail) => detail.includes('idx_persons_birth_month')),
+      details.join('\n'),
+    )
+  })
 })

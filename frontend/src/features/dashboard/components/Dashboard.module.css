@@ -1,6 +1,7 @@
 .statistics,
 .section,
-.warnings {
+.warnings,
+.pastoralCounts {
   display: grid;
   gap: var(--space-4);
 }
@@ -33,6 +34,41 @@
 .section h3 {
   margin: var(--space-0);
 }
+.section h3 {
+  margin-top: var(--space-4);
+}
+.sectionHeader {
+  display: flex;
+  gap: var(--space-4);
+  align-items: end;
+  justify-content: space-between;
+}
+.sectionHeader p,
+.sectionDescription,
+.muted {
+  margin: var(--space-1) var(--space-0) var(--space-0);
+  color: var(--color-text-muted);
+}
+.pastoralCounts {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.pastoralCounts > div {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-base);
+  border: var(--border-width) solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+}
+.pastoralCounts span {
+  color: var(--color-text-muted);
+}
+.pastoralCounts strong {
+  font-size: 24px;
+  line-height: 1.2;
+}
 .warnings {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -46,9 +82,18 @@
   margin-bottom: var(--space-0);
   padding-left: var(--space-5);
 }
+.duplicatePhones li {
+  display: grid;
+  gap: var(--space-1);
+}
 @media (max-width: 1079px) {
   .statistics,
-  .warnings {
+  .warnings,
+  .pastoralCounts {
     grid-template-columns: 1fr;
+  }
+  .sectionHeader {
+    display: grid;
+    align-items: stretch;
   }
 }

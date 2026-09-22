@@ -8,18 +8,18 @@
 
 ## 1. Bản đồ màn hình
 
-| Route           | Màn hình         | Mô tả                                                   | Ưu tiên |
-| --------------- | ---------------- | ------------------------------------------------------- | ------- |
-| `/`             | Tổng quan        | Tổng số giáo dân / hộ / giáo họ, phân bố theo giáo họ   | P0      |
-| `/persons`      | Giáo dân         | Danh sách, lọc theo giáo họ / hộ / giới tính / còn sống | P0      |
-| `/persons/:id`  | Hồ sơ giáo dân   | Thông tin + bí tích + hộ hiện hành + lịch sử hộ         | P0      |
-| `/families`     | Gia đình         | Danh sách hộ, lọc theo giáo họ                          | P0      |
-| `/families/:id` | Chi tiết hộ      | Thông tin hộ + danh sách thành viên                     | P0      |
-| `/zones`        | Giáo họ          | Danh sách giáo họ kèm số hộ / số người                  | P1      |
-| `/zones/:id`    | Chi tiết giáo họ | Danh sách hộ thuộc giáo họ                              | P1      |
-| `/search?q=`    | Tìm kiếm         | Tìm không dấu trên người và hộ                          | P1      |
-| `/trash`        | Thùng rác        | Bản ghi đã xoá mềm                                      | P2      |
-| `/settings`     | Cài đặt          | Giao diện / Dữ liệu / Phím tắt / Giới thiệu             | P1      |
+| Route           | Màn hình         | Mô tả                                                                            | Ưu tiên |
+| --------------- | ---------------- | -------------------------------------------------------------------------------- | ------- |
+| `/`             | Tổng quan        | Tổng số giáo dân / hộ / giáo họ, báo cáo mục vụ theo tháng và chất lượng dữ liệu | P0      |
+| `/persons`      | Giáo dân         | Danh sách, lọc theo giáo họ / hộ / giới tính / còn sống                          | P0      |
+| `/persons/:id`  | Hồ sơ giáo dân   | Thông tin + bí tích + hộ hiện hành + lịch sử hộ                                  | P0      |
+| `/families`     | Gia đình         | Danh sách hộ, lọc theo giáo họ                                                   | P0      |
+| `/families/:id` | Chi tiết hộ      | Thông tin hộ + danh sách thành viên                                              | P0      |
+| `/zones`        | Giáo họ          | Danh sách giáo họ kèm số hộ / số người                                           | P1      |
+| `/zones/:id`    | Chi tiết giáo họ | Danh sách hộ thuộc giáo họ                                                       | P1      |
+| `/search?q=`    | Tìm kiếm         | Tìm không dấu trên người và hộ                                                   | P1      |
+| `/trash`        | Thùng rác        | Bản ghi đã xoá mềm                                                               | P2      |
+| `/settings`     | Cài đặt          | Giao diện / Dữ liệu / Phím tắt / Giới thiệu                                      | P1      |
 
 > Mục **Dữ liệu** của `/settings` chứa hai nút "Xuất dữ liệu ra file" và "Nhập dữ liệu từ file"
 > (kênh `backup:*`, đã có từ Phase 2). Phase 3 đã chuyển hai nút vào Cài đặt, qua API wrapper
@@ -33,7 +33,7 @@
 
 | Route                  | Kênh gọi                                                                                               |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `/`                    | `zone:list`, `family:list`, `person:list`                                                              |
+| `/`                    | `dashboard:getSummary`                                                                                 |
 | `/persons` · `/search` | `person:list`                                                                                          |
 | `/persons/:id`         | `person:getById`, `person:update`, `person:remove`, `family-member:move`                               |
 | `/families`            | `family:list`                                                                                          |

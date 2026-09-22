@@ -72,6 +72,7 @@ describe('migrate', () => {
       '007_add_sacrament_place.sql',
       '008_add_marriages.sql',
       '009_add_person_occupation.sql',
+      '010_add_dashboard_indexes.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -111,6 +112,13 @@ describe('migrate', () => {
       db.prepare("SELECT name FROM pragma_table_info('persons') WHERE name = 'occupation'").get()
         .name,
       'occupation',
+    )
+    assert.ok(
+      db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_persons_phone'",
+        )
+        .get(),
     )
     db.close()
   })

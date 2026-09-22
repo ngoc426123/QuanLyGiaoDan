@@ -6,6 +6,6 @@ export const dashboardHandlers = Object.freeze([
   {
     channel: CHANNELS.DASHBOARD.GET_SUMMARY,
     schema: dashboardGetSummarySchema,
-    handle: () => dashboardService.getSummary(),
+    handle: (input) => dashboardService.getSummary(input),
   },
 ])

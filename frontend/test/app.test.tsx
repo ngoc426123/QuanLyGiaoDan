@@ -109,6 +109,21 @@ beforeEach(() => {
           zones: [],
           familiesWithoutHead: [],
           personsWithoutFamily: [],
+          pastoral: {
+            month: '2026-09',
+            birthdays: [],
+            counts: {
+              baptisms: 0,
+              firstCommunions: 0,
+              confirmations: 0,
+              marriages: 0,
+              deaths: 0,
+            },
+          },
+          dataQuality: {
+            personsWithoutBirthDate: { total: 0, records: [] },
+            duplicatePhones: { total: 0, groups: [] },
+          },
         },
       })),
     },
@@ -269,6 +284,17 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(screen.getByRole('heading', { name: 'Thùng rác đang trống' })).toBeTruthy()
     await user.click(screen.getByRole('link', { name: 'Cài đặt' }))
     expect(await screen.findByRole('combobox', { name: 'Chế độ giao diện' })).toBeTruthy()
+  })
+
+  it('đổi tháng trên Tổng quan sẽ tải lại báo cáo mục vụ cho đúng kỳ', async () => {
+    render(<App />)
+    const month = await screen.findByLabelText('Tháng báo cáo')
+
+    fireEvent.change(month, { target: { value: '2026-10' } })
+
+    await waitFor(() =>
+      expect(window.api.dashboard.getSummary).toHaveBeenCalledWith({ month: '2026-10' }),
+    )
   })
 
   it('lọc giáo dân giữ state trong màn hình, không thêm query vào route', async () => {

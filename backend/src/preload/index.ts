@@ -128,7 +128,7 @@ const familyMemberApi = Object.freeze({
 })
 
 const dashboardApi = Object.freeze({
-  getSummary: () => ipcRenderer.invoke(CHANNELS.DASHBOARD.GET_SUMMARY),
+  getSummary: (input) => ipcRenderer.invoke(CHANNELS.DASHBOARD.GET_SUMMARY, input),
 })
 
 const reportApi = Object.freeze({

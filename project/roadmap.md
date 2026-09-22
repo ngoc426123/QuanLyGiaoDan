@@ -22,7 +22,7 @@
 | 5     | Hoàn thiện trải nghiệm | 3–5 ngày      |     ☑      |
 | 6     | Độ tin cậy             | 2–3 ngày      |     ☑      |
 | 7     | Đóng gói & Phát hành   | 2–3 ngày      |     ☑      |
-| 8     | Mở rộng                | sau phát hành |     ☐      |
+| 8     | Mở rộng                | sau phát hành |     ◐      |
 
 ---
 
@@ -51,6 +51,11 @@ hành là Quan Ly Giao Dan. Lần đầu tạo mật khẩu dữ liệu; Windows
 lần mở sau tự mở DB. Xuất, nhập và xóa dữ liệu xác thực lại mật khẩu hai lần cùng mã 6 số. Quyết
 định Q05 là phát hành nội bộ unsigned, có hướng dẫn SmartScreen; P21 chọn cập nhật thủ công,
 không dùng auto-update.
+
+**◐ Phase 8 (2026-09-22):** bổ sung nghề nghiệp vào hồ sơ, quản lý bí tích và hôn phối; Dashboard
+hiện có báo cáo mục vụ theo tháng (sinh nhật, bí tích, hôn phối, qua đời) và kiểm tra chất lượng dữ
+liệu (hộ thiếu chủ hộ, người chưa thuộc hộ, thiếu ngày sinh, số điện thoại trùng). Các hạng mục còn lại
+được ưu tiên theo phản hồi sử dụng thực tế trong `plan/phase-8-extensions.md`.
 
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 
