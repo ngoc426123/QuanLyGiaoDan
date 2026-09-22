@@ -7,20 +7,27 @@ import { z } from 'zod'
  * nhận từ Renderer. Nếu nhận thì DevTools ghi đè được bất kỳ file nào trên máy.
  */
 
-const backupPasswordSchema = z
+const actionSchema = z.enum(['export', 'import', 'clearAll'])
+
+export const backupConfirmationChallengeSchema = z
   .object({
-    password: z.string().min(12, 'Mật khẩu backup phải có ít nhất 12 ký tự.'),
+    action: actionSchema,
   })
   .strict()
 
-export const backupExportSchema = backupPasswordSchema
-
-export const backupImportSchema = backupPasswordSchema
-
-export const backupClearAllSchema = z
+const sensitiveActionSchema = z
   .object({
-    confirmation: z.literal('XÓA DỮ LIỆU', {
-      error: 'Hãy nhập đúng câu XÓA DỮ LIỆU để xác nhận',
-    }),
+    challengeId: z.string().uuid('Mã xác nhận không hợp lệ.'),
+    code: z.string().regex(/^\d{6}$/, 'Mã xác nhận phải gồm 6 chữ số.'),
+    password: z.string().min(12, 'Mật khẩu dữ liệu phải có ít nhất 12 ký tự.'),
+    passwordConfirmation: z.string().min(12, 'Xác nhận mật khẩu phải có ít nhất 12 ký tự.'),
   })
   .strict()
+
+export const backupExportSchema = sensitiveActionSchema
+
+export const backupImportSchema = sensitiveActionSchema.extend({
+  backupPassword: z.string().min(12, 'Mật khẩu file backup phải có ít nhất 12 ký tự.').optional(),
+})
+
+export const backupClearAllSchema = sensitiveActionSchema

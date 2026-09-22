@@ -3,11 +3,16 @@ import { app, BrowserWindow, dialog } from 'electron'
 import { CHANNELS } from '@shared/channels.ts'
 import {
   backupClearAllSchema,
+  backupConfirmationChallengeSchema,
   backupExportSchema,
   backupImportSchema,
 } from '#/schemas/backup.schema.ts'
 import * as backupService from '#/services/backup.service.ts'
 import * as dataService from '#/services/data.service.ts'
+import {
+  createConfirmationChallenge,
+  verifySensitiveAction,
+} from '#/services/confirmation.service.ts'
 import { today } from '#/services/clock.ts'
 import { userDataPaths } from '../paths.ts'
 import { broadcast } from './broadcast.ts'
@@ -22,7 +27,7 @@ import { broadcast } from './broadcast.ts'
  * rồi hộp thoại xác nhận nói rõ file chứa bao nhiêu bản ghi.
  */
 
-const FILE_FILTERS = [{ name: 'Dữ liệu Elecrusion', extensions: ['db'] }]
+const FILE_FILTERS = [{ name: 'Dữ liệu Quan Ly Giao Dan', extensions: ['db'] }]
 
 /** Chờ Renderer nhận xong envelope rồi mới khởi động lại. */
 const RESTART_DELAY_MS = 500
@@ -40,14 +45,26 @@ function suggestedFileName() {
     .replace(/[^A-Za-z0-9-]/g, '-')
     .slice(0, 30)
 
-  return 'elecrusion-' + today() + '-' + machine + '.db'
+  return 'quan-ly-giao-dan-' + today() + '-' + machine + '.db'
 }
 
 export const backupHandlers = Object.freeze([
   {
+    channel: CHANNELS.BACKUP.CREATE_CONFIRMATION,
+    schema: backupConfirmationChallengeSchema,
+    handle: ({ action }) => createConfirmationChallenge(action),
+  },
+  {
     channel: CHANNELS.BACKUP.EXPORT,
     schema: backupExportSchema,
-    handle: async ({ password: backupPassword }) => {
+    handle: async ({ challengeId, code, password, passwordConfirmation }) => {
+      verifySensitiveAction({
+        action: 'export',
+        challengeId,
+        code,
+        password,
+        passwordConfirmation,
+      })
       const parent = focusedWindow()
 
       const chosen = await dialog.showSaveDialog(parent, {
@@ -60,7 +77,7 @@ export const backupHandlers = Object.freeze([
 
       const result = await backupService.exportToFile({
         targetPath: chosen.filePath,
-        backupPassword,
+        backupPassword: password,
       })
 
       // `security.md` §3: file xuất ra là bản sao **đầy đủ** hồ sơ giáo dân — tên, ngày
@@ -72,7 +89,7 @@ export const backupHandlers = Object.freeze([
         title: 'Đã xuất dữ liệu',
         message: 'Đã lưu vào ' + result.filePath,
         detail:
-          'File này được mã hóa bằng mật khẩu backup bạn vừa đặt. Người nhận cần mật khẩu đó để nhập file.',
+          'File này được mã hóa bằng mật khẩu dữ liệu. Người nhận cần mật khẩu đó để nhập file.',
       })
 
       return { canceled: false, ...result }
@@ -82,7 +99,14 @@ export const backupHandlers = Object.freeze([
   {
     channel: CHANNELS.BACKUP.IMPORT,
     schema: backupImportSchema,
-    handle: async ({ password: backupPassword }) => {
+    handle: async ({ challengeId, code, password, passwordConfirmation, backupPassword }) => {
+      verifySensitiveAction({
+        action: 'import',
+        challengeId,
+        code,
+        password,
+        passwordConfirmation,
+      })
       const parent = focusedWindow()
       const { dbFile, backupDir } = userDataPaths()
 
@@ -98,7 +122,8 @@ export const backupHandlers = Object.freeze([
 
       // Soi trước khi hỏi: file hỏng hay không phải của ứng dụng thì báo lỗi luôn,
       // đừng bắt người dùng xác nhận một việc chắc chắn thất bại.
-      const info = backupService.inspectFile({ sourcePath, dbFile, backupPassword })
+      const filePassword = backupPassword ?? password
+      const info = backupService.inspectFile({ sourcePath, dbFile, backupPassword: filePassword })
 
       const confirmed = await dialog.showMessageBox(parent, {
         type: 'warning',
@@ -116,7 +141,7 @@ export const backupHandlers = Object.freeze([
         dbFile,
         sourcePath,
         backupDir,
-        backupPassword,
+        backupPassword: filePassword,
       })
 
       // Kết nối đã đóng và file đã bị thay: phải khởi động lại thì mới mở được DB mới và
@@ -132,7 +157,14 @@ export const backupHandlers = Object.freeze([
   {
     channel: CHANNELS.BACKUP.CLEAR_ALL,
     schema: backupClearAllSchema,
-    handle: async () => {
+    handle: async ({ challengeId, code, password, passwordConfirmation }) => {
+      verifySensitiveAction({
+        action: 'clearAll',
+        challengeId,
+        code,
+        password,
+        passwordConfirmation,
+      })
       const { backupDir } = userDataPaths()
       const safetyBackup = await backupService.createSafetyBackup({ backupDir })
       const result = { ...dataService.clearAll(), safetyBackup }

@@ -1,4 +1,4 @@
-# Nhật ký quyết định — Elecrusion
+# Nhật ký quyết định — Quan Ly Giao Dan
 
 > **Luật gốc**: `docs/00-meta/decisions-baseline.md` — 18 quyết định mặc định của template,
 > 5 câu hỏi khởi đầu, thang đánh giá mức đảo ngược, mẫu ghi quyết định.
@@ -29,13 +29,13 @@ Sai lệch khỏi baseline (nếu có) ghi ở đây:
 
 ## 2. Năm câu hỏi khởi đầu
 
-| #   | Câu hỏi                 | Trả lời                                                                                                                           | Ngày       | Trạng thái    |
-| --- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------- |
-| Q01 | **Domain nghiệp vụ**    | **Quản lý giáo dân giáo xứ** — nguồn đặc tả `diagrams.jpg`                                                                        | 2026-09-12 | **Hiệu lực**  |
-| Q02 | Chuyển sang TypeScript? | Dùng TypeScript ESM thay cho JavaScript + JSDoc                                                                                   | 2026-09-14 | Đã chốt       |
-| Q03 | Đa ngôn ngữ (i18n)?     | Chỉ tiếng Việt, không thêm i18n — người dùng chốt                                                                                 | 2026-09-13 | Đã chốt       |
-| Q04 | Mã hoá database?        | Dùng SQLCipher. Mật khẩu chính mở DB; từng file backup dùng mật khẩu riêng, tối thiểu 12 ký tự. Không lưu mật khẩu. **Một chiều** | 2026-09-21 | Đã triển khai |
-| Q05 | Chứng chỉ ký số?        | Phát hành nội bộ **không ký số**. Chỉ cài bộ cài do người phụ trách giáo xứ cung cấp; hướng dẫn SmartScreen là bắt buộc.          | 2026-09-21 | Đã chốt       |
+| #   | Câu hỏi                 | Trả lời                                                                                                                                                                                                                                                                                       | Ngày       | Trạng thái    |
+| --- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------- |
+| Q01 | **Domain nghiệp vụ**    | **Quản lý giáo dân giáo xứ** — nguồn đặc tả `diagrams.jpg`                                                                                                                                                                                                                                    | 2026-09-12 | **Hiệu lực**  |
+| Q02 | Chuyển sang TypeScript? | Dùng TypeScript ESM thay cho JavaScript + JSDoc                                                                                                                                                                                                                                               | 2026-09-14 | Đã chốt       |
+| Q03 | Đa ngôn ngữ (i18n)?     | Chỉ tiếng Việt, không thêm i18n — người dùng chốt                                                                                                                                                                                                                                             | 2026-09-13 | Đã chốt       |
+| Q04 | Mã hoá database?        | Dùng SQLCipher. Lần đầu đặt mật khẩu chính tối thiểu 12 ký tự; Windows DPAPI lưu khóa cho đúng tài khoản để lần mở sau tự mở DB. Xuất, nhập và xóa dữ liệu phải nhập lại mật khẩu hai lần kèm mã 6 số. Backup mới dùng mật khẩu chính; vẫn hỗ trợ mật khẩu riêng của backup cũ. **Một chiều** | 2026-09-22 | Đã triển khai |
+| Q05 | Chứng chỉ ký số?        | Phát hành nội bộ **không ký số**. Chỉ cài bộ cài do người phụ trách giáo xứ cung cấp; hướng dẫn SmartScreen là bắt buộc.                                                                                                                                                                      | 2026-09-21 | Đã chốt       |
 
 > **Q01 đã đóng đúng quy trình ngày 2026-09-12.** Chín bước cập nhật docs ở
 > `plan/00-domain-lock-in.md` §8 đã chạy xong: `database-schema.md`, `ipc-channels.md`,

@@ -73,6 +73,7 @@ export const CHANNELS = Object.freeze({
 
   /** Xuất / nhập toàn bộ file dữ liệu. Đường dẫn do Main hỏi, Renderer không truyền. */
   BACKUP: Object.freeze({
+    CREATE_CONFIRMATION: 'backup:createConfirmation',
     EXPORT: 'backup:export',
     IMPORT: 'backup:import',
     CLEAR_ALL: 'backup:clearAll',

@@ -1,4 +1,4 @@
-# Đặc tả nghiệp vụ — Elecrusion
+# Đặc tả nghiệp vụ — Quan Ly Giao Dan
 
 > Thư mục này chứa **mọi thứ riêng của dự án này**. `docs/` là template dùng chung, không chứa nghiệp vụ.
 

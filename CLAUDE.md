@@ -1,4 +1,4 @@
-# Elecrusion — Ràng buộc dự án
+# Quan Ly Giao Dan — Ràng buộc dự án
 
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
@@ -18,19 +18,21 @@ Phase 3, 4 và 5 đã được người dùng xác nhận hoàn tất. Q02 đã 
 dùng TypeScript thay cho JavaScript + JSDoc; mọi mã nguồn đang chạy đã chuyển đổi trước CRUD.
 Phase 4 dùng phân trang SQL 50 dòng/trang cho danh sách lớn, không dùng virtual scroll.
 Tiếp tục từ **Phase 7 — Đóng gói & Phát hành** (`plan/phase-7-packaging.md`), không tự đổi cấu trúc build.
-Phần tiếp theo của Phase 7, theo yêu cầu người dùng ngày 2026-09-21:
-1. Đổi tên ứng dụng từ **Elecrusion** thành **Quan Ly Giao Dan**.
-2. Loại bỏ toàn bộ phần bảo vệ dữ liệu; ứng dụng mở trực tiếp, không tạo hoặc nhập mật khẩu.
-Phase 6 đã có log an toàn, lưới bắt lỗi toàn cục, backup định kỳ/dọn backup, dọn thùng rác,
-E2E Electron và kiểm tra query plan. Giáo xứ cần lịch sử chỉnh sửa nên `activity_logs` đã được
-triển khai. Quyết định mã hóa DB (SQLCipher) đã chốt tại `project/decisions.md` Q04.
-Kiểm chứng cuối Phase 6: `npm run format:check`, `npm run lint`, `npm run typecheck`,
-`npm run build` đạt; backend 84/84, frontend 31/31 và 3/3 E2E Electron test đạt. Soak test
-30 phút được miễn theo xác nhận của người dùng; ứng dụng chỉ cần ổn định trong các phiên ngắn.
-Regression CSV trước đó xác nhận luồng nhập 1.200 dòng → chặn trùng → xóa dữ liệu → nhập lại;
-lỗi preview phải hiện toast.
-Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
-Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
+Phần tiếp theo của Phase 7, theo yêu cầu người dùng ngày 2026-09-22:
+
+1. Đổi tên ứng dụng thành **Quan Ly Giao Dan**, gồm bộ cài, shortcut Desktop và tên hiển thị.
+2. Giữ SQLCipher. Lần đầu đặt mật khẩu; Windows DPAPI lưu khóa theo tài khoản để những lần mở sau tự mở dữ liệu.
+3. Xuất, nhập hoặc xóa dữ liệu phải xác thực lại mật khẩu hai lần kèm mã xác nhận ngẫu nhiên 6 số.
+   Phase 6 đã có log an toàn, lưới bắt lỗi toàn cục, backup định kỳ/dọn backup, dọn thùng rác,
+   E2E Electron và kiểm tra query plan. Giáo xứ cần lịch sử chỉnh sửa nên `activity_logs` đã được
+   triển khai. Quyết định mã hóa DB (SQLCipher) đã chốt tại `project/decisions.md` Q04.
+   Kiểm chứng cuối Phase 6: `npm run format:check`, `npm run lint`, `npm run typecheck`,
+   `npm run build` đạt; backend 84/84, frontend 31/31 và 3/3 E2E Electron test đạt. Soak test
+   30 phút được miễn theo xác nhận của người dùng; ứng dụng chỉ cần ổn định trong các phiên ngắn.
+   Regression CSV trước đó xác nhận luồng nhập 1.200 dòng → chặn trùng → xóa dữ liệu → nhập lại;
+   lỗi preview phải hiện toast.
+   Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
+   Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
 
 File này chứa ràng buộc **bắt buộc**. Chi tiết tra ở `docs/` (template) và `project/` (nghiệp vụ)
 — bảng điều hướng ở cuối.

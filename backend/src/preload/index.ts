@@ -72,9 +72,11 @@ const eventsApi = Object.freeze({
  * `importFromFile` thành công thì ứng dụng sẽ tự khởi động lại ngay sau đó.
  */
 const backupApi = Object.freeze({
+  createConfirmation: (action) =>
+    ipcRenderer.invoke(CHANNELS.BACKUP.CREATE_CONFIRMATION, { action }),
   exportToFile: (input) => ipcRenderer.invoke(CHANNELS.BACKUP.EXPORT, input),
   importFromFile: (input) => ipcRenderer.invoke(CHANNELS.BACKUP.IMPORT, input),
-  clearAll: (confirmation) => ipcRenderer.invoke(CHANNELS.BACKUP.CLEAR_ALL, { confirmation }),
+  clearAll: (input) => ipcRenderer.invoke(CHANNELS.BACKUP.CLEAR_ALL, input),
 })
 
 /**

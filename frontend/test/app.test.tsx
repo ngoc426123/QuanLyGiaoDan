@@ -60,6 +60,10 @@ beforeEach(() => {
       getWindowState: vi.fn(async () => ({ ok: true, data: { maximized: false } })),
     },
     backup: {
+      createConfirmation: vi.fn(async () => ({
+        ok: true,
+        data: { challengeId: '54a9aed5-9277-4a2c-b44d-6986a3306e8f', code: '123456' },
+      })),
       exportToFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
       importFromFile: vi.fn(async () => ({ ok: true, data: { canceled: true } })),
       clearAll: vi.fn(async () => ({ ok: true, data: {} })),
@@ -356,8 +360,9 @@ describe('Khung ứng dụng qua API preload', () => {
     render(<App />)
     const button = screen.getByRole('button', { name: 'Xuất dữ liệu ra file' })
     await user.click(button)
-    await user.type(screen.getByLabelText('Mật khẩu backup'), 'mat-khau-backup-2026')
-    await user.type(screen.getByLabelText('Xác nhận mật khẩu backup'), 'mat-khau-backup-2026')
+    await user.type(await screen.findByLabelText('Mật khẩu dữ liệu'), 'mat-khau-du-lieu-2026')
+    await user.type(screen.getByLabelText('Xác nhận mật khẩu dữ liệu'), 'mat-khau-du-lieu-2026')
+    await user.type(screen.getByLabelText('Nhập mã xác nhận'), '123456')
     await user.click(screen.getByRole('button', { name: 'Xuất file đã mã hóa' }))
     expect(window.api.backup.exportToFile).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'Nhập dữ liệu từ file' }).disabled).toBe(true)

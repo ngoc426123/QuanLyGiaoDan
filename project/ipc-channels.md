@@ -122,13 +122,14 @@ Khoá `settings` riêng của dự án (gồm `general.parishName`) liệt kê �
 > Riêng của dự án này: app dùng chung cho 2–3 người quản lý giáo xứ nên cần mang dữ liệu
 > qua lại. Kéo từ Phase 6 lên Phase 2 theo yêu cầu người dùng (P16).
 
-| Kênh              | Payload vào                       | Dữ liệu trả về                                                                                         | Ghi chú                                                                  |
-| ----------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `backup:export`   | `{ password }`                    | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Xuất nhất quán bằng `VACUUM INTO`, rồi đặt mật khẩu riêng cho file       |
-| `backup:import`   | `{ password }`                    | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | Mở bằng mật khẩu file, thay trọn rồi rekey về mật khẩu chính             |
-| `backup:clearAll` | `{ confirmation: 'XÓA DỮ LIỆU' }` | `{ zones, families, persons, members, safetyBackup }`                                                  | Backup trước, sau đó xóa toàn bộ dữ liệu nghiệp vụ trong một transaction |
+| Kênh                        | Payload vào                                                              | Dữ liệu trả về                                                                                         | Ghi chú                                                                             |
+| --------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `backup:createConfirmation` | `{ action: 'export' \| 'import' \| 'clearAll' }`                         | `{ challengeId, code }`                                                                                | Sinh mã xác nhận 6 số, hết hạn sau 5 phút và chỉ dùng cho đúng một thao tác         |
+| `backup:export`             | `{ challengeId, code, password, passwordConfirmation }`                  | `{ canceled }` hoặc `{ canceled: false, filePath, sizeBytes, exportedAt }`                             | Xác thực lại mật khẩu chính, rồi xuất nhất quán bằng `VACUUM INTO` và giữ SQLCipher |
+| `backup:import`             | `{ challengeId, code, password, passwordConfirmation, backupPassword? }` | `{ canceled }` hoặc `{ canceled: false, restarting: true, safetyBackup, schemaVersion, recordCounts }` | `backupPassword` chỉ dành cho file cũ; bỏ trống dùng mật khẩu dữ liệu chính         |
+| `backup:clearAll`           | `{ challengeId, code, password, passwordConfirmation }`                  | `{ zones, families, persons, members, safetyBackup }`                                                  | Backup trước, rồi xóa trong transaction sau khi xác thực lại mật khẩu và mã sáu số  |
 
-**Cả hai kênh không nhận tham số.** Đường dẫn file do hộp thoại ở Main quyết định — nhận
+**Các kênh thao tác file không nhận đường dẫn.** Đường dẫn file do hộp thoại ở Main quyết định — nhận
 đường dẫn từ Renderer nghĩa là DevTools ghi đè được bất kỳ file nào trên máy.
 
 Bốn lớp chặn trước khi `backup:import` ghi đè bất cứ thứ gì:

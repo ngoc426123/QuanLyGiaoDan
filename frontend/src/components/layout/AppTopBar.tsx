@@ -46,7 +46,7 @@ export function AppTopBar() {
   return (
     <header className={styles.bar}>
       <div className={styles.titlebar}>
-        <span className={styles.appTitle}>DANH BẠ GIÁO XỨ</span>
+        <span className={styles.appTitle}>QUAN LY GIAO DAN</span>
         <div className={styles.menu} role="menubar" aria-label="Thanh menu">
           <div className={styles.menuGroup}>
             <button
@@ -153,7 +153,7 @@ export function AppTopBar() {
         <Icon name="trash" />
       </Link>
       {isAboutOpen && (
-        <Modal title="Danh bạ giáo xứ" onClose={() => setAboutOpen(false)}>
+        <Modal title="Quan Ly Giao Dan" onClose={() => setAboutOpen(false)}>
           <p>Ứng dụng quản lý giáo dân, gia đình và giáo họ, hoạt động với dữ liệu lưu trên máy.</p>
         </Modal>
       )}

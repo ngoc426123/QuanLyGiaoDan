@@ -29,7 +29,7 @@ export function AppSidebar() {
           <Icon name="zone" />
         </span>
         <div className={styles.label}>
-          <strong>Elecrusion</strong>
+          <strong>Quan Ly Giao Dan</strong>
           <p>Danh bạ giáo xứ</p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 # Ghi chú phát hành 0.1.0
 
-Elecrusion 0.1.0 là bản phát hành đầu tiên của ứng dụng quản lý giáo dân giáo xứ.
+Quan Ly Giao Dan 0.1.0 là bản phát hành đầu tiên của ứng dụng quản lý giáo dân giáo xứ.
 
 ## Có trong bản này
 

@@ -45,7 +45,7 @@ export function inspectDatabaseFile(filePath, password?: string) {
   } catch (cause) {
     throw new AppError(
       ERROR_CODES.VALIDATION_ERROR,
-      'File đã chọn không phải là file dữ liệu của Elecrusion',
+      'File đã chọn không phải là file dữ liệu của Quan Ly Giao Dan',
       { reason: cause.message },
     )
   }
@@ -73,7 +73,7 @@ export function inspectDatabaseFile(filePath, password?: string) {
     if (missing.length > 0) {
       throw new AppError(
         ERROR_CODES.VALIDATION_ERROR,
-        'File đã chọn không phải là file dữ liệu của Elecrusion (thiếu bảng ' +
+        'File đã chọn không phải là file dữ liệu của Quan Ly Giao Dan (thiếu bảng ' +
           missing.join(', ') +
           ')',
         { missing },
@@ -98,7 +98,7 @@ export function inspectDatabaseFile(filePath, password?: string) {
 
     throw new AppError(
       ERROR_CODES.VALIDATION_ERROR,
-      'File đã chọn không phải là file dữ liệu của Elecrusion',
+      'File đã chọn không phải là file dữ liệu của Quan Ly Giao Dan',
       { reason: cause.message },
     )
   } finally {

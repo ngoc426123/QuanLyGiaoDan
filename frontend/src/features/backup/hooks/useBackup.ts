@@ -8,8 +8,13 @@ import { backupApi } from '../api/backup.api.ts'
 export function useBackup() {
   const addToast = useToastStore((state) => state.add)
   return useMutation({
-    mutationFn: ({ action, password }: { action: 'export' | 'import'; password: string }) =>
-      action === 'export' ? backupApi.exportToFile(password) : backupApi.importFromFile(password),
+    mutationFn: ({
+      action,
+      input,
+    }: {
+      action: 'export' | 'import'
+      input: Record<string, string>
+    }) => (action === 'export' ? backupApi.exportToFile(input) : backupApi.importFromFile(input)),
     onSuccess: (result: any) => {
       if (result.canceled) return
       addToast(
@@ -30,5 +35,14 @@ export function useClearAllData() {
     onSuccess: () => addToast('Đã xoá dữ liệu nghiệp vụ. Có thể nhập lại tệp CSV.'),
     onError: (error) =>
       addToast(error instanceof Error ? error.message : 'Không thể xoá dữ liệu.', true),
+  })
+}
+
+export function useBackupConfirmation() {
+  const addToast = useToastStore((state) => state.add)
+  return useMutation({
+    mutationFn: backupApi.createConfirmation,
+    onError: (error) =>
+      addToast(error instanceof Error ? error.message : 'Không thể tạo mã xác nhận.', true),
   })
 }

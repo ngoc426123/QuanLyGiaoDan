@@ -35,7 +35,7 @@ test.beforeAll(async () => {
       resolve(
         process.cwd(),
         runPackagedE2E
-          ? '../backend/release/win-unpacked/Elecrusion.exe'
+          ? '../backend/release/win-unpacked/Quan Ly Giao Dan.exe'
           : '../backend/node_modules/electron/dist/electron.exe',
       ),
     args:
@@ -45,6 +45,7 @@ test.beforeAll(async () => {
     env: {
       ...process.env,
       ELECRUSION_USER_DATA: userDataDir,
+      ELECRUSION_E2E_USER_DATA: userDataDir,
       ELECRUSION_E2E: '1',
       VITE_DEV_SERVER_URL: 'http://127.0.0.1:5174',
     },
@@ -192,5 +193,33 @@ test.describe.serial('Ba luồng nghiệp vụ Phase 6', () => {
     await expect(page.getByRole('link', { name: personName })).toBeVisible()
     await page.getByRole('link', { name: personName }).click()
     await expect(page.getByRole('link', { name: secondFamilyName })).toBeVisible()
+  })
+
+  test('mở lại ứng dụng không hỏi mật khẩu khi Windows còn khóa đã lưu', async () => {
+    await electronApp.close()
+    electronApp = await electron.launch({
+      executablePath:
+        configuredExecutable ??
+        resolve(
+          process.cwd(),
+          runPackagedE2E
+            ? '../backend/release/win-unpacked/Quan Ly Giao Dan.exe'
+            : '../backend/node_modules/electron/dist/electron.exe',
+        ),
+      args:
+        runPackagedE2E || configuredExecutable
+          ? []
+          : [resolve(process.cwd(), '../backend/out/main.js')],
+      env: {
+        ...process.env,
+        ELECRUSION_USER_DATA: userDataDir,
+        ELECRUSION_E2E_USER_DATA: userDataDir,
+        ELECRUSION_E2E: '1',
+        VITE_DEV_SERVER_URL: 'http://127.0.0.1:5174',
+      },
+    })
+    page = await electronApp.firstWindow()
+    await expect(page.getByRole('heading', { name: 'Tổng quan giáo xứ' })).toBeVisible()
+    await expect(page.getByText(zoneName, { exact: true })).toBeVisible()
   })
 })

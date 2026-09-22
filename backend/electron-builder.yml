@@ -2,7 +2,7 @@
 # Luật gốc: docs/01-architecture/project-structure.md §6.
 
 appId: com.elecrusion.app
-productName: Elecrusion
+productName: Quan Ly Giao Dan
 icon: resources/app-icon.ico
 
 directories:
@@ -29,3 +29,5 @@ nsis:
   oneClick: false
   perMachine: true
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Quan Ly Giao Dan

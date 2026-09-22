@@ -1,7 +1,10 @@
 import { invoke } from '@/shared/invoke.ts'
 
 export const backupApi = {
-  exportToFile: (password: string) => invoke(window.api.backup.exportToFile({ password })),
-  importFromFile: (password: string) => invoke(window.api.backup.importFromFile({ password })),
-  clearAll: (confirmation: string) => invoke(window.api.backup.clearAll(confirmation)),
+  createConfirmation: (action: 'export' | 'import' | 'clearAll') =>
+    invoke(window.api.backup.createConfirmation(action)),
+  exportToFile: (input: Record<string, string>) => invoke(window.api.backup.exportToFile(input)),
+  importFromFile: (input: Record<string, string>) =>
+    invoke(window.api.backup.importFromFile(input)),
+  clearAll: (input: Record<string, string>) => invoke(window.api.backup.clearAll(input)),
 }

@@ -1,7 +1,7 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, dialog, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, safeStorage, screen } from 'electron'
 import { bootstrapDatabase } from '#/db/bootstrap.ts'
 import { closeDatabase } from '#/db/connection.ts'
 import { isPlaintextSqliteDatabase } from '#/db/encryption.ts'
@@ -37,6 +37,32 @@ let savedWindowState = null
 let logger: ReturnType<typeof createLogger> | null = null
 let isUnlockingDatabase = false
 let unlockWindow: BrowserWindow | null = null
+
+function databasePasswordVaultPath(dataDir: string) {
+  return join(dataDir, 'database-password.bin')
+}
+
+function loadStoredDatabasePassword(dataDir: string) {
+  const vaultPath = databasePasswordVaultPath(dataDir)
+  if (!existsSync(vaultPath)) return null
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Windows không thể mở kho mật khẩu an toàn trên tài khoản này.')
+  }
+  try {
+    return safeStorage.decryptString(readFileSync(vaultPath))
+  } catch {
+    return null
+  }
+}
+
+function storeDatabasePassword(dataDir: string, password: string) {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Windows không thể lưu mật khẩu an toàn trên tài khoản này.')
+  }
+  writeFileSync(databasePasswordVaultPath(dataDir), safeStorage.encryptString(password), {
+    mode: 0o600,
+  })
+}
 
 async function requestDatabasePassword({
   isSetup,
@@ -101,9 +127,27 @@ async function unlockDatabase(dataDir: string, backupDir: string, message = ''):
   const dbFile = join(dataDir, 'app.db')
   const isSetup = !existsSync(dbFile) || isPlaintextSqliteDatabase(dbFile)
   isUnlockingDatabase = true
+  const storedPassword = isSetup ? null : loadStoredDatabasePassword(dataDir)
+
+  if (storedPassword) {
+    try {
+      const database = await bootstrapDatabase({
+        dataDir,
+        backupDir,
+        timestamp: now(),
+        password: storedPassword,
+      })
+      isUnlockingDatabase = false
+      return database
+    } catch {
+      closeDatabase()
+    }
+  }
+
   const password = await requestDatabasePassword({ isSetup, message })
   try {
     const database = await bootstrapDatabase({ dataDir, backupDir, timestamp: now(), password })
+    storeDatabasePassword(dataDir, password)
     isUnlockingDatabase = false
     return database
   } catch (error) {
@@ -136,7 +180,7 @@ function createMainWindow() {
   mainWindow = new BrowserWindow({
     ...bounds,
     frame: false,
-    title: 'Danh bạ giáo xứ',
+    title: 'Quan Ly Giao Dan',
     icon: join(currentDir, '../resources/app-icon.ico'),
     minWidth: 940,
     minHeight: 600,

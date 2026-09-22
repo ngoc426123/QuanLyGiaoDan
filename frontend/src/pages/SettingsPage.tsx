@@ -35,8 +35,8 @@ export function SettingsPage() {
       <section className={styles.info}>
         <h2>Giới thiệu</h2>
         <p>
-          Elecrusion — Quản lý giáo dân giáo xứ. Dữ liệu lưu cục bộ trên máy, sử dụng hoàn toàn
-          ngoại tuyến.
+          Quan Ly Giao Dan — Quản lý giáo dân giáo xứ. Dữ liệu lưu cục bộ trên máy, sử dụng hoàn
+          toàn ngoại tuyến.
         </p>
         {version.data && (
           <p>
