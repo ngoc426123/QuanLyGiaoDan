@@ -101,6 +101,30 @@ describe('Gia đình', () => {
     ).toBeTruthy()
   })
 
+  it('tìm giáo dân chưa thuộc hộ trước khi thêm thành viên', async () => {
+    const user = userEvent.setup()
+    window.api.person.list.mockResolvedValue({
+      ok: true,
+      data: [{ id: 'person-2', fullName: 'Trần Thị Hoa', familyId: null }],
+      meta: { total: 1 },
+    })
+    renderFeature(<FamilyDetail id={family.id} />, `/families/${family.id}`)
+    await user.click(await screen.findByRole('button', { name: 'Thêm thành viên' }))
+    await user.type(screen.getByRole('textbox', { name: 'Tìm giáo dân theo tên' }), 'tran hoa')
+
+    await waitFor(() =>
+      expect(window.api.person.list).toHaveBeenCalledWith({
+        page: 1,
+        pageSize: 50,
+        search: 'tran hoa',
+        withoutFamily: true,
+        sortBy: 'givenName',
+        sortDir: 'asc',
+      }),
+    )
+    expect(await screen.findByRole('option', { name: 'Trần Thị Hoa' })).toBeTruthy()
+  })
+
   it('sửa gia đình chỉ gửi các trường cho phép trong patch', async () => {
     const user = userEvent.setup()
     renderFeature(<FamilyDetail id={family.id} />, `/families/${family.id}`)

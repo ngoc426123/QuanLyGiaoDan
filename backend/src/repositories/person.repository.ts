@@ -90,6 +90,13 @@ function buildFilter(filter: any = {}) {
     clauses.push('f.id = ?')
     params.push(filter.familyId)
   }
+  if (filter.withoutFamily === true) {
+    clauses.push(
+      'NOT EXISTS (SELECT 1 FROM family_members unassigned_fm' +
+        ' WHERE unassigned_fm.person_id = p.id AND unassigned_fm.deleted_at IS NULL' +
+        ' AND unassigned_fm.to_date IS NULL)',
+    )
+  }
 
   if (filter.zoneId) {
     clauses.push('z.id = ?')

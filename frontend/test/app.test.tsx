@@ -231,6 +231,19 @@ beforeEach(() => {
 })
 
 describe('Khung ứng dụng qua API preload', () => {
+  it('hiển thị tên giáo xứ ở thanh bên, hoặc tên ứng dụng khi chưa cấu hình', async () => {
+    settings['general.parishName'] = 'Giáo xứ Thánh Tâm'
+    const view = render(<App />)
+
+    expect(await screen.findByText('Giáo xứ Thánh Tâm')).toBeTruthy()
+    view.unmount()
+
+    settings['general.parishName'] = '   '
+    render(<App />)
+
+    expect(await screen.findByText('Quan Ly Giao Dan')).toBeTruthy()
+  })
+
   it('menu khung gọi được lệnh thật và đồng bộ nút phóng to', async () => {
     const user = userEvent.setup()
     render(<App />)

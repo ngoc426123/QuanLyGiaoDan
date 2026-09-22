@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon.tsx'
 import { Button } from '@/components/ui/Button.tsx'
+import { useSettings } from '@/features/setting/hooks/useSettings.ts'
 import { useUIStore } from '@/stores/ui.store.ts'
 import { navigation } from './navigation.ts'
 import styles from './AppSidebar.module.css'
@@ -22,6 +23,9 @@ function SidebarLink({ item }) {
 
 export function AppSidebar() {
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
+  const settings = useSettings()
+  const parishName = String(settings.data?.['general.parishName'] ?? '').trim()
+  const brandName = parishName || 'Quan Ly Giao Dan'
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
@@ -29,7 +33,7 @@ export function AppSidebar() {
           <Icon name="zone" />
         </span>
         <div className={styles.label}>
-          <strong>Quan Ly Giao Dan</strong>
+          <strong>{brandName}</strong>
           <p>Danh bạ giáo xứ</p>
         </div>
       </div>

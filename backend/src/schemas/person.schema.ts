@@ -57,6 +57,7 @@ export const personListSchema = z
       ...listQueryShape,
       zoneId: idSchema.nullish(),
       familyId: idSchema.nullish(),
+      withoutFamily: z.boolean({ error: 'Bộ lọc chưa thuộc hộ không hợp lệ' }).optional(),
       gender: z.enum(['male', 'female'], { error: 'Giới tính không hợp lệ' }).nullish(),
       isAlive: z.boolean({ error: 'Bộ lọc còn sống không hợp lệ' }).nullish(),
     },

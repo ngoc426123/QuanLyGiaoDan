@@ -131,6 +131,22 @@ describe('person.service', () => {
     assert.equal(data[0].fullName, 'Nguyễn Văn Ánh')
   })
 
+  it('lọc người chưa thuộc hộ để tìm thành viên mới', () => {
+    const { familyA } = seed()
+    personService.create({
+      fullName: 'Nguyễn Văn Đã Có Hộ',
+      family: { familyId: familyA.id, relationship: 'head', fromDate: '2020-01-01' },
+    })
+    personService.create({ fullName: 'Nguyễn Văn Chưa Thuộc Hộ' })
+
+    const { data } = personService.list({ search: 'nguyen van', withoutFamily: true })
+
+    assert.deepEqual(
+      data.map((person) => person.fullName),
+      ['Nguyễn Văn Chưa Thuộc Hộ'],
+    )
+  })
+
   it('ngày qua đời trước ngày sinh bị từ chối', () => {
     assert.throws(
       () =>

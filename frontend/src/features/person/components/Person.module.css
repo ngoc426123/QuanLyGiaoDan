@@ -119,9 +119,10 @@
 
 .details {
   display: grid;
-  gap: var(--space-5);
-  padding: var(--space-6);
-  margin: var(--space-0) var(--space-0) var(--space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-5);
+  margin: var(--space-0);
   border: var(--border-width) solid var(--color-border-default);
   border-radius: var(--radius-lg);
   background: var(--color-bg-base);
@@ -138,13 +139,60 @@
 }
 .details dd {
   margin: var(--space-0);
+  line-height: 1.5;
+}
+.detailSection {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border: var(--border-width) solid var(--color-border-default);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+.sectionHeading {
+  display: grid;
+  gap: var(--space-1);
+}
+.sectionHeading h2 {
+  margin: var(--space-0);
+  font-size: var(--font-size-lg);
+}
+.sectionHeading p {
+  margin: var(--space-0);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 .section h2 {
   margin: var(--space-0);
   font-size: var(--font-size-lg);
 }
+.section {
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border-default);
+}
+.sacramentDetail {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-base);
+}
+.marriageDetail {
+  max-width: 720px;
+}
 
 @media (max-width: 1079px) {
+  .details {
+    grid-template-columns: 1fr;
+  }
   .group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -154,6 +202,10 @@
 }
 
 @media (max-width: 720px) {
+  .detailSection,
+  .section {
+    padding: var(--space-4);
+  }
   .group {
     grid-template-columns: 1fr;
   }

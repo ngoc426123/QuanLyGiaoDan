@@ -19,6 +19,9 @@ type FormValue = AddValue & Partial<MoveValue>
 
 type Props = {
   people?: PersonChoice[]
+  personSearch?: string
+  onPersonSearchChange?: (value: string) => void
+  peopleLoading?: boolean
   families?: FamilyChoice[]
   initialValue?: Partial<FormValue>
   onSubmit: (value: AddValue | MoveValue) => Promise<unknown>
@@ -46,6 +49,9 @@ const messageFor = (error: AppClientError) => {
 
 export function FamilyMemberForm({
   people = [],
+  personSearch = '',
+  onPersonSearchChange,
+  peopleLoading = false,
   families = [],
   initialValue = {},
   onSubmit,
@@ -56,7 +62,7 @@ export function FamilyMemberForm({
   const [value, setValue] = useState<FormValue>({
     personId: '',
     relationship: 'other',
-    fromDate: '',
+    fromDate: mode === 'add' ? calendarToday() : '',
     toFamilyId: '',
     moveDate: mode === 'move' ? calendarToday() : '',
     ...initialValue,
@@ -95,21 +101,40 @@ export function FamilyMemberForm({
   return (
     <form className={styles.form} onSubmit={submit}>
       {mode === 'add' && (
-        <Select
-          label="Giáo dân"
-          value={value.personId}
-          error={fieldErrors?.personId}
-          onChange={(event) => setValue({ ...value, personId: event.target.value })}
-          required
-        >
-          <option value="">Chọn giáo dân</option>
-          {people.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.fullName}
-              {person.familyName ? ` (${person.familyName})` : ''}
-            </option>
-          ))}
-        </Select>
+        <>
+          <Input
+            label="Tìm giáo dân theo tên"
+            value={personSearch}
+            onChange={(event) => {
+              setValue({ ...value, personId: '' })
+              onPersonSearchChange?.(event.target.value)
+            }}
+            placeholder="Nhập ít nhất một phần họ tên"
+          />
+          {personSearch.trim() ? (
+            <Select
+              label="Kết quả tìm kiếm"
+              value={value.personId}
+              error={fieldErrors?.personId}
+              onChange={(event) => setValue({ ...value, personId: event.target.value })}
+              required
+              disabled={peopleLoading}
+            >
+              <option value="">{peopleLoading ? 'Đang tìm giáo dân…' : 'Chọn giáo dân'}</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.fullName}
+                  {person.familyName ? ` (${person.familyName})` : ''}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <p className={styles.hint}>Nhập tên để tìm trong các giáo dân chưa thuộc hộ.</p>
+          )}
+          {personSearch.trim() && !peopleLoading && people.length === 0 && (
+            <p className={styles.hint}>Không tìm thấy giáo dân phù hợp.</p>
+          )}
+        </>
       )}
       {mode === 'move' && (
         <>

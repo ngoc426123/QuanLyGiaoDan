@@ -42,6 +42,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const [isEditOpen, setEditOpen] = useState(location.state?.action === 'edit')
   const [isRemoveOpen, setRemoveOpen] = useState(location.state?.action === 'remove')
   const [isAddOpen, setAddOpen] = useState(false)
+  const [personSearch, setPersonSearch] = useState('')
   const [memberToRemove, setMemberToRemove] = useState<FamilyMember | null>(null)
   const [memberToMove, setMemberToMove] = useState<FamilyMember | null>(null)
   const [memberError, setMemberError] = useState<string | null>(null)
@@ -49,7 +50,17 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const family = useFamily(id)
   const zones = useZones(listOptions)
   const families = useFamilies(listOptions)
-  const people = usePersons({ page: 1, pageSize: 200, sortBy: 'givenName', sortDir: 'asc' })
+  const people = usePersons(
+    {
+      page: 1,
+      pageSize: 50,
+      search: personSearch.trim() || undefined,
+      withoutFamily: true,
+      sortBy: 'givenName',
+      sortDir: 'asc',
+    },
+    isAddOpen && Boolean(personSearch.trim()),
+  )
   const update = useUpdateFamily()
   const remove = useRemoveFamily()
   const addMember = useAddFamilyMember()
@@ -91,6 +102,9 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
     <section>
       <Link to="/families">Về danh sách gia đình</Link>
       <PageHeader title="Chi tiết hộ" description={`${record.name} · ${record.zoneName}`}>
+        <Button variant="primary" onClick={() => setAddOpen(true)}>
+          Thêm thành viên
+        </Button>
         <Button
           variant="secondary"
           disabled={exportCsv.isPending || members.length === 0}
@@ -105,23 +119,31 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
           Xoá
         </Button>
       </PageHeader>
-      <dl className={styles.details}>
-        <div>
-          <dt>Giáo họ</dt>
-          <dd>{record.zoneName}</dd>
+      <section className={styles.detailSection} aria-labelledby="family-info-heading">
+        <div className={styles.sectionHeading}>
+          <h2 id="family-info-heading">Thông tin hộ</h2>
+          <p>Địa chỉ và thông tin quản lý của hộ gia đình.</p>
         </div>
-        <div>
-          <dt>Địa chỉ</dt>
-          <dd>{record.address || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Ghi chú</dt>
-          <dd>{record.note || 'Không có ghi chú'}</dd>
-        </div>
-      </dl>
+        <dl className={styles.details}>
+          <div>
+            <dt>Giáo họ</dt>
+            <dd>{record.zoneName}</dd>
+          </div>
+          <div>
+            <dt>Địa chỉ</dt>
+            <dd>{record.address || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Ghi chú</dt>
+            <dd>{record.note || 'Không có ghi chú'}</dd>
+          </div>
+        </dl>
+      </section>
       <section className={styles.section} aria-labelledby="members-heading">
-        <h2 id="members-heading">Thành viên hiện hành</h2>
-        <Button onClick={() => setAddOpen(true)}>Thêm thành viên</Button>
+        <div className={styles.sectionHeading}>
+          <h2 id="members-heading">Thành viên hiện hành</h2>
+          <p>Danh sách những người đang thuộc hộ này.</p>
+        </div>
         {!hasHead && <p className={styles.warning}>Hộ này chưa có chủ hộ.</p>}
         {memberError && (
           <p role="alert" className={styles.error}>
@@ -221,7 +243,10 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
         )}
       </details>
       <section className={styles.section} aria-labelledby="activity-heading">
-        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+          <p>Các thay đổi đã được ghi lại trên hộ này.</p>
+        </div>
         <ActivityLog entityType="family" entityId={record.id} />
       </section>
       {isEditOpen && (
@@ -243,9 +268,18 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
         </Modal>
       )}
       {isAddOpen && (
-        <Modal title="Thêm thành viên" onClose={() => setAddOpen(false)}>
+        <Modal
+          title="Thêm thành viên"
+          onClose={() => {
+            setAddOpen(false)
+            setPersonSearch('')
+          }}
+        >
           <FamilyMemberForm
             people={availablePeople}
+            personSearch={personSearch}
+            onPersonSearchChange={setPersonSearch}
+            peopleLoading={people.isLoading}
             isPending={addMember.isPending}
             onSubmit={async (input) => {
               await addMember.mutateAsync({
@@ -253,6 +287,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
                 familyId: record.id,
               })
               setAddOpen(false)
+              setPersonSearch('')
             }}
           />
           <Link to="/persons">Tạo giáo dân mới</Link>

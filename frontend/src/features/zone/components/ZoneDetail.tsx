@@ -49,22 +49,31 @@ export function ZoneDetail({ id }: { id: string | undefined }) {
           Xoá
         </Button>
       </PageHeader>
-      <dl className={styles.details}>
-        <div>
-          <dt>Số gia đình</dt>
-          <dd>{zone.familyCount}</dd>
+      <section className={styles.detailSection} aria-labelledby="zone-info-heading">
+        <div className={styles.sectionHeading}>
+          <h2 id="zone-info-heading">Thông tin giáo họ</h2>
+          <p>Tổng quan quy mô và ghi chú của giáo họ.</p>
         </div>
-        <div>
-          <dt>Số giáo dân</dt>
-          <dd>{zone.personCount}</dd>
-        </div>
-        <div>
-          <dt>Ghi chú</dt>
-          <dd>{zone.note || 'Không có ghi chú'}</dd>
-        </div>
-      </dl>
+        <dl className={styles.details}>
+          <div>
+            <dt>Số gia đình</dt>
+            <dd>{zone.familyCount}</dd>
+          </div>
+          <div>
+            <dt>Số giáo dân</dt>
+            <dd>{zone.personCount}</dd>
+          </div>
+          <div>
+            <dt>Ghi chú</dt>
+            <dd>{zone.note || 'Không có ghi chú'}</dd>
+          </div>
+        </dl>
+      </section>
       <section className={styles.section} aria-labelledby="families-heading">
-        <h2 id="families-heading">Gia đình thuộc giáo họ</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="families-heading">Gia đình thuộc giáo họ</h2>
+          <p>Các hộ gia đình đang được quản lý trong giáo họ này.</p>
+        </div>
         {families.isLoading && <Skeleton />}
         {families.isError && <ErrorState error={families.error} onRetry={families.refetch} />}
         {!families.isLoading && !families.isError && (families.data?.data ?? []).length === 0 && (
@@ -93,7 +102,10 @@ export function ZoneDetail({ id }: { id: string | undefined }) {
         )}
       </section>
       <section className={styles.section} aria-labelledby="activity-heading">
-        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+          <p>Các thay đổi đã được ghi lại trên giáo họ này.</p>
+        </div>
         <ActivityLog entityType="zone" entityId={zone.id} />
       </section>
       {isEditOpen && (

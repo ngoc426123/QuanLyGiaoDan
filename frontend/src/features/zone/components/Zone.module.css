@@ -41,9 +41,9 @@
 
 .details {
   display: grid;
-  gap: var(--space-5);
-  padding: var(--space-6);
-  margin: var(--space-0) var(--space-0) var(--space-6);
+  gap: var(--space-4);
+  padding: var(--space-5);
+  margin: var(--space-0);
   background: var(--color-bg-base);
   border: var(--border-width) solid var(--color-border-default);
   border-radius: var(--radius-lg);
@@ -61,11 +61,38 @@
 
 .details dd {
   margin: var(--space-0);
+  line-height: 1.5;
+}
+.detailSection {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border: var(--border-width) solid var(--color-border-default);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-subtle);
+}
+.sectionHeading {
+  display: grid;
+  gap: var(--space-1);
+}
+.sectionHeading h2 {
+  margin: var(--space-0);
+  font-size: var(--font-size-lg);
+}
+.sectionHeading p {
+  margin: var(--space-0);
+  color: var(--color-text-muted);
+  line-height: 1.5;
 }
 
 .section {
   display: grid;
   gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border-default);
 }
 
 .section h2 {
@@ -109,6 +136,10 @@
 }
 
 @media (max-width: 1079px) {
+  .detailSection,
+  .section {
+    padding: var(--space-4);
+  }
   .quickFilters {
     display: none;
   }

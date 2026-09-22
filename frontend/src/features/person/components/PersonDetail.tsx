@@ -76,58 +76,67 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           Xoá
         </Button>
       </PageHeader>
-      <dl className={styles.details}>
-        <div>
-          <dt>Tên thánh</dt>
-          <dd>{record.holyName || 'Chưa cập nhật'}</dd>
+      <section className={styles.detailSection} aria-labelledby="administrative-heading">
+        <div className={styles.sectionHeading}>
+          <h2 id="administrative-heading">Thông tin hành chính</h2>
+          <p>Thông tin nhận diện, liên hệ và tình trạng hiện tại của giáo dân.</p>
         </div>
-        <div>
-          <dt>Giới tính</dt>
-          <dd>{genderLabel(record.gender)}</dd>
-        </div>
-        <div>
-          <dt>Ngày sinh</dt>
-          <dd>{record.birthDate || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Số điện thoại</dt>
-          <dd>{record.phone || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Email</dt>
-          <dd>{record.email || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Nghề nghiệp</dt>
-          <dd>{record.occupation || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Số liên hệ thay thế</dt>
-          <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Tình trạng cư trú</dt>
-          <dd>{residenceLabel[record.residenceStatus] || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Tình trạng mục vụ</dt>
-          <dd>{pastoralLabel[record.pastoralStatus] || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Ngày qua đời</dt>
-          <dd>{record.deathDate || 'Chưa cập nhật'}</dd>
-        </div>
-        <div>
-          <dt>Ghi chú</dt>
-          <dd>{record.note || 'Không có ghi chú'}</dd>
-        </div>
-        <div>
-          <dt>Ghi chú mục vụ</dt>
-          <dd>{record.pastoralNote || 'Không có ghi chú'}</dd>
-        </div>
-      </dl>
+        <dl className={styles.details}>
+          <div>
+            <dt>Tên thánh</dt>
+            <dd>{record.holyName || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Giới tính</dt>
+            <dd>{genderLabel(record.gender)}</dd>
+          </div>
+          <div>
+            <dt>Ngày sinh</dt>
+            <dd>{record.birthDate || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Số điện thoại</dt>
+            <dd>{record.phone || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{record.email || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Nghề nghiệp</dt>
+            <dd>{record.occupation || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Số liên hệ thay thế</dt>
+            <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Tình trạng cư trú</dt>
+            <dd>{residenceLabel[record.residenceStatus] || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Tình trạng mục vụ</dt>
+            <dd>{pastoralLabel[record.pastoralStatus] || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Ngày qua đời</dt>
+            <dd>{record.deathDate || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
+            <dt>Ghi chú</dt>
+            <dd>{record.note || 'Không có ghi chú'}</dd>
+          </div>
+          <div>
+            <dt>Ghi chú mục vụ</dt>
+            <dd>{record.pastoralNote || 'Không có ghi chú'}</dd>
+          </div>
+        </dl>
+      </section>
       <section className={styles.section} aria-labelledby="sacraments-heading">
-        <h2 id="sacraments-heading">Đời sống Bí tích</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="sacraments-heading">Đời sống bí tích</h2>
+          <p>Thông tin các bí tích khai tâm đã được ghi nhận.</p>
+        </div>
         <div className={styles.sacramentGrid}>
           {initiationSacramentTypes.map((type) => {
             const sacrament = sacramentByType[type]
@@ -145,9 +154,14 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         </div>
       </section>
       <section className={styles.section} aria-labelledby="marriage-heading">
-        <h2 id="marriage-heading">Tình trạng hôn nhân</h2>
-        <Link to="/marriages">Quản lý hôn phối</Link>
-        <dl className={styles.sacramentDetail}>
+        <div className={styles.sectionHeading}>
+          <h2 id="marriage-heading">Thông tin hôn phối</h2>
+          <p>Quan hệ hôn nhân và thông tin lễ cưới được ghi nhận.</p>
+        </div>
+        <div className={styles.sectionActions}>
+          <Link to="/marriages">Quản lý hôn phối</Link>
+        </div>
+        <dl className={`${styles.sacramentDetail} ${styles.marriageDetail}`}>
           <dt>Tình trạng hôn phối</dt>
           <dd>{marriage ? 'Đã kết hôn' : 'Độc thân'}</dd>
           {marriage && (
@@ -167,7 +181,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         </dl>
       </section>
       <section className={styles.section} aria-labelledby="membership-heading">
-        <h2 id="membership-heading">Hộ hiện hành</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="membership-heading">Hộ hiện hành</h2>
+          <p>Hộ gia đình hiện tại và vai trò của giáo dân trong hộ.</p>
+        </div>
         {record.currentMembership && <Button onClick={() => setMoveOpen(true)}>Chuyển hộ</Button>}
         {record.currentMembership ? (
           <Table
@@ -196,7 +213,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         )}
       </section>
       <section className={styles.section} aria-labelledby="history-heading">
-        <h2 id="history-heading">Lịch sử hộ</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="history-heading">Lịch sử hộ</h2>
+          <p>Các lần gán hộ, chuyển hộ hoặc kết thúc tư cách thành viên.</p>
+        </div>
         {record.membershipHistory?.length ? (
           <Table
             caption="Lịch sử hộ"
@@ -221,7 +241,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         )}
       </section>
       <section className={styles.section} aria-labelledby="activity-heading">
-        <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="activity-heading">Lịch sử chỉnh sửa</h2>
+          <p>Các thay đổi đã được ghi lại trên hồ sơ này.</p>
+        </div>
         <ActivityLog entityType="person" entityId={record.id} />
       </section>
       {isRemoveOpen && (
