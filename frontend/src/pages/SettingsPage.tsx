@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { AppearanceSettings } from '@/features/setting/components/AppearanceSettings.tsx'
 import { DataSettings } from '@/features/setting/components/DataSettings.tsx'
+import { DangerZoneSettings } from '@/features/setting/components/DangerZoneSettings.tsx'
 import { BackupSettings } from '@/features/backup/components/BackupSettings.tsx'
 import { useAppVersion } from '@/features/app/hooks/useAppInfo.ts'
 import styles from './SettingsPage.module.css'
@@ -45,6 +46,7 @@ export function SettingsPage() {
           </p>
         )}
       </section>
+      <DangerZoneSettings />
     </div>
   )
 }

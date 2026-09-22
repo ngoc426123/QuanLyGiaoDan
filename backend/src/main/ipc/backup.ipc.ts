@@ -1,6 +1,8 @@
 import { hostname } from 'node:os'
+import { dirname } from 'node:path'
 import { app, BrowserWindow, dialog } from 'electron'
 import { CHANNELS } from '@shared/channels.ts'
+import { bootstrapDatabase } from '#/db/bootstrap.ts'
 import {
   backupClearAllSchema,
   backupConfirmationChallengeSchema,
@@ -13,7 +15,7 @@ import {
   createConfirmationChallenge,
   verifySensitiveAction,
 } from '#/services/confirmation.service.ts'
-import { today } from '#/services/clock.ts'
+import { now, today } from '#/services/clock.ts'
 import { userDataPaths } from '../paths.ts'
 import { broadcast } from './broadcast.ts'
 
@@ -143,6 +145,14 @@ export const backupHandlers = Object.freeze([
         backupDir,
         backupPassword: filePassword,
       })
+
+      // electron-vite dừng máy chủ Vite khi tiến trình Electron trong bản dev bị relaunch.
+      // Mở lại DB và reload Renderer tại chỗ để cửa sổ mới không tải thành màn hình trắng.
+      if (!app.isPackaged) {
+        await bootstrapDatabase({ dataDir: dirname(dbFile), backupDir, timestamp: now(), password })
+        setTimeout(() => parent?.webContents.reload(), RESTART_DELAY_MS)
+        return { canceled: false, reloading: true, divergence: (info as any).divergence, ...result }
+      }
 
       // Kết nối đã đóng và file đã bị thay: phải khởi động lại thì mới mở được DB mới và
       // chạy migration nếu file nhập vào có schema cũ hơn.

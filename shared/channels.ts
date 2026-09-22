@@ -88,6 +88,9 @@ export const CHANNELS = Object.freeze({
 
   REPORT: Object.freeze({
     EXPORT_CSV: 'report:exportCsv',
+    EXPORT_XLSX: 'report:exportXlsx',
+    EXPORT_PDF: 'report:exportPdf',
+    EXPORT_PERSON_PROFILE_PDF: 'report:exportPersonProfilePdf',
   }),
 
   IMPORT: Object.freeze({

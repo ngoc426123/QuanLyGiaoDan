@@ -205,6 +205,12 @@ const COMPARED_TABLES = Object.freeze(['zones', 'families', 'persons'])
  * @param {{ dbFile: string, sourcePath: string }} options
  */
 export function compareDatabases({ dbFile, sourcePath, sourcePassword, currentPassword }: any) {
+  // SQLite không thể ATTACH một DB SQLCipher vào kết nối đang mở một DB thuần. Đọc hai
+  // file riêng khi đang nhập dữ liệu cũ, rồi chỉ so sánh các id và thời điểm cập nhật.
+  if (!sourcePassword && currentPassword) {
+    return comparePlaintextSource({ dbFile, sourcePath, currentPassword })
+  }
+
   const probe = new Database(sourcePath, { readonly: true, fileMustExist: true })
 
   try {
@@ -293,5 +299,71 @@ export function compareDatabases({ dbFile, sourcePath, sourcePassword, currentPa
       // Kết nối sắp đóng ngay sau đây, DETACH hỏng cũng không để lại hậu quả gì.
     }
     probe.close()
+  }
+}
+
+function comparePlaintextSource({ dbFile, sourcePath, currentPassword }: any) {
+  const incoming = new Database(sourcePath, { readonly: true, fileMustExist: true })
+  const current = new Database(dbFile, { readonly: true, fileMustExist: true })
+
+  try {
+    configureSqlCipher(current, currentPassword)
+
+    const counts = (db: any) => {
+      const result: any = {}
+      for (const table of COMPARED_TABLES) {
+        result[table] = db.prepare('SELECT COUNT(*) AS total FROM ' + table + ' WHERE deleted_at IS NULL').get()
+          .total
+      }
+      return result
+    }
+
+    const latest = (db: any) => {
+      let value = null
+      for (const table of COMPARED_TABLES) {
+        const candidate = db.prepare('SELECT MAX(updated_at) AS latest FROM ' + table).get().latest
+        if (candidate && (value === null || candidate > value)) value = candidate
+      }
+      return value
+    }
+
+    const onlyInCurrent: any = {}
+    const newerInCurrent: any = {}
+    for (const table of COMPARED_TABLES) {
+      const incomingUpdatedAt = new Map(
+        incoming
+          .prepare('SELECT id, updated_at FROM ' + table + ' WHERE deleted_at IS NULL')
+          .all()
+          .map((row: any) => [row.id, row.updated_at]),
+      )
+      let only = 0
+      let newer = 0
+      for (const row of current
+        .prepare('SELECT id, updated_at FROM ' + table + ' WHERE deleted_at IS NULL')
+        .iterate()) {
+        const incomingUpdated = incomingUpdatedAt.get(row.id)
+        if (incomingUpdated === undefined) only += 1
+        else if (row.updated_at > incomingUpdated) newer += 1
+      }
+      onlyInCurrent[table] = only
+      newerInCurrent[table] = newer
+    }
+
+    const sum = (record: Record<string, number>) =>
+      Object.values(record).reduce((total, value) => total + value, 0)
+    const incomingLatest = latest(incoming)
+    const currentLatest = latest(current)
+
+    return {
+      current: { ...counts(current), lastUpdatedAt: currentLatest },
+      incoming: { ...counts(incoming), lastUpdatedAt: incomingLatest },
+      onlyInCurrent: { ...onlyInCurrent, total: sum(onlyInCurrent) },
+      newerInCurrent: { ...newerInCurrent, total: sum(newerInCurrent) },
+      currentIsNewer:
+        Boolean(currentLatest) && (incomingLatest === null || currentLatest > incomingLatest),
+    }
+  } finally {
+    incoming.close()
+    current.close()
   }
 }

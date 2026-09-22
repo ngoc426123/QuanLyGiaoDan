@@ -1,0 +1,40 @@
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: #711d28;
+  border: var(--border-width) solid #57131c;
+  border-radius: var(--radius-lg);
+}
+.panel h2,
+.panel p {
+  color: #ffffff;
+}
+.warning {
+  font-weight: var(--font-weight-bold);
+}
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+.actionRow p {
+  max-width: 760px;
+}
+.actionRow button {
+  flex: 0 0 auto;
+  background: #161616;
+  border-color: #161616;
+  color: #ffffff;
+}
+.actionRow button:hover:not(:disabled) {
+  background: #000000;
+  border-color: #000000;
+}
+@media (max-width: 640px) {
+  .actionRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

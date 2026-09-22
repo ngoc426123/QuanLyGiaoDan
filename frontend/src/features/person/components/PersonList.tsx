@@ -12,7 +12,6 @@ import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { usePersons } from '../hooks/usePersons.ts'
-import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { PersonBulkActions } from './PersonBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
 import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
@@ -47,7 +46,6 @@ export function PersonList() {
   const persons = usePersons(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
-  const exportCsv = useCsvExport()
   const selectedIds = useSelectionStore(selectedIdsFor('person'))
   const toggleSelection = useSelectionStore((state) => state.toggle)
   const clearSelection = useSelectionStore((state) => state.clear)
@@ -70,24 +68,6 @@ export function PersonList() {
   return (
     <section className={styles.page}>
       <PageHeader title="Giáo dân" description="Quản lý hồ sơ và tình trạng gia đình của giáo dân.">
-        <Button
-          variant="secondary"
-          disabled={exportCsv.isPending || rows.length === 0}
-          onClick={() =>
-            exportCsv.mutate({
-              report: 'persons',
-              filter: {
-                search,
-                zoneId: zoneId || undefined,
-                familyId: familyId || undefined,
-                gender: gender || undefined,
-                isAlive: isAlive === '' ? undefined : isAlive === 'true',
-              },
-            })
-          }
-        >
-          Xuất CSV
-        </Button>
         <Button onClick={() => navigate('/persons/new')}>Thêm giáo dân</Button>
       </PageHeader>
       <div className={styles.filters}>

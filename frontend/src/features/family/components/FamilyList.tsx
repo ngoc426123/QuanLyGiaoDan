@@ -13,7 +13,6 @@ import { Table } from '@/components/ui/Table.tsx'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useCreateFamily } from '../hooks/useFamilyMutations.ts'
 import { useFamilies } from '../hooks/useFamilies.ts'
-import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { FamilyForm } from './FamilyForm.tsx'
 import { FamilyBulkActions } from './FamilyBulkActions.tsx'
 import { selectedIdsFor, useSelectionStore } from '@/stores/selection.store.ts'
@@ -46,7 +45,6 @@ export function FamilyList() {
   const families = useFamilies(filter)
   const zones = useZones({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const create = useCreateFamily()
-  const exportCsv = useCsvExport()
   const selectedIds = useSelectionStore(selectedIdsFor('family'))
   const toggleSelection = useSelectionStore((state) => state.toggle)
   const clearSelection = useSelectionStore((state) => state.clear)
@@ -72,18 +70,6 @@ export function FamilyList() {
   return (
     <section className={styles.page}>
       <PageHeader title="Gia đình" description="Quản lý hộ gia đình và giáo họ trực thuộc.">
-        <Button
-          variant="secondary"
-          disabled={exportCsv.isPending || rows.length === 0}
-          onClick={() =>
-            exportCsv.mutate({
-              report: 'families',
-              filter: { search, zoneId: zoneId || undefined },
-            })
-          }
-        >
-          Xuất CSV
-        </Button>
         <Button
           onClick={() => setCreateOpen(true)}
           disabled={zones.isLoading || zoneRows.length === 0}

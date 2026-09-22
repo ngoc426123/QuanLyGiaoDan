@@ -20,6 +20,8 @@ export function useBackup() {
       addToast(
         result.restarting
           ? 'Đã nhập dữ liệu. Ứng dụng đang khởi động lại…'
+          : result.reloading
+            ? 'Đã nhập dữ liệu. Giao diện đang tải lại…'
           : 'Đã xuất dữ liệu ra file.',
       )
     },

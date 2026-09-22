@@ -203,6 +203,49 @@ describe('backup.service — nội dung cảnh báo', () => {
 })
 
 describe('backup.service — nhập dữ liệu', () => {
+  it('nhập được file SQLite thuần hợp lệ vào cơ sở dữ liệu đang mã hóa', async () => {
+    const databasePassword = 'mat-khau-du-lieu-2026'
+    const encryptedDbFile = join(workDir, 'data', 'ma-hoa.db')
+    const legacyFile = join(workDir, 'du-lieu-cu.db')
+
+    closeDatabase()
+    const encrypted = openDatabase(encryptedDbFile, { password: databasePassword })
+    await migrate(encrypted)
+    applyPragmas(encrypted)
+    seedDefaultSettings(encrypted, '2026-09-13T00:00:00.000Z')
+    zoneService.create({ name: 'Giáo họ hiện tại' })
+
+    const legacy = new Database(legacyFile)
+    await migrate(legacy)
+    seedDefaultSettings(legacy, '2026-09-13T00:00:00.000Z')
+    legacy
+      .prepare(
+        'INSERT INTO zones (id, name, name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run(
+      'zone-legacy',
+      'Giáo họ từ file cũ',
+      'giao ho tu file cu',
+      '2026-09-13T00:00:00.000Z',
+      '2026-09-13T00:00:00.000Z',
+      )
+    legacy.close()
+
+    const preview = backupService.inspectFile({ sourcePath: legacyFile, dbFile: encryptedDbFile })
+    assert.equal(preview.divergence.current.zones, 1)
+    assert.equal(preview.divergence.incoming.zones, 1)
+
+    await backupService.importFromFile({
+      dbFile: encryptedDbFile,
+      sourcePath: legacyFile,
+      backupDir,
+    })
+
+    const imported = openDatabase(encryptedDbFile, { password: databasePassword })
+    assert.equal(imported.prepare('SELECT COUNT(*) AS total FROM zones').get().total, 1)
+    assert.equal(imported.prepare('SELECT name FROM zones').get().name, 'Giáo họ từ file cũ')
+  })
+
   it('thay trọn dữ liệu và để lại bản sao an toàn', async () => {
     zoneService.create({ name: 'Giáo họ Gốc' })
 

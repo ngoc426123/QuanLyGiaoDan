@@ -2,17 +2,15 @@ import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
 import { useState } from 'react'
 import { Input } from '@/components/ui/Input.tsx'
-import { useBackup, useBackupConfirmation, useClearAllData } from '../hooks/useBackup.ts'
+import { useBackup, useBackupConfirmation } from '../hooks/useBackup.ts'
 import { useCsvImport } from '@/features/import/hooks/useCsvImport.ts'
 import styles from './BackupSettings.module.css'
 
 export function BackupSettings() {
   const mutation = useBackup()
-  const clearAll = useClearAllData()
   const confirmationChallenge = useBackupConfirmation()
   const csvImport = useCsvImport()
   const [preview, setPreview] = useState<any>(null)
-  const [isClearOpen, setClearOpen] = useState(false)
   const [backupAction, setBackupAction] = useState<'export' | 'import' | null>(null)
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
@@ -27,16 +25,16 @@ export function BackupSettings() {
     confirmationChallenge.reset()
   }
 
-  function openBackup(action: 'export' | 'import') {
-    setBackupAction(action)
-    resetConfirmation()
+  function renewConfirmation(action: 'export' | 'import') {
+    setCode('')
+    confirmationChallenge.reset()
     confirmationChallenge.mutate(action)
   }
 
-  function openClearAll() {
-    setClearOpen(true)
+  function openBackup(action: 'export' | 'import') {
+    setBackupAction(action)
     resetConfirmation()
-    confirmationChallenge.mutate('clearAll')
+    renewConfirmation(action)
   }
 
   function validConfirmation() {
@@ -74,6 +72,11 @@ export function BackupSettings() {
             setBackupAction(null)
             resetConfirmation()
           },
+          onError: (error) => {
+            if (error instanceof Error && error.message.includes('Mã xác nhận đã hết hạn')) {
+              renewConfirmation(backupAction)
+            }
+          },
         },
       )
     }
@@ -103,13 +106,6 @@ export function BackupSettings() {
           }
         >
           Nhập CSV
-        </Button>
-        <Button
-          variant="danger"
-          disabled={mutation.isPending || clearAll.isPending}
-          onClick={openClearAll}
-        >
-          Xóa dữ liệu để kiểm thử
         </Button>
       </div>
       {mutation.isPending && <p role="status">Đang xử lý dữ liệu…</p>}
@@ -166,6 +162,12 @@ export function BackupSettings() {
                   disabled={mutation.isPending}
                   onChange={(event: any) => setCode(event.target.value)}
                 />
+                <Button
+                  disabled={mutation.isPending || confirmationChallenge.isPending}
+                  onClick={() => renewConfirmation(backupAction)}
+                >
+                  Lấy mã xác nhận mới
+                </Button>
               </>
             )}
           </span>
@@ -191,59 +193,6 @@ export function BackupSettings() {
           {preview.suspectedDuplicateCount > 0
             ? `Phát hiện ${preview.suspectedDuplicateCount} giáo dân nghi ngờ trùng. Tệp sẽ không được nhập tự động để tránh nhân đôi dữ liệu.`
             : `Tệp gồm ${preview.zoneCount} giáo họ, ${preview.familyCount} hộ và ${preview.rowCount} giáo dân. Giáo họ và hộ trùng tên sẽ được tái sử dụng; dữ liệu hiện tại được sao lưu trước khi ghi.`}
-        </ConfirmDialog>
-      )}
-      {isClearOpen && (
-        <ConfirmDialog
-          title="Xóa toàn bộ dữ liệu nghiệp vụ"
-          isPending={clearAll.isPending}
-          confirmDisabled={!validConfirmation()}
-          onClose={() => {
-            setClearOpen(false)
-            resetConfirmation()
-          }}
-          onConfirm={() => {
-            const input = confirmationInput()
-            if (!input) return
-            clearAll.mutate(input, {
-              onSuccess: () => {
-                setClearOpen(false)
-                resetConfirmation()
-              },
-            })
-          }}
-        >
-          <span>
-            Ứng dụng sẽ sao lưu trước, sau đó xóa giáo họ, hộ, giáo dân và thành viên hộ.
-            <Input
-              label="Mật khẩu dữ liệu"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              disabled={clearAll.isPending}
-              onChange={(event: any) => setPassword(event.target.value)}
-            />
-            <Input
-              label="Xác nhận mật khẩu dữ liệu"
-              type="password"
-              autoComplete="current-password"
-              value={passwordConfirmation}
-              disabled={clearAll.isPending}
-              onChange={(event: any) => setPasswordConfirmation(event.target.value)}
-            />
-            {confirmationChallenge.data && (
-              <>
-                <p>Mã xác nhận: {confirmationChallenge.data.code}</p>
-                <Input
-                  label="Nhập mã xác nhận"
-                  inputMode="numeric"
-                  value={code}
-                  disabled={clearAll.isPending}
-                  onChange={(event: any) => setCode(event.target.value)}
-                />
-              </>
-            )}
-          </span>
         </ConfirmDialog>
       )}
     </section>

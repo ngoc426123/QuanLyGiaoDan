@@ -414,6 +414,35 @@ describe('Khung ứng dụng qua API preload', () => {
     await waitFor(() => expect(button.disabled).toBe(false))
   })
 
+  it('cấp lại mã khi nhập file backup bằng mã xác nhận đã hết hạn', async () => {
+    const user = userEvent.setup()
+    window.api.backup.createConfirmation
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { challengeId: '54a9aed5-9277-4a2c-b44d-6986a3306e8f', code: '123456' },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { challengeId: '8d6b0fb7-1a87-4cc7-a27a-a5fd74f9f921', code: '654321' },
+      })
+    window.api.backup.importFromFile.mockResolvedValue({
+      ok: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Mã xác nhận đã hết hạn. Hãy thử lại.' },
+    })
+    window.location.hash = '/settings'
+    render(<App />)
+
+    await user.click(await screen.findByRole('button', { name: 'Nhập dữ liệu từ file' }))
+    await user.type(await screen.findByLabelText('Mật khẩu dữ liệu'), 'mat-khau-du-lieu-2026')
+    await user.type(screen.getByLabelText('Xác nhận mật khẩu dữ liệu'), 'mat-khau-du-lieu-2026')
+    await user.type(screen.getByLabelText('Nhập mã xác nhận'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Nhập file backup' }))
+
+    await waitFor(() => expect(window.api.backup.createConfirmation).toHaveBeenCalledTimes(2))
+    expect(screen.getByText('Mã xác nhận: 654321')).toBeTruthy()
+    expect((screen.getByLabelText('Nhập mã xác nhận') as HTMLInputElement).value).toBe('')
+  })
+
   it('báo lỗi khi CSV không thể preview sau khi người dùng đã xoá dữ liệu', async () => {
     const user = userEvent.setup()
     window.api.import.chooseCsv.mockResolvedValue({

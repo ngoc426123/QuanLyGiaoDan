@@ -26,7 +26,6 @@ import {
 import { usePersons } from '@/features/person/hooks/usePersons.ts'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
-import { useCsvExport } from '@/features/report/hooks/useCsvExport.ts'
 import { AppClientError } from '@/shared/invoke.ts'
 import { useRemoveFamily, useUpdateFamily } from '../hooks/useFamilyMutations.ts'
 import { useFamily } from '../hooks/useFamilies.ts'
@@ -67,7 +66,6 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const updateMember = useUpdateFamilyMember()
   const moveMember = useMoveFamilyMember()
   const removeMember = useRemoveFamilyMember()
-  const exportCsv = useCsvExport()
 
   useEffect(() => {
     if (family.error instanceof AppClientError && family.error.code === 'NOT_FOUND') {
@@ -104,15 +102,6 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
       <PageHeader title="Chi tiết hộ" description={`${record.name} · ${record.zoneName}`}>
         <Button variant="primary" onClick={() => setAddOpen(true)}>
           Thêm thành viên
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={exportCsv.isPending || members.length === 0}
-          onClick={() =>
-            exportCsv.mutate({ report: 'familyMembers', filter: { familyId: record.id } })
-          }
-        >
-          Xuất CSV
         </Button>
         <Button onClick={() => setEditOpen(true)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>

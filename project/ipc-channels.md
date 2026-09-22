@@ -89,12 +89,18 @@ quản lý Hôn phối; hồ sơ giáo dân chỉ hiển thị tóm tắt và li
 
 ### 1.5. Nhóm `report:*` — Xuất danh sách
 
-| Kênh               | Payload vào                                                      | Dữ liệu trả về                                      | Ghi chú                                                    |
-| ------------------ | ---------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
-| `report:exportCsv` | `{ report: 'persons' \| 'families' \| 'familyMembers', filter }` | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Main tự mở hộp thoại lưu và ghi CSV UTF-8 BOM theo bộ lọc. |
+| Kênh                            | Payload vào                                                                                                                                                                                 | Dữ liệu trả về                                      | Ghi chú                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
+| `report:exportCsv`              | `{ report: 'persons' \| 'families' \| 'familyMembers' \| 'zones' \| 'sacraments' \| 'marriages' \| 'pastoral' \| 'summary' \| 'dataQuality' \| 'birthdays' \| 'householdMembers', filter }` | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Main tự mở hộp thoại lưu và ghi CSV UTF-8 BOM theo bộ lọc.            |
+| `report:exportXlsx`             | Như `report:exportCsv`                                                                                                                                                                      | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Xuất Excel có tiêu đề, bộ lọc cột, đóng băng hàng đầu và định dạng.   |
+| `report:exportPdf`              | Như `report:exportCsv`                                                                                                                                                                      | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Xuất báo cáo bảng PDF A4, tự ngắt trang và lặp lại hàng tiêu đề.      |
+| `report:exportPersonProfilePdf` | `{ personId }`                                                                                                                                                                              | `{ canceled }` hoặc `{ canceled: false, rowCount }` | Xuất hồ sơ giáo dân A4 gồm hành chính, bí tích, hôn phối và gia đình. |
 
 `persons` nhận `zoneId`, `familyId`, `gender`, `isAlive`, `search`; `families` nhận `zoneId`,
-`search`; `familyMembers` bắt buộc `familyId`. Đường dẫn tệp không nhận từ Renderer.
+`search`; `familyMembers` bắt buộc `familyId`; `zones`, `summary`, `dataQuality` không cần bộ lọc;
+`sacraments` nhận `zoneId`, `type`, `month?`; `marriages` và `birthdays` bắt buộc `month`;
+`pastoral` nhận `zoneId`, `residenceStatus`, `pastoralStatus`; `householdMembers` nhận `zoneId`.
+Đường dẫn tệp không nhận từ Renderer.
 
 ### 1.6. Nhóm `search:*` — Tìm toàn văn
 

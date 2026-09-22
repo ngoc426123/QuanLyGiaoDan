@@ -5,7 +5,7 @@ import {
   getDatabasePasswordOrNull,
   openDatabase,
 } from '#/db/connection.ts'
-import { rekeySqlCipher } from '#/db/encryption.ts'
+import { encryptPlaintextDatabase, isPlaintextSqliteDatabase, rekeySqlCipher } from '#/db/encryption.ts'
 import { LATEST_VERSION, backupDatabase } from '#/db/migrator.ts'
 import {
   compareDatabases,
@@ -72,7 +72,8 @@ export async function importFromFile({ dbFile, sourcePath, backupDir, backupPass
     )
   }
 
-  const info = inspectDatabaseFile(sourcePath, backupPassword)
+  const sourcePassword = isPlaintextSqliteDatabase(sourcePath) ? undefined : backupPassword
+  const info = inspectDatabaseFile(sourcePath, sourcePassword)
 
   if (info.schemaVersion > LATEST_VERSION) {
     throw new AppError(
@@ -91,9 +92,10 @@ export async function importFromFile({ dbFile, sourcePath, backupDir, backupPass
   // Backup có thể dùng mật khẩu riêng. Trước khi khởi động lại, đổi nó về mật khẩu chính
   // của ứng dụng để lần mở tiếp theo chỉ cần một mật khẩu dữ liệu.
   if (mainPassword) {
-    const imported = openDatabase(dbFile, { password: backupPassword })
+    const imported = openDatabase(dbFile, sourcePassword ? { password: sourcePassword } : undefined)
     try {
-      rekeySqlCipher(imported, mainPassword)
+      if (sourcePassword) rekeySqlCipher(imported, mainPassword)
+      else encryptPlaintextDatabase(imported, mainPassword)
     } finally {
       closeDatabase()
     }
@@ -122,7 +124,8 @@ function resolveSame(left, right) {
  * @param {{ sourcePath: string, dbFile?: string }} options
  */
 export function inspectFile({ sourcePath, dbFile, backupPassword }: any) {
-  const info = inspectDatabaseFile(sourcePath, backupPassword)
+  const sourcePassword = isPlaintextSqliteDatabase(sourcePath) ? undefined : backupPassword
+  const info = inspectDatabaseFile(sourcePath, sourcePassword)
 
   if (!dbFile) return info
 
@@ -131,7 +134,7 @@ export function inspectFile({ sourcePath, dbFile, backupPassword }: any) {
     divergence: compareDatabases({
       dbFile,
       sourcePath,
-      sourcePassword: backupPassword,
+      sourcePassword,
       currentPassword: getDatabasePasswordOrNull() ?? undefined,
     }),
   }

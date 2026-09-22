@@ -4,6 +4,7 @@ export const navigation = [
   { path: '/marriages', label: 'Hôn phối', icon: 'marriage' },
   { path: '/families', label: 'Gia đình', icon: 'family' },
   { path: '/zones', label: 'Giáo họ', icon: 'zone' },
+  { path: '/exports', label: 'Xuất file', icon: 'export' },
   { path: '/settings', label: 'Cài đặt', icon: 'settings' },
 ]
 
@@ -18,5 +19,6 @@ export function routeTitle(pathname) {
   if (/^\/zones\/.+/.test(pathname)) return 'Chi tiết giáo họ'
   if (pathname === '/search') return 'Tìm kiếm'
   if (pathname === '/trash') return 'Thùng rác'
+  if (pathname === '/exports') return 'Xuất file'
   return navigation.find((item) => item.path === pathname)?.label || 'Không tìm thấy trang'
 }

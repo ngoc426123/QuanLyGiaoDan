@@ -541,6 +541,65 @@ describe('report.service', () => {
       rmSync(directory, { recursive: true, force: true })
     }
   })
+
+  it('xuất được báo cáo thống kê và hồ sơ cần bổ sung', () => {
+    personService.create({ fullName: 'Nguyễn Văn Thiếu Thông Tin' })
+    const directory = mkdtempSync(join(tmpdir(), 'elecrusion-report-'))
+    const summaryPath = join(directory, 'thong-ke.csv')
+    const qualityPath = join(directory, 'can-bo-sung.csv')
+
+    try {
+      assert.equal(
+        reportService.exportCsv({ report: 'summary', filter: {}, filePath: summaryPath }).rowCount,
+        1,
+      )
+      assert.equal(
+        reportService.exportCsv({ report: 'dataQuality', filter: {}, filePath: qualityPath })
+          .rowCount,
+        3,
+      )
+      assert.match(readFileSync(qualityPath, 'utf8'), /Nguyễn Văn Thiếu Thông Tin/)
+      assert.match(readFileSync(qualityPath, 'utf8'), /Thiếu ngày sinh/)
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('xuất được Excel, PDF bảng và PDF hồ sơ giáo dân', async () => {
+    const { familyA } = seed()
+    const { data: person } = personService.create({
+      fullName: 'Nguyễn Văn Xuất File',
+      birthDate: '1990-01-02',
+      family: { familyId: familyA.id, relationship: 'head', fromDate: '2020-01-01' },
+    })
+    const directory = mkdtempSync(join(tmpdir(), 'elecrusion-report-'))
+    const xlsxPath = join(directory, 'giao-dan.xlsx')
+    const pdfPath = join(directory, 'giao-dan.pdf')
+    const profilePath = join(directory, 'ho-so.pdf')
+
+    try {
+      assert.equal(
+        (await reportService.exportXlsx({ report: 'persons', filter: {}, filePath: xlsxPath }))
+          .rowCount,
+        1,
+      )
+      assert.equal(
+        (await reportService.exportPdf({ report: 'persons', filter: {}, filePath: pdfPath }))
+          .rowCount,
+        1,
+      )
+      assert.equal(
+        (await reportService.exportPersonProfilePdf({ personId: person.id, filePath: profilePath }))
+          .rowCount,
+        1,
+      )
+      assert.equal(readFileSync(xlsxPath).subarray(0, 2).toString(), 'PK')
+      assert.equal(readFileSync(pdfPath).subarray(0, 4).toString(), '%PDF')
+      assert.equal(readFileSync(profilePath).subarray(0, 4).toString(), '%PDF')
+    } finally {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('search.service', () => {
@@ -624,6 +683,14 @@ describe('activity-log.service', () => {
     assert.equal(db.prepare('SELECT COUNT(*) AS total FROM activity_logs').get().total, 1)
     dataService.clearAll()
     assert.equal(db.prepare('SELECT COUNT(*) AS total FROM activity_logs').get().total, 0)
+  })
+
+  it('xóa dữ liệu kiểm thử tự sửa chỉ mục tìm kiếm toàn văn bị lệch', () => {
+    personService.create({ fullName: 'Giáo dân kiểm thử' })
+    db.prepare('DELETE FROM persons_fts').run()
+
+    assert.doesNotThrow(() => dataService.clearAll())
+    assert.equal(personService.list({}).data.length, 0)
   })
 })
 

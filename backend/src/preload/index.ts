@@ -133,6 +133,10 @@ const dashboardApi = Object.freeze({
 
 const reportApi = Object.freeze({
   exportCsv: (input) => ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_CSV, input),
+  exportXlsx: (input) => ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_XLSX, input),
+  exportPdf: (input) => ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_PDF, input),
+  exportPersonProfilePdf: (input) =>
+    ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_PERSON_PROFILE_PDF, input),
 })
 const importApi = Object.freeze({
   chooseCsv: () => ipcRenderer.invoke(CHANNELS.IMPORT.CHOOSE_CSV),

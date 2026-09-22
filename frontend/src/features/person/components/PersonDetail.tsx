@@ -18,6 +18,7 @@ import {
 import { AppClientError } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
+import { useReportExport } from '@/features/report/hooks/useCsvExport.ts'
 import { useRemovePerson } from '../hooks/usePersonMutations.ts'
 import { usePerson } from '../hooks/usePersons.ts'
 import styles from './Person.module.css'
@@ -52,6 +53,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const remove = useRemovePerson()
   const moveMember = useMoveFamilyMember()
+  const exportProfile = useReportExport('pdf')
   useEffect(() => {
     if (person.error instanceof AppClientError && person.error.code === 'NOT_FOUND') {
       addToast('Giáo dân này không còn tồn tại.', true)
@@ -71,6 +73,16 @@ export function PersonDetail({ id }: { id: string | undefined }) {
     <section>
       <Link to="/persons">Về danh sách giáo dân</Link>
       <PageHeader title="Hồ sơ giáo dân" description={record.fullName}>
+        <Button
+          variant="secondary"
+          isPending={exportProfile.isPending}
+          disabled={exportProfile.isPending}
+          onClick={() =>
+            exportProfile.mutate({ report: 'personProfile', filter: { personId: record.id } })
+          }
+        >
+          Xuất PDF
+        </Button>
         <Button onClick={() => navigate(`/persons/${record.id}/edit`)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>
           Xoá
