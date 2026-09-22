@@ -2,6 +2,8 @@ import * as familyMemberRepository from '#/repositories/family-member.repository
 import { record as recordActivity } from './activity-log.service.ts'
 import * as familyRepository from '#/repositories/family.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
+import * as marriageRepository from '#/repositories/marriage.repository.ts'
+import * as sacramentRepository from '#/repositories/sacrament.repository.ts'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
@@ -22,30 +24,24 @@ import {
 
 const NOT_FOUND_MESSAGE = 'Không tìm thấy giáo dân'
 
-/** Ngày bí tích: tên trường ↔ nhãn tiếng Việt dùng trong thông điệp lỗi. */
-const SACRAMENT_DATES = Object.freeze([
-  ['baptismDate', 'Ngày rửa tội'],
-  ['firstCommunionDate', 'Ngày rước lễ lần đầu'],
-  ['confirmationDate', 'Ngày thêm sức'],
-  ['marriageDate', 'Ngày hôn phối'],
-])
+const SACRAMENT_LABELS = Object.freeze({
+  baptism: 'Ngày rửa tội',
+  first_communion: 'Ngày rước lễ lần đầu',
+  confirmation: 'Ngày thêm sức',
+})
 
 const TEXT_FIELDS = Object.freeze([
   ['fullName', 120],
   ['givenName', 50],
   ['holyName', 75],
   ['phone', 20],
+  ['email', 254],
+  ['secondaryPhone', 20],
+  ['pastoralNote', undefined],
   ['note', undefined],
 ])
 
-const DATE_FIELDS = Object.freeze([
-  'birthDate',
-  'baptismDate',
-  'firstCommunionDate',
-  'confirmationDate',
-  'marriageDate',
-  'deathDate',
-])
+const DATE_FIELDS = Object.freeze(['birthDate', 'deathDate'])
 
 /**
  * Chuẩn hoá payload. `fullNameAscii` **luôn** do Service sinh lại từ `fullName` mỗi lần ghi —
@@ -70,7 +66,17 @@ function normalizePatch(input: any) {
   }
 
   if (Object.hasOwn(input, 'gender')) patch.gender = input.gender ?? null
-
+  for (const field of ['residenceStatus', 'pastoralStatus', 'source']) {
+    if (Object.hasOwn(input, field)) patch[field] = input[field] ?? null
+  }
+  if (Object.hasOwn(input, 'sacraments')) {
+    patch.sacraments = input.sacraments.map((row: any) => ({
+      type: row.type,
+      date: row.date,
+      minister: normalizeText(row.minister, 120),
+      place: normalizeText(row.place, 255),
+    }))
+  }
   for (const field of DATE_FIELDS) {
     if (Object.hasOwn(input, field)) patch[field] = input[field] ?? null
   }
@@ -94,23 +100,28 @@ function validateDates(record) {
     throw fieldError('deathDate', 'Ngày qua đời không được trước ngày sinh')
   }
 
-  for (const [field, label] of SACRAMENT_DATES) {
-    if (isBefore(record[field], birthDate)) {
-      throw fieldError(field, label + ' không được trước ngày sinh')
+  const byType = new Map<string, { date: string }>(
+    (record.sacraments ?? []).map((row: any) => [row.type, row]),
+  )
+  for (const row of record.sacraments ?? []) {
+    const label = SACRAMENT_LABELS[row.type]
+    if (!label) continue
+    if (isBefore(row.date, birthDate)) {
+      throw fieldError('sacraments', label + ' không được trước ngày sinh')
     }
 
-    if (isBefore(deathDate, record[field])) {
-      throw fieldError(field, label + ' không được sau ngày qua đời')
+    if (isBefore(deathDate, row.date)) {
+      throw fieldError('sacraments', label + ' không được sau ngày qua đời')
     }
   }
 
   const warnings = []
 
-  if (isBefore(record.firstCommunionDate, record.baptismDate)) {
+  if (isBefore(byType.get('first_communion')?.date, byType.get('baptism')?.date)) {
     warnings.push('Ngày rước lễ lần đầu đang trước ngày rửa tội')
   }
 
-  if (isBefore(record.confirmationDate, record.firstCommunionDate)) {
+  if (isBefore(byType.get('confirmation')?.date, byType.get('first_communion')?.date)) {
     warnings.push('Ngày thêm sức đang trước ngày rước lễ lần đầu')
   }
 
@@ -139,6 +150,8 @@ export function getById(id) {
 
   return {
     ...person,
+    sacraments: sacramentRepository.findByPersonId(id),
+    marriage: marriageRepository.findByPersonId(id),
     currentMembership: familyMemberRepository.findCurrentByPersonId(id),
     membershipHistory: familyMemberRepository.findHistoryByPersonId(id),
   }
@@ -150,7 +163,7 @@ export function getById(id) {
  */
 export function create(input: any) {
   const patch = normalizePatch(input)
-  const warnings = validateDates(patch)
+  const warnings = validateDates({ ...patch, sacraments: patch.sacraments ?? [] })
   const timestamp = now()
 
   const person = runInTransaction(() => {
@@ -163,17 +176,27 @@ export function create(input: any) {
       holyName: patch.holyName ?? null,
       gender: patch.gender ?? null,
       birthDate: patch.birthDate ?? null,
-      baptismDate: patch.baptismDate ?? null,
-      firstCommunionDate: patch.firstCommunionDate ?? null,
-      confirmationDate: patch.confirmationDate ?? null,
-      marriageDate: patch.marriageDate ?? null,
       deathDate: patch.deathDate ?? null,
       phone: patch.phone ?? null,
+      email: patch.email ?? null,
+      secondaryPhone: patch.secondaryPhone ?? null,
+      residenceStatus: patch.residenceStatus ?? null,
+      pastoralStatus: patch.pastoralStatus ?? null,
+      pastoralNote: patch.pastoralNote ?? null,
+      source: patch.source ?? 'manual',
       note: patch.note ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
-
+    for (const sacrament of patch.sacraments ?? []) {
+      sacramentRepository.insert({
+        id: newId(),
+        personId: created.id,
+        ...sacrament,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+    }
     if (input.family) {
       const membership = openMembership({ ...input.family, personId: created.id }, timestamp)
       recordActivity({
@@ -184,7 +207,7 @@ export function create(input: any) {
       })
     }
 
-    const person = personRepository.findById(created.id)
+    const person = getById(created.id)
     recordActivity({ entityType: 'person', entityId: created.id, action: 'created', timestamp })
     return person
   })
@@ -203,21 +226,47 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
 
     // Kiểm tra ngày trên bản ghi **sau khi gộp**: sửa mỗi ngày sinh vẫn phải đối chiếu
     // với các ngày bí tích đang có sẵn trong DB.
-    warnings = validateDates({ ...current, ...normalized })
+    const currentSacraments = sacramentRepository.findByPersonId(id)
+    const currentMarriage = marriageRepository.findByPersonId(id)
+    warnings = validateDates({
+      ...current,
+      ...normalized,
+      sacraments: normalized.sacraments ?? currentSacraments,
+    })
 
     const updated = assertFound(
       personRepository.update(id, normalized, timestamp),
       NOT_FOUND_MESSAGE,
     )
+    if (normalized.sacraments) {
+      sacramentRepository.softDeleteInitiationByPersonId(id, timestamp)
+      for (const sacrament of normalized.sacraments) {
+        sacramentRepository.insert({
+          id: newId(),
+          personId: id,
+          ...sacrament,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        })
+      }
+    }
     recordActivity({
       entityType: 'person',
       entityId: id,
       action: 'updated',
-      before: current,
-      after: updated,
+      before: {
+        ...current,
+        sacraments: currentSacraments,
+        marriage: currentMarriage,
+      },
+      after: {
+        ...updated,
+        sacraments: normalized.sacraments ?? currentSacraments,
+        marriage: currentMarriage,
+      },
       timestamp,
     })
-    return updated
+    return getById(updated.id)
   })
 
   return withMeta(person, warnings)
@@ -237,6 +286,8 @@ export function remove({ id }: any) {
     const membership = familyMemberRepository.findCurrentByPersonId(id)
 
     familyMemberRepository.softDeleteCurrentByPersonId(id, timestamp)
+    sacramentRepository.softDeleteByPersonId(id, timestamp)
+    marriageRepository.softDeleteByPersonIds([id], timestamp)
     personRepository.softDelete(id, timestamp)
     if (membership) {
       recordActivity({
@@ -309,6 +360,8 @@ export function bulkRemove({ ids }: any) {
     }
     const memberships = familyMemberRepository.findCurrentByPersonIds(ids)
     familyMemberRepository.softDeleteCurrentByPersonIds(ids, timestamp)
+    sacramentRepository.softDeleteByPersonIds(ids, timestamp)
+    marriageRepository.softDeleteByPersonIds(ids, timestamp)
     const count = personRepository.softDeleteMany(ids, timestamp)
     for (const membership of memberships) {
       recordActivity({

@@ -19,14 +19,35 @@ const fullNameSchema = z
 
 const genderSchema = z.enum(['male', 'female'], { error: 'Giới tính không hợp lệ' }).nullish()
 
-/** Năm cột ngày bí tích + ngày sinh + ngày mất. Bỏ trống được, sai định dạng thì không. */
+const sacramentSchema = z
+  .object({
+    type: z.enum(['baptism', 'first_communion', 'confirmation']),
+    date: calendarDateSchema,
+    minister: optionalText(120, 'Tên linh mục cử hành'),
+    place: optionalText(255, 'Nơi cử hành'),
+  })
+  .strict()
+
+/** Ngày sinh và ngày mất. Các bí tích nằm trong bảng `sacraments`. */
 const dateFields = Object.freeze({
   birthDate: calendarDateSchema.nullish(),
-  baptismDate: calendarDateSchema.nullish(),
-  firstCommunionDate: calendarDateSchema.nullish(),
-  confirmationDate: calendarDateSchema.nullish(),
-  marriageDate: calendarDateSchema.nullish(),
   deathDate: calendarDateSchema.nullish(),
+})
+
+const personExtensions = Object.freeze({
+  email: optionalText(254, 'Email'),
+  secondaryPhone: optionalText(20, 'Số liên hệ thay thế'),
+  residenceStatus: z.enum(['permanent', 'temporary', 'moved_away']).nullish(),
+  pastoralStatus: z.enum(['ordinary', 'catechism', 'catechist', 'needs_visit']).nullish(),
+  pastoralNote: optionalText(2000, 'Ghi chú mục vụ'),
+  source: z.enum(['manual', 'csv_import', 'transferred', 'restored']).nullish(),
+  sacraments: z
+    .array(sacramentSchema)
+    .max(3, { error: 'Mỗi giáo dân chỉ có một bản ghi cho mỗi bí tích' })
+    .refine((rows) => new Set(rows.map((row) => row.type)).size === rows.length, {
+      error: 'Mỗi loại bí tích chỉ được nhập một lần',
+    })
+    .optional(),
 })
 
 export const personListSchema = z
@@ -61,6 +82,7 @@ export const personCreateSchema = z
       ...dateFields,
       phone: optionalText(20, 'Số điện thoại'),
       note: optionalText(2000, 'Ghi chú'),
+      ...personExtensions,
       family: z
         .object(
           {
@@ -87,6 +109,7 @@ export const personUpdateSchema = updateSchema(
       ...dateFields,
       phone: optionalText(20, 'Số điện thoại'),
       note: optionalText(2000, 'Ghi chú'),
+      ...personExtensions,
     })
     .strict(),
   'giáo dân',

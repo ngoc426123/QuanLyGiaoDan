@@ -13,8 +13,8 @@ const SORT_COLUMNS = Object.freeze({
 const SELECT_COLUMNS =
   'p.id, p.full_name, p.given_name, p.full_name_ascii, p.given_name_ascii,' +
   ' p.holy_name, p.gender,' +
-  ' p.birth_date, p.baptism_date, p.first_communion_date, p.confirmation_date,' +
-  ' p.marriage_date, p.death_date, p.phone, p.note, p.created_at, p.updated_at'
+  ' p.birth_date, p.death_date, p.phone, p.email, p.secondary_phone, p.residence_status,' +
+  ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.created_at, p.updated_at'
 
 const UPDATABLE = Object.freeze({
   fullName: 'full_name',
@@ -24,12 +24,14 @@ const UPDATABLE = Object.freeze({
   holyName: 'holy_name',
   gender: 'gender',
   birthDate: 'birth_date',
-  baptismDate: 'baptism_date',
-  firstCommunionDate: 'first_communion_date',
-  confirmationDate: 'confirmation_date',
-  marriageDate: 'marriage_date',
   deathDate: 'death_date',
   phone: 'phone',
+  email: 'email',
+  secondaryPhone: 'secondary_phone',
+  residenceStatus: 'residence_status',
+  pastoralStatus: 'pastoral_status',
+  pastoralNote: 'pastoral_note',
+  source: 'source',
   note: 'note',
 })
 
@@ -59,12 +61,14 @@ export function toDomain(row) {
     holyName: row.holy_name ?? null,
     gender: row.gender ?? null,
     birthDate: row.birth_date ?? null,
-    baptismDate: row.baptism_date ?? null,
-    firstCommunionDate: row.first_communion_date ?? null,
-    confirmationDate: row.confirmation_date ?? null,
-    marriageDate: row.marriage_date ?? null,
     deathDate: row.death_date ?? null,
     phone: row.phone ?? null,
+    email: row.email ?? null,
+    secondaryPhone: row.secondary_phone ?? null,
+    residenceStatus: row.residence_status ?? null,
+    pastoralStatus: row.pastoral_status ?? null,
+    pastoralNote: row.pastoral_note ?? null,
+    source: row.source ?? null,
     note: row.note ?? null,
     isAlive: row.death_date === null || row.death_date === undefined,
     createdAt: row.created_at,
@@ -170,9 +174,9 @@ export function insert(record) {
   prepare(
     'INSERT INTO persons (id, full_name, given_name, full_name_ascii, given_name_ascii,' +
       ' holy_name, gender,' +
-      ' birth_date, baptism_date, first_communion_date, confirmation_date, marriage_date,' +
-      ' death_date, phone, note, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' birth_date, death_date, phone, email, secondary_phone, residence_status, pastoral_status,' +
+      ' pastoral_note, source, note, created_at, updated_at)' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,
@@ -182,12 +186,14 @@ export function insert(record) {
     record.holyName,
     record.gender,
     record.birthDate,
-    record.baptismDate,
-    record.firstCommunionDate,
-    record.confirmationDate,
-    record.marriageDate,
     record.deathDate,
     record.phone,
+    record.email,
+    record.secondaryPhone,
+    record.residenceStatus,
+    record.pastoralStatus,
+    record.pastoralNote,
+    record.source,
     record.note,
     record.createdAt,
     record.updatedAt,

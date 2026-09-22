@@ -21,9 +21,8 @@ export function useUpdatePerson() {
   const client = useQueryClient()
   return useMutation({
     mutationFn: personApi.update,
-    onSuccess: (_data, input: any) => {
-      client.invalidateQueries({ queryKey: personKeys.lists })
-      client.invalidateQueries({ queryKey: personKeys.detail(input.id) })
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: personKeys.all })
     },
   })
 }

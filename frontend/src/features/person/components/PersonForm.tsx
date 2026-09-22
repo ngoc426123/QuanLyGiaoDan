@@ -12,10 +12,21 @@ const emptyValue = {
   gender: '',
   birthDate: '',
   phone: '',
+  email: '',
+  secondaryPhone: '',
+  residenceStatus: '',
+  pastoralStatus: '',
+  pastoralNote: '',
+  source: 'manual',
   baptismDate: '',
+  baptismMinister: '',
+  baptismPlace: '',
   firstCommunionDate: '',
+  firstCommunionMinister: '',
+  firstCommunionPlace: '',
   confirmationDate: '',
-  marriageDate: '',
+  confirmationMinister: '',
+  confirmationPlace: '',
   deathDate: '',
   note: '',
   familyId: '',
@@ -30,10 +41,12 @@ const editableFields = [
   'gender',
   'birthDate',
   'phone',
-  'baptismDate',
-  'firstCommunionDate',
-  'confirmationDate',
-  'marriageDate',
+  'email',
+  'secondaryPhone',
+  'residenceStatus',
+  'pastoralStatus',
+  'pastoralNote',
+  'source',
   'deathDate',
   'note',
 ] as const
@@ -43,6 +56,15 @@ function toFormValue(initialValue: any) {
   for (const key of Object.keys(emptyValue)) {
     if (Object.hasOwn(initialValue ?? {}, key)) value[key] = initialValue[key] ?? ''
   }
+  for (const sacrament of initialValue?.sacraments ?? []) {
+    const key = sacrament.type === 'first_communion' ? 'firstCommunion' : sacrament.type
+    const dateKey = `${key}Date`
+    const ministerKey = `${key}Minister`
+    const placeKey = `${key}Place`
+    if (Object.hasOwn(value, dateKey)) (value as any)[dateKey] = sacrament.date ?? ''
+    if (Object.hasOwn(value, ministerKey)) (value as any)[ministerKey] = sacrament.minister ?? ''
+    if (Object.hasOwn(value, placeKey)) (value as any)[placeKey] = sacrament.place ?? ''
+  }
   return value
 }
 
@@ -51,6 +73,23 @@ function toPayload(value: any, allowFamilyAssignment: boolean) {
   for (const key of editableFields) {
     payload[key] = key === 'fullName' ? value[key] : value[key] || null
   }
+  payload.sacraments = [
+    ['baptism', value.baptismDate, value.baptismMinister, value.baptismPlace],
+    [
+      'first_communion',
+      value.firstCommunionDate,
+      value.firstCommunionMinister,
+      value.firstCommunionPlace,
+    ],
+    ['confirmation', value.confirmationDate, value.confirmationMinister, value.confirmationPlace],
+  ]
+    .filter(([, date]) => Boolean(date))
+    .map(([type, date, minister, place]) => ({
+      type,
+      date,
+      minister: minister || null,
+      place: place || null,
+    }))
   if (allowFamilyAssignment && value.familyId) {
     payload.family = {
       familyId: value.familyId,
@@ -85,7 +124,7 @@ export function PersonForm({
   return (
     <form className={styles.form} onSubmit={submit}>
       <fieldset className={styles.group}>
-        <h2>Thông tin cơ bản</h2>
+        <h2>Thông tin định danh &amp; Hành chính</h2>
         <Input
           label="Họ và tên"
           value={value.fullName}
@@ -131,33 +170,88 @@ export function PersonForm({
           onChange={(event: any) => set('phone', event.target.value)}
           maxLength={20}
         />
+        <Input
+          label="Email"
+          value={value.email}
+          error={fieldErrors.email}
+          onChange={(event: any) => set('email', event.target.value)}
+          maxLength={254}
+        />
+        <Input
+          label="Số liên hệ thay thế"
+          value={value.secondaryPhone}
+          error={fieldErrors.secondaryPhone}
+          onChange={(event: any) => set('secondaryPhone', event.target.value)}
+          maxLength={20}
+        />
       </fieldset>
       <fieldset className={styles.group}>
-        <h2>Bí tích</h2>
-        <DateInput
-          label="Ngày rửa tội"
-          value={value.baptismDate}
-          error={fieldErrors.baptismDate}
-          onChange={(next: string) => set('baptismDate', next)}
-        />
-        <DateInput
-          label="Ngày rước lễ lần đầu"
-          value={value.firstCommunionDate}
-          error={fieldErrors.firstCommunionDate}
-          onChange={(next: string) => set('firstCommunionDate', next)}
-        />
-        <DateInput
-          label="Ngày thêm sức"
-          value={value.confirmationDate}
-          error={fieldErrors.confirmationDate}
-          onChange={(next: string) => set('confirmationDate', next)}
-        />
-        <DateInput
-          label="Ngày hôn phối"
-          value={value.marriageDate}
-          error={fieldErrors.marriageDate}
-          onChange={(next: string) => set('marriageDate', next)}
-        />
+        <h2>Đời sống Bí tích</h2>
+        <div className={styles.sacramentGrid}>
+          <div className={styles.sacramentColumn}>
+            <h3>Rửa tội</h3>
+            <DateInput
+              label="Ngày cử hành"
+              value={value.baptismDate}
+              error={fieldErrors.baptismDate}
+              onChange={(next: string) => set('baptismDate', next)}
+            />
+            <Input
+              label="Linh mục cử hành"
+              value={value.baptismMinister}
+              onChange={(event: any) => set('baptismMinister', event.target.value)}
+              maxLength={120}
+            />
+            <Input
+              label="Nơi cử hành"
+              value={value.baptismPlace}
+              onChange={(event: any) => set('baptismPlace', event.target.value)}
+              maxLength={255}
+            />
+          </div>
+          <div className={styles.sacramentColumn}>
+            <h3>Rước lễ lần đầu</h3>
+            <DateInput
+              label="Ngày cử hành"
+              value={value.firstCommunionDate}
+              error={fieldErrors.firstCommunionDate}
+              onChange={(next: string) => set('firstCommunionDate', next)}
+            />
+            <Input
+              label="Linh mục cử hành"
+              value={value.firstCommunionMinister}
+              onChange={(event: any) => set('firstCommunionMinister', event.target.value)}
+              maxLength={120}
+            />
+            <Input
+              label="Nơi cử hành"
+              value={value.firstCommunionPlace}
+              onChange={(event: any) => set('firstCommunionPlace', event.target.value)}
+              maxLength={255}
+            />
+          </div>
+          <div className={styles.sacramentColumn}>
+            <h3>Thêm sức</h3>
+            <DateInput
+              label="Ngày cử hành"
+              value={value.confirmationDate}
+              error={fieldErrors.confirmationDate}
+              onChange={(next: string) => set('confirmationDate', next)}
+            />
+            <Input
+              label="Linh mục cử hành"
+              value={value.confirmationMinister}
+              onChange={(event: any) => set('confirmationMinister', event.target.value)}
+              maxLength={120}
+            />
+            <Input
+              label="Nơi cử hành"
+              value={value.confirmationPlace}
+              onChange={(event: any) => set('confirmationPlace', event.target.value)}
+              maxLength={255}
+            />
+          </div>
+        </div>
       </fieldset>
       <fieldset className={styles.group}>
         <h2>Tình trạng</h2>
@@ -167,6 +261,40 @@ export function PersonForm({
           error={fieldErrors.deathDate}
           onChange={(next: string) => set('deathDate', next)}
         />
+        <Select
+          label="Tình trạng cư trú"
+          value={value.residenceStatus}
+          error={fieldErrors.residenceStatus}
+          onChange={(event: any) => set('residenceStatus', event.target.value)}
+        >
+          <option value="">Chưa cập nhật</option>
+          <option value="permanent">Thường trú</option>
+          <option value="temporary">Tạm trú</option>
+          <option value="moved_away">Đã chuyển đi</option>
+        </Select>
+        <Select
+          label="Tình trạng mục vụ"
+          value={value.pastoralStatus}
+          error={fieldErrors.pastoralStatus}
+          onChange={(event: any) => set('pastoralStatus', event.target.value)}
+        >
+          <option value="">Chưa cập nhật</option>
+          <option value="ordinary">Bình thường</option>
+          <option value="catechism">Đang học giáo lý</option>
+          <option value="catechist">Giáo lý viên</option>
+          <option value="needs_visit">Cần thăm viếng</option>
+        </Select>
+        <Select
+          label="Nguồn tạo hồ sơ"
+          value={value.source}
+          error={fieldErrors.source}
+          onChange={(event: any) => set('source', event.target.value)}
+        >
+          <option value="manual">Nhập thủ công</option>
+          <option value="csv_import">Nhập CSV</option>
+          <option value="transferred">Chuyển đến</option>
+          <option value="restored">Khôi phục dữ liệu</option>
+        </Select>
         {allowFamilyAssignment && (
           <Select
             label="Gán vào hộ"
@@ -205,6 +333,15 @@ export function PersonForm({
             />
           </>
         )}
+        <label className={styles.textareaField}>
+          <span>Ghi chú mục vụ</span>
+          <textarea
+            className={styles.textarea}
+            value={value.pastoralNote}
+            onChange={(event) => set('pastoralNote', event.target.value)}
+            maxLength={2000}
+          />
+        </label>
         <label className={styles.textareaField}>
           <span>Ghi chú</span>
           <textarea

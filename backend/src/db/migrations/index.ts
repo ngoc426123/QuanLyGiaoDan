@@ -3,6 +3,9 @@ import ftsSql from './002_add_fts.sql?raw'
 import ftsDeleteTriggersSql from './003_add_fts_delete_triggers.sql?raw'
 import ftsSoftDeleteTriggersSql from './004_fix_fts_soft_delete_triggers.sql?raw'
 import activityLogsSql from './005_add_activity_logs.sql?raw'
+import personExtensionsSql from './006_add_person_extensions_and_sacraments.sql?raw'
+import sacramentPlaceSql from './007_add_sacrament_place.sql?raw'
+import marriagesSql from './008_add_marriages.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -29,6 +32,13 @@ export const MIGRATIONS = Object.freeze([
     sql: ftsSoftDeleteTriggersSql,
   }),
   Object.freeze({ version: 5, name: '005_add_activity_logs.sql', sql: activityLogsSql }),
+  Object.freeze({
+    version: 6,
+    name: '006_add_person_extensions_and_sacraments.sql',
+    sql: personExtensionsSql,
+  }),
+  Object.freeze({ version: 7, name: '007_add_sacrament_place.sql', sql: sacramentPlaceSql }),
+  Object.freeze({ version: 8, name: '008_add_marriages.sql', sql: marriagesSql }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

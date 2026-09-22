@@ -45,15 +45,15 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 
 ### 1.3. Nhóm `person:*` — Giáo dân
 
-| Kênh                | Payload vào                                                                                                                                                         | Dữ liệu trả về                                   | Ghi chú                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
-| `person:list`       | `{ zoneId?, familyId?, gender?, isAlive?, search?, page, pageSize, sortBy, sortDir }`                                                                               | `Person[]` kèm `familyName`, `zoneName` + `meta` | `search` so khớp trên `full_name_ascii`                                |
-| `person:getById`    | `{ id }`                                                                                                                                                            | `Person` kèm hộ hiện hành + lịch sử hộ           | `NOT_FOUND` nếu không tồn tại                                          |
-| `person:create`     | `{ fullName, givenName?, holyName?, gender?, birthDate?, baptismDate?, firstCommunionDate?, confirmationDate?, marriageDate?, deathDate?, phone?, note?, family? }` | `Person` vừa tạo                                 | Xem ghi chú dưới bảng                                                  |
-| `person:update`     | `{ id, expectedUpdatedAt, patch }`                                                                                                                                  | `Person` sau cập nhật                            | **Bắt buộc** `expectedUpdatedAt`                                       |
-| `person:remove`     | `{ id }`                                                                                                                                                            | `{ id }`                                         | Xoá mềm người **và** dòng `family_members` hiện hành, cùng transaction |
-| `person:bulkMove`   | `{ ids, familyId, relationship, moveDate }`                                                                                                                         | `{ count, familyId }`                            | Chuyển nhiều người sang một hộ trong một transaction                   |
-| `person:bulkRemove` | `{ ids }`                                                                                                                                                           | `{ count }`                                      | Xoá mềm nhiều giáo dân cùng các thành viên hộ hiện hành                |
+| Kênh                | Payload vào                                                                                                                                                                                     | Dữ liệu trả về                                   | Ghi chú                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `person:list`       | `{ zoneId?, familyId?, gender?, isAlive?, search?, page, pageSize, sortBy, sortDir }`                                                                                                           | `Person[]` kèm `familyName`, `zoneName` + `meta` | `search` so khớp trên `full_name_ascii`                                |
+| `person:getById`    | `{ id }`                                                                                                                                                                                        | `Person` kèm hộ hiện hành + lịch sử hộ           | `NOT_FOUND` nếu không tồn tại                                          |
+| `person:create`     | `{ fullName, givenName?, holyName?, gender?, birthDate?, deathDate?, phone?, email?, secondaryPhone?, residenceStatus?, pastoralStatus?, pastoralNote?, source?, sacraments?, note?, family? }` | `Person` vừa tạo                                 | Xem ghi chú dưới bảng                                                  |
+| `person:update`     | `{ id, expectedUpdatedAt, patch }`                                                                                                                                                              | `Person` sau cập nhật                            | **Bắt buộc** `expectedUpdatedAt`                                       |
+| `person:remove`     | `{ id }`                                                                                                                                                                                        | `{ id }`                                         | Xoá mềm người **và** dòng `family_members` hiện hành, cùng transaction |
+| `person:bulkMove`   | `{ ids, familyId, relationship, moveDate }`                                                                                                                                                     | `{ count, familyId }`                            | Chuyển nhiều người sang một hộ trong một transaction                   |
+| `person:bulkRemove` | `{ ids }`                                                                                                                                                                                       | `{ count }`                                      | Xoá mềm nhiều giáo dân cùng các thành viên hộ hiện hành                |
 
 > `person:create` và `person:update` trả thêm `meta.warnings` khi thứ tự ngày bí tích bất
 > thường (`baptism ≤ firstCommunion ≤ confirmation`) — **cảnh báo, không chặn**.
@@ -63,7 +63,19 @@ Mọi payload và dữ liệu trả về dùng `camelCase`. Mọi kênh `*:updat
 >
 > Renderer **không** gửi `id`, `fullNameAscii`, `createdAt`, `updatedAt` — Service sinh.
 
-### 1.4. Nhóm `family-member:*` — Thành viên hộ
+### 1.4. Nhóm `marriage:*` — Hôn phối
+
+| Kênh              | Payload vào                                       | Dữ liệu trả về         | Ghi chú                                                  |
+| ----------------- | ------------------------------------------------- | ---------------------- | -------------------------------------------------------- |
+| `marriage:list`   | `{ page?, pageSize? }`                            | Danh sách hôn phối     | Mỗi dòng gồm hai đương sự và thông tin cử hành           |
+| `marriage:create` | `{ personId, spouseId, date, minister?, place? }` | `Marriage` vừa tạo     | Hai đương sự phải khác nhau và chưa có hôn phối          |
+| `marriage:update` | `{ id, expectedUpdatedAt, patch }`                | `Marriage` đã cập nhật | Thay đổi thông tin hoặc hai đương sự; kiểm tra phiên bản |
+| `marriage:remove` | `{ id }`                                          | `{ id }`               | Xoá mềm bản ghi và liên kết hai đương sự                 |
+
+Hôn phối là bản ghi chung của hai giáo dân. Việc tạo, sửa và xoá chỉ thực hiện tại màn hình
+quản lý Hôn phối; hồ sơ giáo dân chỉ hiển thị tóm tắt và liên kết điều hướng.
+
+### 1.5. Nhóm `family-member:*` — Thành viên hộ
 
 | Kênh                   | Payload vào                                        | Dữ liệu trả về              | Ghi chú                                                                               |
 | ---------------------- | -------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
@@ -161,12 +173,13 @@ Bản sao đó là đường lui duy nhất, nên đường dẫn của nó tr�
 
 ## 3. Nhóm sự kiện (Main → Renderer)
 
-| Kênh                                   | Payload                                               | Khi nào phát                                                 |
-| -------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
-| `event:zone-changed`                   | `{ action, id }`                                      | Sau mọi thao tác ghi lên `zones`                             |
-| `event:family-changed`                 | `{ action, id, zoneId? }`                             | Sau mọi thao tác ghi lên `families`                          |
-| `event:person-changed`                 | `{ action, id, familyId? }`                           | Sau mọi thao tác ghi lên `persons` **hoặc** `family_members` |
-| `event:person-changed` (khi chuyển hộ) | `{ action: 'moved', id, familyId, previousFamilyId }` | `family-member:move` chạm hai hộ nên mang thêm hộ cũ (P15)   |
+| Kênh                                   | Payload                                               | Khi nào phát                                                     |
+| -------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------- |
+| `event:zone-changed`                   | `{ action, id }`                                      | Sau mọi thao tác ghi lên `zones`                                 |
+| `event:family-changed`                 | `{ action, id, zoneId? }`                             | Sau mọi thao tác ghi lên `families`                              |
+| `event:person-changed`                 | `{ action, id, familyId? }`                           | Sau mọi thao tác ghi lên `persons` **hoặc** `family_members`     |
+| `event:marriage-changed`               | `{ action, id }`                                      | Sau tạo, sửa, xoá hôn phối; làm mới danh sách và hồ sơ liên quan |
+| `event:person-changed` (khi chuyển hộ) | `{ action: 'moved', id, familyId, previousFamilyId }` | `family-member:move` chạm hai hộ nên mang thêm hộ cũ (P15)       |
 
 Ba sự kiện hạ tầng giữ nguyên theo template: `event:import-progress`, `event:update-status`,
 `event:app-error`.

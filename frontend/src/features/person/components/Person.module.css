@@ -43,6 +43,39 @@
   font-size: var(--font-size-md);
 }
 
+.sacramentGrid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.sacramentColumn {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.sacramentColumn h3 {
+  margin: var(--space-0);
+  font-size: var(--font-size-md);
+}
+
+.sacramentDetail {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-0);
+}
+
+.sacramentDetail dt {
+  color: var(--color-text-muted);
+}
+
+.sacramentDetail dd {
+  margin: var(--space-0) var(--space-0) var(--space-2);
+}
+
 .textareaField {
   display: grid;
   grid-column: 1 / -1;
@@ -115,10 +148,16 @@
   .group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .sacramentGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
   .group {
+    grid-template-columns: 1fr;
+  }
+  .sacramentGrid {
     grid-template-columns: 1fr;
   }
   .details div {

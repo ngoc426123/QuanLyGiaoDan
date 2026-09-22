@@ -61,6 +61,7 @@ const eventsApi = Object.freeze({
   onZoneChanged: (listener) => subscribe(CHANNELS.EVENTS.ZONE_CHANGED, listener),
   onFamilyChanged: (listener) => subscribe(CHANNELS.EVENTS.FAMILY_CHANGED, listener),
   onPersonChanged: (listener) => subscribe(CHANNELS.EVENTS.PERSON_CHANGED, listener),
+  onMarriageChanged: (listener) => subscribe(CHANNELS.EVENTS.MARRIAGE_CHANGED, listener),
   onAppError: (listener) => subscribe(CHANNELS.EVENTS.APP_ERROR, listener),
   onImportProgress: (listener) => subscribe(CHANNELS.EVENTS.IMPORT_PROGRESS, listener),
   onUpdateStatus: (listener) => subscribe(CHANNELS.EVENTS.UPDATE_STATUS, listener),
@@ -112,6 +113,13 @@ const personApi = Object.freeze({
   bulkRemove: (ids) => ipcRenderer.invoke(CHANNELS.PERSON.BULK_REMOVE, { ids }),
 })
 
+const marriageApi = Object.freeze({
+  list: (query) => ipcRenderer.invoke(CHANNELS.MARRIAGE.LIST, query),
+  create: (input) => ipcRenderer.invoke(CHANNELS.MARRIAGE.CREATE, input),
+  update: (input) => ipcRenderer.invoke(CHANNELS.MARRIAGE.UPDATE, input),
+  remove: (id) => ipcRenderer.invoke(CHANNELS.MARRIAGE.REMOVE, { id }),
+})
+
 const familyMemberApi = Object.freeze({
   add: (input) => ipcRenderer.invoke(CHANNELS.FAMILY_MEMBER.ADD, input),
   update: (input) => ipcRenderer.invoke(CHANNELS.FAMILY_MEMBER.UPDATE, input),
@@ -153,6 +161,7 @@ const api = Object.freeze({
   zone: zoneApi,
   family: familyApi,
   person: personApi,
+  marriage: marriageApi,
   familyMember: familyMemberApi,
   dashboard: dashboardApi,
   report: reportApi,

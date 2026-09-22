@@ -42,8 +42,10 @@ export function findPersonsForCsv(filter: any) {
 
   return rowsInBatches(
     'SELECT p.full_name AS full_name, p.holy_name AS holy_name, p.gender, p.birth_date AS birth_date,' +
-      ' p.baptism_date AS baptism_date, p.first_communion_date AS first_communion_date,' +
-      ' p.confirmation_date AS confirmation_date, p.marriage_date AS marriage_date,' +
+      " (SELECT date FROM sacraments s WHERE s.person_id = p.id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptism_date," +
+      " (SELECT date FROM sacraments s WHERE s.person_id = p.id AND s.type = 'first_communion' AND s.deleted_at IS NULL) AS first_communion_date," +
+      " (SELECT date FROM sacraments s WHERE s.person_id = p.id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmation_date," +
+      " (SELECT date FROM sacraments s WHERE s.person_id = p.id AND s.type = 'marriage' AND s.deleted_at IS NULL) AS marriage_date," +
       ' p.death_date AS death_date, p.phone, p.note, f.name AS family_name, z.name AS zone_name' +
       ' FROM persons p' +
       ' LEFT JOIN family_members fm ON fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL' +

@@ -12,6 +12,7 @@ import {
   pendingMigrations,
   readSchemaVersion,
 } from '#/db/migrator.ts'
+import { MIGRATIONS } from '#/db/migrations/index.ts'
 
 /** Migration và chặn hạ cấp — `storage-strategy.md` §5.3–5.4. */
 
@@ -67,6 +68,9 @@ describe('migrate', () => {
       '003_add_fts_delete_triggers.sql',
       '004_fix_fts_soft_delete_triggers.sql',
       '005_add_activity_logs.sql',
+      '006_add_person_extensions_and_sacraments.sql',
+      '007_add_sacrament_place.sql',
+      '008_add_marriages.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -85,15 +89,23 @@ describe('migrate', () => {
       'families_fts_docsize',
       'families_fts_idx',
       'family_members',
+      'marriage_participants',
+      'marriages',
       'persons',
       'persons_fts',
       'persons_fts_config',
       'persons_fts_data',
       'persons_fts_docsize',
       'persons_fts_idx',
+      'sacraments',
       'settings',
       'zones',
     ])
+    assert.equal(
+      db.prepare("SELECT name FROM pragma_table_info('sacraments') WHERE name = 'place'").get()
+        .name,
+      'place',
+    )
     db.close()
   })
 
@@ -104,6 +116,44 @@ describe('migrate', () => {
 
     assert.deepEqual(second.applied, [])
     assert.equal(second.from, LATEST_VERSION)
+    db.close()
+  })
+
+  it('chuyển bốn ngày bí tích cũ sang bảng sacraments', async () => {
+    const db = new Database(':memory:')
+    for (const migration of MIGRATIONS.filter((migration) => migration.version <= 5)) {
+      db.exec(migration.sql)
+      db.pragma(`user_version = ${migration.version}`)
+    }
+    db.prepare(
+      'INSERT INTO persons (id, full_name, full_name_ascii, baptism_date, first_communion_date,' +
+        ' confirmation_date, marriage_date, created_at, updated_at)' +
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      'person-1',
+      'Nguyễn Văn An',
+      'nguyen van an',
+      '1990-01-01',
+      '1997-01-01',
+      '2000-01-01',
+      '2010-01-01',
+      '2026-09-22T00:00:00.000Z',
+      '2026-09-22T00:00:00.000Z',
+    )
+
+    await migrate(db)
+
+    assert.deepEqual(
+      db
+        .prepare('SELECT type, date, minister FROM sacraments WHERE person_id = ? ORDER BY type')
+        .all('person-1'),
+      [
+        { type: 'baptism', date: '1990-01-01', minister: null },
+        { type: 'confirmation', date: '2000-01-01', minister: null },
+        { type: 'first_communion', date: '1997-01-01', minister: null },
+        { type: 'marriage', date: '2010-01-01', minister: null },
+      ],
+    )
     db.close()
   })
 

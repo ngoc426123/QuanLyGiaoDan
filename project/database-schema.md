@@ -31,29 +31,34 @@ bảng ánh xạ diagram → schema nằm ở `plan/00-domain-lock-in.md` §3.
                             │ id         (PK) │        │ id      (PK) │
                             │ family_id   FK  │        │ full_name    │
                             │ person_id   FK  │        │ given_name   │
-                            │ relationship    │        │ full_name_   │
-                            │ from_date       │        │   ascii      │
-                            │ to_date  (NULL  │        │ holy_name    │
-                            │   = hiện hành)  │        │ gender       │
-                            └─────────────────┘        │ birth_date   │
-                                                       │ baptism_date │
-              ┌──────────────┐                         │ first_commu- │
-              │   settings   │                         │  nion_date   │
-              │──────────────│                         │ confirmation_│
-              │ key     (PK) │                         │  date        │
-              │ value        │                         │ marriage_date│
-              │ updated_at   │                         │ death_date   │
-              └──────────────┘                         │ phone        │
+                            │ relationship    │        │ holy_name    │
+                            │ from_date       │        │ birth_date   │
+                            │ to_date  (NULL  │        │ death_date   │
+                            │   = hiện hành)  │        │ phone        │
+                            └─────────────────┘        └──────┬───────┘
+                                                               │ 1
+              ┌──────────────┐                                │
+              │   settings   │                                │ N
+              │──────────────│                         ┌──────▼───────┐
+              │ key     (PK) │                         │  sacraments  │
+              │ value        │                         │──────────────│
+              │ updated_at   │                         │ person_id FK │
+              └──────────────┘                         │ type         │
+                                                       │ date         │
+                                                       │ minister     │
+                                                       │ place        │
                                                        └──────────────┘
 ```
 
 **Tóm tắt quan hệ**
 
-| Quan hệ                | Kiểu               | Ghi chú                                                                                   |
-| ---------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `zones` → `families`   | 1–N                | Mỗi hộ thuộc **đúng một** giáo họ (`zone_id` NOT NULL)                                    |
-| `families` ↔ `persons` | N–N theo thời gian | Qua `family_members`. Mỗi người **đúng một** hộ hiện hành                                 |
-| `zones` → `persons`    | _(suy ra)_         | `persons` → `family_members` (hiện hành) → `families.zone_id`. **Không có cột trực tiếp** |
+| Quan hệ                  | Kiểu               | Ghi chú                                                                                   |
+| ------------------------ | ------------------ | ----------------------------------------------------------------------------------------- |
+| `zones` → `families`     | 1–N                | Mỗi hộ thuộc **đúng một** giáo họ (`zone_id` NOT NULL)                                    |
+| `families` ↔ `persons`   | N–N theo thời gian | Qua `family_members`. Mỗi người **đúng một** hộ hiện hành                                 |
+| `persons` → `sacraments` | 1–N                | Mỗi người có tối đa một bản ghi còn hiệu lực cho mỗi loại bí tích                         |
+| `persons` ↔ `marriages`  | N–N theo cặp       | Qua `marriage_participants`; mỗi hôn phối có đúng hai đương sự                            |
+| `zones` → `persons`      | _(suy ra)_         | `persons` → `family_members` (hiện hành) → `families.zone_id`. **Không có cột trực tiếp** |
 
 > Không có bảng `person_zone` / `family_zone`. Diagram gốc có cả hai đường dẫn tới giáo họ
 > → hai nguồn sự thật, mâu thuẫn được. Quyết định P02 ở [`decisions.md`](./decisions.md) §3.
@@ -105,22 +110,24 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 
 ### 2.3. `persons` — Giáo dân
 
-| Cột                    | Kiểu | Ràng buộc                             | Mô tả                                                                       |
-| ---------------------- | ---- | ------------------------------------- | --------------------------------------------------------------------------- |
-| `full_name`            | TEXT | NOT NULL, CHECK(length 1–120)         | Nguyên văn như trên giấy tờ                                                 |
-| `given_name`           | TEXT | NULL, CHECK(length ≤ 50)              | Tên gọi, dùng để sắp xếp                                                    |
-| `full_name_ascii`      | TEXT | NOT NULL                              | Service sinh: NFC → bỏ dấu → lowercase                                      |
-| `given_name_ascii`     | TEXT | NULL                                  | Service sinh từ `given_name`: NFC → bỏ dấu → lowercase. Dùng để **sắp xếp** |
-| `holy_name`            | TEXT | NULL, CHECK(length ≤ 75)              | Tên thánh                                                                   |
-| `gender`               | TEXT | NULL, CHECK IN (`'male'`, `'female'`) | Giới tính                                                                   |
-| `birth_date`           | TEXT | NULL                                  | `YYYY-MM-DD`                                                                |
-| `baptism_date`         | TEXT | NULL                                  | Ngày rửa tội                                                                |
-| `first_communion_date` | TEXT | NULL                                  | Ngày rước lễ lần đầu                                                        |
-| `confirmation_date`    | TEXT | NULL                                  | Ngày thêm sức                                                               |
-| `marriage_date`        | TEXT | NULL                                  | Ngày hôn phối                                                               |
-| `death_date`           | TEXT | NULL                                  | `NULL` = còn sống                                                           |
-| `phone`                | TEXT | NULL, CHECK(length ≤ 20)              | Số điện thoại                                                               |
-| `note`                 | TEXT | NULL                                  | Ghi chú                                                                     |
+| Cột                | Kiểu | Ràng buộc                             | Mô tả                                                                       |
+| ------------------ | ---- | ------------------------------------- | --------------------------------------------------------------------------- |
+| `full_name`        | TEXT | NOT NULL, CHECK(length 1–120)         | Nguyên văn như trên giấy tờ                                                 |
+| `given_name`       | TEXT | NULL, CHECK(length ≤ 50)              | Tên gọi, dùng để sắp xếp                                                    |
+| `full_name_ascii`  | TEXT | NOT NULL                              | Service sinh: NFC → bỏ dấu → lowercase                                      |
+| `given_name_ascii` | TEXT | NULL                                  | Service sinh từ `given_name`: NFC → bỏ dấu → lowercase. Dùng để **sắp xếp** |
+| `holy_name`        | TEXT | NULL, CHECK(length ≤ 75)              | Tên thánh                                                                   |
+| `gender`           | TEXT | NULL, CHECK IN (`'male'`, `'female'`) | Giới tính                                                                   |
+| `birth_date`       | TEXT | NULL                                  | `YYYY-MM-DD`                                                                |
+| `death_date`       | TEXT | NULL                                  | `NULL` = còn sống                                                           |
+| `phone`            | TEXT | NULL, CHECK(length ≤ 20)              | Số điện thoại                                                               |
+| `email`            | TEXT | NULL, CHECK(length ≤ 254)             | Email cá nhân                                                               |
+| `secondary_phone`  | TEXT | NULL, CHECK(length ≤ 20)              | Số liên hệ thay thế                                                         |
+| `residence_status` | TEXT | NULL, CHECK enum                      | `permanent` / `temporary` / `moved_away`                                    |
+| `pastoral_status`  | TEXT | NULL, CHECK enum                      | `ordinary` / `catechism` / `catechist` / `needs_visit`                      |
+| `pastoral_note`    | TEXT | NULL                                  | Ghi chú mục vụ; không đưa vào FTS                                           |
+| `source`           | TEXT | NULL, CHECK enum                      | `manual` / `csv_import` / `transferred` / `restored`                        |
+| `note`             | TEXT | NULL                                  | Ghi chú                                                                     |
 
 **Index**
 
@@ -136,12 +143,31 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 
 1. `full_name_ascii` và `given_name_ascii` **luôn** do Service sinh lại mỗi lần ghi. Renderer không gửi hai cột này.
 2. `death_date` không được **trước** `birth_date`.
-3. Các ngày bí tích không được **sau** `death_date` và không được **trước** `birth_date`.
-4. Thứ tự tự nhiên `baptism_date` ≤ `first_communion_date` ≤ `confirmation_date` — **cảnh báo**,
+3. Các ngày trong `sacraments` không được **sau** `death_date` và không được **trước** `birth_date`.
+4. Thứ tự tự nhiên Rửa tội ≤ Rước lễ lần đầu ≤ Thêm sức — **cảnh báo**,
    không chặn (sổ cũ hay thiếu dữ liệu).
 
-> Bí tích lưu bằng **5 cột ngày phẳng**, không tách bảng riêng. Hệ quả: **không in được chứng thư**.
-> Đã biết trước và chấp nhận — quyết định P01 ở [`decisions.md`](./decisions.md) §3.
+### 2.3a. `sacraments` — Bí tích
+
+| Cột         | Kiểu | Ràng buộc                    | Mô tả                                                                                |
+| ----------- | ---- | ---------------------------- | ------------------------------------------------------------------------------------ |
+| `person_id` | TEXT | NOT NULL, FK → `persons(id)` | Giáo dân nhận bí tích                                                                |
+| `type`      | TEXT | NOT NULL, CHECK enum         | `baptism` / `first_communion` / `confirmation`; `marriage` cũ chỉ còn để tương thích |
+| `date`      | TEXT | NOT NULL                     | Ngày cử hành, `YYYY-MM-DD`                                                           |
+| `minister`  | TEXT | NULL, CHECK(length ≤ 120)    | Linh mục cử hành                                                                     |
+| `place`     | TEXT | NULL, CHECK(length ≤ 255)    | Nơi cử hành                                                                          |
+
+Mỗi giáo dân chỉ có một bản ghi còn hiệu lực cho mỗi loại bí tích. Migration 006 chuyển bốn cột
+ngày cũ sang bảng này; những cột cũ chỉ còn để tương thích DB đã phát hành, không còn được đọc/ghi.
+
+### 2.3b. `marriages` và `marriage_participants` — Hôn phối
+
+`marriages` lưu một lần thông tin cử hành: `date`, `minister`, `place`. `marriage_participants`
+liên kết hai giáo dân với bản ghi này và lưu `full_name` là bản chụp tên lúc cử hành, để chứng thư
+không đổi theo các lần sửa hồ sơ sau này. Một giáo dân chỉ có tối đa một hôn phối còn hiệu lực.
+
+Các dòng `sacraments.type = 'marriage'` có trước migration 008 được giữ nguyên như lịch sử cũ vì
+chúng không có thông tin người phối ngẫu để tự chuyển đổi chính xác.
 
 ### 2.4. `family_members` — Thành viên hộ
 

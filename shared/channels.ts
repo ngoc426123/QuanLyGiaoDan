@@ -48,6 +48,13 @@ export const CHANNELS = Object.freeze({
     BULK_REMOVE: 'person:bulkRemove',
   }),
 
+  MARRIAGE: Object.freeze({
+    LIST: 'marriage:list',
+    CREATE: 'marriage:create',
+    UPDATE: 'marriage:update',
+    REMOVE: 'marriage:remove',
+  }),
+
   /** Thành viên hộ — `move` là nghiệp vụ riêng, không nhồi vào `update` */
   FAMILY_MEMBER: Object.freeze({
     ADD: 'family-member:add',
@@ -119,6 +126,7 @@ export const CHANNELS = Object.freeze({
     ZONE_CHANGED: 'event:zone-changed',
     FAMILY_CHANGED: 'event:family-changed',
     PERSON_CHANGED: 'event:person-changed',
+    MARRIAGE_CHANGED: 'event:marriage-changed',
     APP_ERROR: 'event:app-error',
     IMPORT_PROGRESS: 'event:import-progress',
     UPDATE_STATUS: 'event:update-status',

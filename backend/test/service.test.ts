@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { after, beforeEach, describe, it } from 'node:test'
 import * as familyMemberService from '#/services/family-member.service.ts'
 import * as familyService from '#/services/family.service.ts'
+import * as marriageService from '#/services/marriage.service.ts'
 import * as personService from '#/services/person.service.ts'
 import * as reportService from '#/services/report.service.ts'
 import * as searchService from '#/services/search.service.ts'
@@ -102,12 +103,52 @@ describe('person.service', () => {
   it('ngày bí tích sai thứ tự chỉ cảnh báo, không chặn', () => {
     const result = personService.create({
       fullName: 'Phạm Thị Hoa',
-      baptismDate: '2005-01-01',
-      firstCommunionDate: '2004-01-01',
+      sacraments: [
+        { type: 'baptism', date: '2005-01-01', minister: null },
+        { type: 'first_communion', date: '2004-01-01', minister: null },
+      ],
     })
 
     assert.ok(result.data.id)
     assert.deepEqual(result.meta.warnings, ['Ngày rước lễ lần đầu đang trước ngày rửa tội'])
+  })
+
+  it('lưu thông tin liên hệ, mục vụ và các bí tích khai tâm', () => {
+    const { data: spouse } = personService.create({ fullName: 'Nguyễn Văn Thành' })
+    const { data: person } = personService.create({
+      fullName: 'Trần Thị Hồng',
+      email: 'hong@example.test',
+      secondaryPhone: '0900000000',
+      residenceStatus: 'temporary',
+      pastoralStatus: 'catechism',
+      pastoralNote: 'Cần xếp lớp giáo lý.',
+      source: 'manual',
+      sacraments: [
+        {
+          type: 'baptism',
+          date: '2000-01-01',
+          minister: 'Cha Giuse',
+          place: 'Giáo xứ An Bình',
+        },
+      ],
+    })
+
+    assert.equal(person.email, 'hong@example.test')
+    assert.equal(person.pastoralStatus, 'catechism')
+    assert.deepEqual(
+      person.sacraments.map((row) => [row.type, row.date, row.minister, row.place]),
+      [['baptism', '2000-01-01', 'Cha Giuse', 'Giáo xứ An Bình']],
+    )
+    const marriage = marriageService.create({
+      personId: person.id,
+      spouseId: spouse.id,
+      date: '2022-02-02',
+      minister: 'Cha Phêrô',
+      place: 'Giáo xứ Tân Định',
+    })
+    assert.equal(marriage.place, 'Giáo xứ Tân Định')
+    assert.equal(personService.getById(person.id).marriage.spouseId, spouse.id)
+    assert.equal(personService.getById(spouse.id).marriage.spouseId, person.id)
   })
 
   it('sắp xếp theo tên gọi đúng bảng chữ cái tiếng Việt', () => {

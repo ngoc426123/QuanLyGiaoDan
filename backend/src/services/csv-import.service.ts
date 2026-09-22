@@ -188,11 +188,16 @@ export function importCsv({ filePath, onProgress = () => {} }: any) {
         holyName: row['Tên thánh'],
         gender: row['Giới tính'] === 'Nam' ? 'male' : row['Giới tính'] === 'Nữ' ? 'female' : null,
         birthDate: row['Ngày sinh'],
-        baptismDate: row['Ngày rửa tội'],
-        firstCommunionDate: row['Ngày rước lễ lần đầu'],
-        confirmationDate: row['Ngày thêm sức'],
-        marriageDate: row['Ngày hôn phối'],
+        sacraments: [
+          ['baptism', row['Ngày rửa tội']],
+          ['first_communion', row['Ngày rước lễ lần đầu']],
+          ['confirmation', row['Ngày thêm sức']],
+          ['marriage', row['Ngày hôn phối']],
+        ]
+          .filter(([, date]) => Boolean(date))
+          .map(([type, date]) => ({ type, date, minister: null })),
         phone: row['Số điện thoại'],
+        source: 'csv_import',
         note: row['Ghi chú'],
       }).data
       familyMemberService.add({

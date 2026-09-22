@@ -24,6 +24,24 @@ import styles from './Person.module.css'
 
 const genderLabel = (value: string | null) =>
   value === 'male' ? 'Nam' : value === 'female' ? 'Nữ' : 'Chưa cập nhật'
+const sacramentLabel = Object.freeze({
+  baptism: 'Rửa tội',
+  first_communion: 'Rước lễ lần đầu',
+  confirmation: 'Thêm sức',
+  marriage: 'Hôn phối',
+})
+const initiationSacramentTypes = Object.freeze(['baptism', 'first_communion', 'confirmation'])
+const residenceLabel = Object.freeze({
+  permanent: 'Thường trú',
+  temporary: 'Tạm trú',
+  moved_away: 'Đã chuyển đi',
+})
+const pastoralLabel = Object.freeze({
+  ordinary: 'Bình thường',
+  catechism: 'Đang học giáo lý',
+  catechist: 'Giáo lý viên',
+  needs_visit: 'Cần thăm viếng',
+})
 export function PersonDetail({ id }: { id: string | undefined }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -45,6 +63,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const record = person.data
   if (!record)
     return <EmptyState title="Không tìm thấy giáo dân">Bản ghi này không còn tồn tại.</EmptyState>
+  const sacramentByType = Object.fromEntries(
+    (record.sacraments ?? []).map((sacrament: any) => [sacrament.type, sacrament]),
+  )
+  const marriage = record.marriage
   return (
     <section>
       <Link to="/persons">Về danh sách giáo dân</Link>
@@ -72,20 +94,20 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           <dd>{record.phone || 'Chưa cập nhật'}</dd>
         </div>
         <div>
-          <dt>Ngày rửa tội</dt>
-          <dd>{record.baptismDate || 'Chưa cập nhật'}</dd>
+          <dt>Email</dt>
+          <dd>{record.email || 'Chưa cập nhật'}</dd>
         </div>
         <div>
-          <dt>Ngày rước lễ lần đầu</dt>
-          <dd>{record.firstCommunionDate || 'Chưa cập nhật'}</dd>
+          <dt>Số liên hệ thay thế</dt>
+          <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
         </div>
         <div>
-          <dt>Ngày thêm sức</dt>
-          <dd>{record.confirmationDate || 'Chưa cập nhật'}</dd>
+          <dt>Tình trạng cư trú</dt>
+          <dd>{residenceLabel[record.residenceStatus] || 'Chưa cập nhật'}</dd>
         </div>
         <div>
-          <dt>Ngày hôn phối</dt>
-          <dd>{record.marriageDate || 'Chưa cập nhật'}</dd>
+          <dt>Tình trạng mục vụ</dt>
+          <dd>{pastoralLabel[record.pastoralStatus] || 'Chưa cập nhật'}</dd>
         </div>
         <div>
           <dt>Ngày qua đời</dt>
@@ -95,7 +117,51 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           <dt>Ghi chú</dt>
           <dd>{record.note || 'Không có ghi chú'}</dd>
         </div>
+        <div>
+          <dt>Ghi chú mục vụ</dt>
+          <dd>{record.pastoralNote || 'Không có ghi chú'}</dd>
+        </div>
       </dl>
+      <section className={styles.section} aria-labelledby="sacraments-heading">
+        <h2 id="sacraments-heading">Đời sống Bí tích</h2>
+        <div className={styles.sacramentGrid}>
+          {initiationSacramentTypes.map((type) => {
+            const sacrament = sacramentByType[type]
+            return (
+              <dl key={type} className={styles.sacramentDetail}>
+                <dt>{sacramentLabel[type]}</dt>
+                <dd>{sacrament?.date || 'Chưa cập nhật'}</dd>
+                <dt>Linh mục cử hành</dt>
+                <dd>{sacrament?.minister || 'Chưa cập nhật'}</dd>
+                <dt>Nơi cử hành</dt>
+                <dd>{sacrament?.place || 'Chưa cập nhật'}</dd>
+              </dl>
+            )
+          })}
+        </div>
+      </section>
+      <section className={styles.section} aria-labelledby="marriage-heading">
+        <h2 id="marriage-heading">Tình trạng hôn nhân</h2>
+        <Link to="/marriages">Quản lý hôn phối</Link>
+        <dl className={styles.sacramentDetail}>
+          <dt>Tình trạng hôn phối</dt>
+          <dd>{marriage ? 'Đã kết hôn' : 'Độc thân'}</dd>
+          {marriage && (
+            <>
+              <dt>Người phối ngẫu</dt>
+              <dd>
+                <Link to={`/persons/${marriage.spouseId}`}>{marriage.spouseFullName}</Link>
+              </dd>
+              <dt>Ngày cử hành</dt>
+              <dd>{marriage.date}</dd>
+              <dt>Linh mục cử hành</dt>
+              <dd>{marriage.minister || 'Chưa cập nhật'}</dd>
+              <dt>Nơi cử hành</dt>
+              <dd>{marriage.place || 'Chưa cập nhật'}</dd>
+            </>
+          )}
+        </dl>
+      </section>
       <section className={styles.section} aria-labelledby="membership-heading">
         <h2 id="membership-heading">Hộ hiện hành</h2>
         {record.currentMembership && <Button onClick={() => setMoveOpen(true)}>Chuyển hộ</Button>}

@@ -15,6 +15,14 @@ const person = {
   gender: 'male',
   birthDate: '1990-01-01',
   phone: null,
+  email: null,
+  secondaryPhone: null,
+  residenceStatus: null,
+  pastoralStatus: null,
+  pastoralNote: null,
+  source: null,
+  sacraments: [],
+  marriage: null,
   note: null,
   currentMembership: null,
   membershipHistory: [],
@@ -25,6 +33,7 @@ const person = {
 beforeEach(() => {
   window.api = {
     person: {
+      list: vi.fn(async () => ({ ok: true, data: [], meta: { total: 0 } })),
       getById: vi.fn(async () => ({ ok: true, data: person })),
       update: vi.fn(async () => ({ ok: true, data: person })),
       remove: vi.fn(async () => ({ ok: true, data: { id: person.id } })),
@@ -47,6 +56,10 @@ describe('Giáo dân', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
+    expect(
+      await screen.findByRole('heading', { name: 'Thông tin định danh & Hành chính' }),
+    ).toBeTruthy()
+    expect(screen.queryByLabelText('Tình trạng hôn phối')).toBeNull()
     await user.click(await screen.findByRole('button', { name: 'Lưu thay đổi' }))
     await waitFor(() =>
       expect(window.api.person.update).toHaveBeenCalledWith({
@@ -59,10 +72,13 @@ describe('Giáo dân', () => {
           gender: person.gender,
           birthDate: person.birthDate,
           phone: null,
-          baptismDate: null,
-          firstCommunionDate: null,
-          confirmationDate: null,
-          marriageDate: null,
+          email: null,
+          secondaryPhone: null,
+          residenceStatus: null,
+          pastoralStatus: null,
+          pastoralNote: null,
+          source: null,
+          sacraments: [],
           deathDate: null,
           note: null,
         },

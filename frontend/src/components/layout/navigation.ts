@@ -1,6 +1,7 @@
 export const navigation = [
   { path: '/', label: 'Tổng quan', icon: 'overview' },
   { path: '/persons', label: 'Giáo dân', icon: 'person' },
+  { path: '/marriages', label: 'Hôn phối', icon: 'marriage' },
   { path: '/families', label: 'Gia đình', icon: 'family' },
   { path: '/zones', label: 'Giáo họ', icon: 'zone' },
   { path: '/settings', label: 'Cài đặt', icon: 'settings' },
@@ -12,6 +13,7 @@ export const navigation = [
  */
 export function routeTitle(pathname) {
   if (/^\/persons\/.+/.test(pathname)) return 'Hồ sơ giáo dân'
+  if (pathname === '/marriages') return 'Hôn phối'
   if (/^\/families\/.+/.test(pathname)) return 'Chi tiết hộ'
   if (/^\/zones\/.+/.test(pathname)) return 'Chi tiết giáo họ'
   if (pathname === '/search') return 'Tìm kiếm'

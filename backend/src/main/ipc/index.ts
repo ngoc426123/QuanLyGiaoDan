@@ -7,6 +7,7 @@ import { dashboardHandlers } from './dashboard.ipc.ts'
 import { familyHandlers } from './family.ipc.ts'
 import { familyMemberHandlers } from './family-member.ipc.ts'
 import { personHandlers } from './person.ipc.ts'
+import { marriageHandlers } from './marriage.ipc.ts'
 import { reportHandlers } from './report.ipc.ts'
 import { searchHandlers } from './search.ipc.ts'
 import { trashHandlers } from './trash.ipc.ts'
@@ -75,6 +76,7 @@ export function registerIpcHandlers() {
     zoneHandlers,
     familyHandlers,
     personHandlers,
+    marriageHandlers,
     familyMemberHandlers,
     reportHandlers,
     searchHandlers,

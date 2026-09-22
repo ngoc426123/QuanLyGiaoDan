@@ -74,7 +74,7 @@ Rủi ro cố hữu của stack (native module, đóng gói, migration, rò rỉ
 | Dữ liệu nhạy cảm (tôn giáo, quan hệ gia đình, địa chỉ) trên máy dùng chung                               | Trung bình | Xem lại **Q04 (mã hoá DB)** sớm hơn Phase 7. Đây là **quyết định một chiều**. `docs/01-architecture/security.md` §5 khuyến nghị BitLocker thay vì SQLCipher                                                            |
 | **Đã xác nhận 2026-09-13**: 2–3 người quản lý, **mỗi người một máy** riêng                               | —          | Giả định "một người dùng mỗi máy" của `security.md` §6 **vẫn đúng**, không phải sửa template. Không cần phân quyền                                                                                                     |
 | **Hai bản dữ liệu chạy song song trên hai máy** — nhập là thay trọn, ai nhập sau đè mất công người trước | **Cao**    | Hộp thoại đối chiếu bắt buộc trước khi nhập (P18). Về quy trình: chốt **một người giữ bản gốc**, người còn lại xuất gửi về chứ không nhập ngược. Muốn gộp thật thì phải thiết kế đồng bộ — việc lớn, chưa lên kế hoạch |
-| Không in được chứng thư vì chọn bí tích phẳng                                                            | Trung bình | Đã biết trước và chấp nhận (quyết định P01). Nếu phát sinh yêu cầu → migration rebuild `persons` theo `docs/02-backend-data/storage-strategy.md` §5.6                                                                  |
+| Cần in chứng thư có giá trị sổ bộ                                                                        | Trung bình | Đã có bảng `sacraments` với ngày và linh mục cử hành. Khi cần chứng thư phải bổ sung nơi cử hành, số sổ/trang/số thứ tự và mẫu in; kiểm thử trên bản sao dữ liệu thật                                                  |
 
 ---
 

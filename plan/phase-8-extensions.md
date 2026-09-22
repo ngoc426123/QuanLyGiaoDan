@@ -30,8 +30,9 @@
 
 ## 2. Sổ bộ bí tích — nếu phát sinh yêu cầu
 
-Bước tiền đề đã chọn **bí tích phẳng** (5 cột ngày trên `persons`) và ghi rõ hệ quả:
-**không in được chứng thư**, và hôn phối không lưu đúng bản chất.
+**Đã thực hiện 2026-09-22:** bảng `sacraments` thay thế bốn cột ngày trên `persons` trong đường
+chạy ứng dụng, với loại bí tích, ngày và tên linh mục cử hành. Migration 006 chuyển dữ liệu cũ;
+các cột cũ chỉ còn tương thích với DB đã phát hành.
 
 Nếu giáo xứ phát sinh yêu cầu in chứng thư, đây là việc phải làm:
 

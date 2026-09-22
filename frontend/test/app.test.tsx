@@ -48,6 +48,10 @@ beforeEach(() => {
         void callback
         return vi.fn()
       }),
+      onMarriageChanged: vi.fn((callback) => {
+        void callback
+        return vi.fn()
+      }),
       onAppError: vi.fn((callback) => {
         appErrorListener = callback
         return vi.fn()
@@ -304,13 +308,14 @@ describe('Khung ứng dụng qua API preload', () => {
   })
 
   it('mount và unmount lặp lại luôn huỷ toàn bộ listener sự kiện', async () => {
-    const cleanups = Array.from({ length: 5 }, () => vi.fn())
+    const cleanups = Array.from({ length: 6 }, () => vi.fn())
     const subscribe = (index: number) => vi.fn(() => cleanups[index])
     window.api.events.onSettingChanged = subscribe(0)
     window.api.events.onZoneChanged = subscribe(1)
     window.api.events.onFamilyChanged = subscribe(2)
     window.api.events.onPersonChanged = subscribe(3)
-    window.api.events.onAppError = subscribe(4)
+    window.api.events.onMarriageChanged = subscribe(4)
+    window.api.events.onAppError = subscribe(5)
 
     for (let index = 0; index < 10; index += 1) {
       const view = render(<App />)

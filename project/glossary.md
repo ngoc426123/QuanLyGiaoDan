@@ -29,6 +29,11 @@ Cột **Không dùng** quan trọng ngang cột định danh — nó chặn vi�
 | Ngày rước lễ lần đầu | `firstCommunionDate` | Ngày rước lễ lần đầu   | `dateRL`                              |
 | Ngày thêm sức        | `confirmationDate`   | Ngày thêm sức          | `dateTS`                              |
 | Ngày hôn phối        | `marriageDate`       | Ngày hôn phối          | `dateHP`, `weddingDate`               |
+| Bí tích              | `sacrament`          | Bí tích                | `rite`, `ceremony`                    |
+| Hôn phối             | `marriage`           | Hôn phối               | `wedding`, `marriageSacrament`        |
+| Người phối ngẫu      | `spouse`             | Người phối ngẫu        | `partner`                             |
+| Linh mục cử hành     | `minister`           | Linh mục cử hành       | `priestName`                          |
+| Nơi cử hành          | `place`              | Nơi cử hành            | `venue`, `location`                   |
 | Ngày qua đời         | `deathDate`          | Ngày qua đời           | `dateDead`, `diedAt`                  |
 | Ngày vào hộ          | `fromDate`           | Từ ngày                | `startDate`, `joinedAt`               |
 | Ngày rời hộ          | `toDate`             | Đến ngày               | `endDate`, `leftAt`                   |
@@ -63,6 +68,14 @@ Cột **Không dùng** quan trọng ngang cột định danh — nó chặn vi�
 | `sibling`     | Anh/Chị/Em |
 | `relative`    | Họ hàng    |
 | `other`       | Khác       |
+
+**`sacraments.type`**
+
+| Giá trị           | Hiển thị        |
+| ----------------- | --------------- |
+| `baptism`         | Rửa tội         |
+| `first_communion` | Rước lễ lần đầu |
+| `confirmation`    | Thêm sức        |
 
 > Hai bảng trên là nguồn chân lý cho `CHECK IN (...)` ở
 > [`database-schema.md`](./database-schema.md) §2.3 và §2.5. Thêm giá trị mới → phải có migration.

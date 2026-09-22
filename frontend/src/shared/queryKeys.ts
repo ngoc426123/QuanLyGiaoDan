@@ -7,6 +7,7 @@ const domainKeys = (domain) => ({
 })
 
 export const personKeys = domainKeys('person')
+export const marriageKeys = domainKeys('marriage')
 export const familyKeys = domainKeys('family')
 export const zoneKeys = domainKeys('zone')
 export const settingKeys = domainKeys('setting')
