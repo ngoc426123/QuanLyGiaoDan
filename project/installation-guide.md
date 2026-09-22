@@ -37,4 +37,5 @@ Không gửi file backup hoặc mật khẩu qua cùng một kênh liên lạc.
 ## Cập nhật hoặc gỡ cài đặt
 
 - Ứng dụng không tự cập nhật. Khi người phụ trách giáo xứ gửi bản mới, đóng Quan Ly Giao Dan rồi cài đè file cài đặt mới lên bản cũ. Dữ liệu và mật khẩu dữ liệu vẫn ở lại trong hồ sơ Windows.
+- Dữ liệu nằm trong `%APPDATA%\Quan Ly Giao Dan`. Khi nâng cấp từ bản Elecrusion, ứng dụng tự chuyển dữ liệu cũ sang thư mục này trước khi mở.
 - Gỡ cài đặt không xóa dữ liệu giáo xứ. Chỉ xóa ứng dụng; cần xóa dữ liệu thủ công khi thật sự cần và đã có backup đã kiểm tra.

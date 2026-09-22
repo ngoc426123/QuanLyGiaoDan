@@ -8,26 +8,38 @@
         box-sizing: border-box;
         height: 100vh;
         margin: 0;
-        padding: 20px 32px;
+        padding: 32px;
         overflow: hidden;
-        color: #1a2730;
-        background: #f7fafb;
-        font: 16px system-ui;
+        color: #1f2d2b;
+        background: #f3f5f5;
+        font:
+          16px/1.5 'Segoe UI Variable',
+          'Segoe UI',
+          system-ui,
+          sans-serif;
       }
       main {
-        max-width: 420px;
-        margin: auto;
+        box-sizing: border-box;
+        width: min(100%, 560px);
+        margin: 0 auto;
+        padding: 24px;
+        border: 1px solid #d7dfdd;
+        border-radius: 4px;
+        background: #ffffff;
+        box-shadow: 0 12px 32px #1727243d;
       }
       h1 {
-        margin: 0 0 12px;
-        font-size: 24px;
+        margin: 0 0 8px;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.5;
       }
       p {
         margin: 0;
       }
       label {
         display: block;
-        margin: 18px 0 0;
+        margin-top: 16px;
         font-weight: 600;
       }
       [hidden] {
@@ -36,26 +48,40 @@
       input {
         box-sizing: border-box;
         width: 100%;
-        margin-top: 6px;
-        padding: 10px;
-        border: 1px solid #72808a;
+        height: 34px;
+        margin-top: 4px;
+        padding: 0 8px;
+        border: 1px solid #a8b4b2;
         border-radius: 4px;
         font: inherit;
       }
+      input:focus {
+        border-color: #236b5a;
+        outline: 0;
+        box-shadow: 0 0 0 2px #236b5a42;
+      }
       button {
+        min-height: 34px;
         margin-top: 24px;
-        padding: 10px 16px;
+        padding: 6px 16px;
         border: 0;
         border-radius: 4px;
-        background: #0c6b5e;
+        background: #236b5a;
         color: white;
         font: inherit;
         font-weight: 600;
       }
+      button:hover {
+        background: #1c584a;
+      }
+      button:focus-visible {
+        outline: 0;
+        box-shadow: 0 0 0 2px #236b5a42;
+      }
       .error {
-        margin-top: 12px;
+        margin-top: 16px;
         min-height: 1.5em;
-        color: #a31919;
+        color: #ae3039;
       }
     </style>
   </head>
@@ -63,7 +89,7 @@
     <main>
       <h1 id="title"></h1>
       <p id="description"></p>
-      <p class="error" id="error"></p>
+      <p class="error" id="error" role="alert"></p>
       <form>
         <label
           >Mật khẩu dữ liệu<input id="password" type="password" minlength="12" required autofocus

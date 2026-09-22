@@ -3,7 +3,7 @@
 Ứng dụng desktop Electron. Dữ liệu cục bộ, offline hoàn toàn.
 **Domain: Quản lý giáo dân giáo xứ** — đã chốt 2026-09-12, đặc tả ở `project/`.
 **Ngôn ngữ: chỉ tiếng Việt**, không triển khai i18n — người dùng chốt 2026-09-13 (Q03).
-**Trạng thái: Phase 6 đã hoàn tất** (2026-09-21, người dùng xác nhận).
+**Trạng thái: Phase 7 đã hoàn tất** (2026-09-22, người dùng xác nhận).
 Đường chạy đã chuyển sang TypeScript; CRUD Giáo họ → Gia đình → Giáo dân → Thành viên hộ,
 phân trang SQL, đồng bộ broadcast, kiểm tra xung đột và thông báo lỗi nghiệp vụ đã được hoàn tất.
 Phase 5 đã hoàn thiện trải nghiệm: thùng rác, tìm kiếm FTS tiếng Việt, thao tác hàng loạt,
@@ -12,27 +12,25 @@ worker đã được kiểm chứng đóng gói và tìm đúng đường dẫn 
 sau cùng theo yêu cầu người dùng.
 Tiến độ đầy đủ: `project/roadmap.md`.
 
-## Ghi chú tiếp tục phiên sau — 2026-09-21
+## Ghi chú tiếp tục phiên sau — 2026-09-22
 
-Phase 3, 4 và 5 đã được người dùng xác nhận hoàn tất. Q02 đã được chốt ngày 2026-09-14:
-dùng TypeScript thay cho JavaScript + JSDoc; mọi mã nguồn đang chạy đã chuyển đổi trước CRUD.
-Phase 4 dùng phân trang SQL 50 dòng/trang cho danh sách lớn, không dùng virtual scroll.
-Tiếp tục từ **Phase 7 — Đóng gói & Phát hành** (`plan/phase-7-packaging.md`), không tự đổi cấu trúc build.
-Phần tiếp theo của Phase 7, theo yêu cầu người dùng ngày 2026-09-22:
+Phase 3 đến 7 đã hoàn tất. Q02 đã chốt TypeScript ESM; danh sách lớn vẫn phân trang SQL 50
+dòng/trang. Phase 7 hoàn tất với bộ cài NSIS x64 và shortcut Desktop mang tên **Quan Ly Giao Dan**.
 
-1. Đổi tên ứng dụng thành **Quan Ly Giao Dan**, gồm bộ cài, shortcut Desktop và tên hiển thị.
-2. Giữ SQLCipher. Lần đầu đặt mật khẩu; Windows DPAPI lưu khóa theo tài khoản để những lần mở sau tự mở dữ liệu.
-3. Xuất, nhập hoặc xóa dữ liệu phải xác thực lại mật khẩu hai lần kèm mã xác nhận ngẫu nhiên 6 số.
-   Phase 6 đã có log an toàn, lưới bắt lỗi toàn cục, backup định kỳ/dọn backup, dọn thùng rác,
-   E2E Electron và kiểm tra query plan. Giáo xứ cần lịch sử chỉnh sửa nên `activity_logs` đã được
-   triển khai. Quyết định mã hóa DB (SQLCipher) đã chốt tại `project/decisions.md` Q04.
-   Kiểm chứng cuối Phase 6: `npm run format:check`, `npm run lint`, `npm run typecheck`,
-   `npm run build` đạt; backend 84/84, frontend 31/31 và 3/3 E2E Electron test đạt. Soak test
-   30 phút được miễn theo xác nhận của người dùng; ứng dụng chỉ cần ổn định trong các phiên ngắn.
-   Regression CSV trước đó xác nhận luồng nhập 1.200 dòng → chặn trùng → xóa dữ liệu → nhập lại;
-   lỗi preview phải hiện toast.
-   Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp trên `develop`, không tạo worktree.
-   Đã được phép thêm package và bộ test; **không tự ý commit hoặc push**.
+Mã hoá SQLCipher được giữ lại: lần đầu tạo mật khẩu dữ liệu, sau đó Windows DPAPI lưu khóa theo
+tài khoản để ứng dụng tự mở dữ liệu. Xuất, nhập hoặc xóa toàn bộ dữ liệu yêu cầu nhập lại mật khẩu
+hai lần kèm mã xác nhận ngẫu nhiên 6 số. Backup mới dùng mật khẩu dữ liệu; backup cũ dùng mật khẩu
+riêng vẫn nhập được. Dữ liệu phát hành nằm tại `%APPDATA%\Quan Ly Giao Dan`; bản cập nhật tự đổi
+tên nguyên thư mục `elecrusion` cũ một lần để giữ database, backup, log và khóa DPAPI.
+
+Kiểm chứng cuối: `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm run build` và
+đóng gói NSIS đạt; backend 89/89 test đạt; E2E Electron production đạt 4/4 (1 kịch bản cài đè để
+kiểm tra riêng). Soak test 30 phút được miễn theo xác nhận người dùng; ứng dụng chỉ cần ổn định trong
+các phiên ngắn. In giấy vẫn để sau cùng theo yêu cầu người dùng.
+
+Tiếp theo là **Phase 8 — Mở rộng** khi có yêu cầu mới. Tiếp tục chỉ dùng tiếng Việt, làm trực tiếp
+trên `develop`, không tạo worktree. Đã được phép thêm package và bộ test; **không tự ý commit hoặc
+push**.
 
 File này chứa ràng buộc **bắt buộc**. Chi tiết tra ở `docs/` (template) và `project/` (nghiệp vụ)
 — bảng điều hướng ở cuối.
@@ -260,11 +258,3 @@ Chi tiết: `docs/00-meta/agent-rules.md`. Rút gọn:
 | **Nhật ký quyết định** — vì sao chọn A không chọn B              | `project/decisions.md`                         |
 
 ---
-
-## Quyết định còn bỏ ngỏ — hỏi trước khi tự chọn
-
-> Bản đầy đủ kèm mức ảnh hưởng: `project/decisions.md` §2.
-
-| Vấn đề                                           | Hạn chót      |
-| ------------------------------------------------ | ------------- |
-| Mã hoá DB (SQLCipher) — **quyết định một chiều** | Trước Phase 7 |

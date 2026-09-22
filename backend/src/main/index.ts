@@ -14,6 +14,7 @@ import { applySessionSecurity, devServerUrl, hardenWebContents } from './securit
 import { readWindowState, restoreWindowState, saveWindowState } from './window-manager.ts'
 import { CHANNELS } from '@shared/channels.ts'
 import { createLogger } from './logger.ts'
+import { migrateLegacyUserDataDirectory, USER_DATA_DIRECTORY_NAME } from './user-data-directory.ts'
 
 /**
  * Điểm vào của Main Process. Thứ tự khởi động là bắt buộc — `overview.md` §6.1:
@@ -72,8 +73,8 @@ async function requestDatabasePassword({
   message?: string
 }) {
   const window = new BrowserWindow({
-    width: 520,
-    height: isSetup ? 430 : 350,
+    width: 640,
+    height: isSetup ? 480 : 380,
     resizable: false,
     maximizable: false,
     minimizable: false,
@@ -301,7 +302,7 @@ function failFast(err) {
  * triển đều đổ thẳng vào **dữ liệu thật của người dùng**. Phải gọi trước `whenReady`, vì
  * chỉ cần một lời gọi `app.getPath('userData')` chạy trước là đường dẫn đã bị chốt.
  */
-function useSeparateDataDirectoryInDev() {
+function configureUserDataDirectory() {
   // Hook cô lập dữ liệu chỉ dành cho E2E bản đóng gói; luồng khởi động thông thường không đặt biến này.
   const e2eUserData = process.env.ELECRUSION_E2E_USER_DATA
   if (e2eUserData) {
@@ -309,7 +310,13 @@ function useSeparateDataDirectoryInDev() {
     return
   }
 
-  if (app.isPackaged) return
+  if (app.isPackaged) {
+    const appDataDirectory = app.getPath('appData')
+    const userDataDirectory = join(appDataDirectory, USER_DATA_DIRECTORY_NAME)
+    migrateLegacyUserDataDirectory(appDataDirectory, userDataDirectory)
+    app.setPath('userData', userDataDirectory)
+    return
+  }
 
   const configuredUserData = process.env.ELECRUSION_USER_DATA
   if (configuredUserData) {
@@ -346,7 +353,7 @@ async function startup() {
 
 // Phải tách `userData` trước khi lấy single-instance lock để bản dev/E2E không khoá nhầm
 // phiên ứng dụng đã cài của người dùng.
-useSeparateDataDirectoryInDev()
+configureUserDataDirectory()
 
 // Việc đầu tiên còn lại của vòng đời, trước cả `whenReady` — `overview.md` §6.1.
 if (!app.requestSingleInstanceLock()) {
