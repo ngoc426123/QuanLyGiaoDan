@@ -384,6 +384,28 @@ describe('Khung ứng dụng qua API preload', () => {
     expect(localStorage.getItem('elecrusion.theme')).toBe('system')
   })
 
+  it('lưu thông tin giáo xứ dùng cho chứng thư', async () => {
+    const user = userEvent.setup()
+    window.location.hash = '/settings'
+    render(<App />)
+
+    await user.type(await screen.findByLabelText('Tên giáo xứ'), 'Giáo xứ Thánh Tâm')
+    await user.type(screen.getByLabelText('Giáo phận'), 'Giáo phận Hà Nội')
+    await user.type(screen.getByLabelText('Linh mục chánh xứ'), 'Linh mục Giuse Nguyễn Văn A')
+    await user.click(screen.getByRole('button', { name: 'Lưu cài đặt dữ liệu' }))
+
+    await waitFor(() =>
+      expect(window.api.setting.set).toHaveBeenCalledWith({
+        key: 'general.parishPriestName',
+        value: 'Linh mục Giuse Nguyễn Văn A',
+      }),
+    )
+    expect(window.api.setting.set).toHaveBeenCalledWith({
+      key: 'general.dioceseName',
+      value: 'Giáo phận Hà Nội',
+    })
+  })
+
   it('hiển thị toast khi Main báo lỗi nền', async () => {
     render(<App />)
     await screen.findByRole('main')

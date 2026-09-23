@@ -138,6 +138,10 @@ const reportApi = Object.freeze({
   exportPersonProfilePdf: (input) =>
     ipcRenderer.invoke(CHANNELS.REPORT.EXPORT_PERSON_PROFILE_PDF, input),
 })
+const certificateApi = Object.freeze({
+  issue: (input) => ipcRenderer.invoke(CHANNELS.CERTIFICATE.ISSUE, input),
+  list: (query) => ipcRenderer.invoke(CHANNELS.CERTIFICATE.LIST, query),
+})
 const importApi = Object.freeze({
   chooseCsv: () => ipcRenderer.invoke(CHANNELS.IMPORT.CHOOSE_CSV),
   commitCsv: (token) => ipcRenderer.invoke(CHANNELS.IMPORT.COMMIT_CSV, { token }),
@@ -169,6 +173,7 @@ const api = Object.freeze({
   familyMember: familyMemberApi,
   dashboard: dashboardApi,
   report: reportApi,
+  certificate: certificateApi,
   import: importApi,
   search: searchApi,
   trash: trashApi,

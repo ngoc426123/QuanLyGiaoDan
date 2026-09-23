@@ -84,6 +84,7 @@ describe('migrate', () => {
 
     assert.deepEqual(tables, [
       'activity_logs',
+      'certificate_issuances',
       'families',
       'families_fts',
       'families_fts_config',

@@ -8,6 +8,7 @@ import sacramentPlaceSql from './007_add_sacrament_place.sql?raw'
 import marriagesSql from './008_add_marriages.sql?raw'
 import personOccupationSql from './009_add_person_occupation.sql?raw'
 import dashboardIndexesSql from './010_add_dashboard_indexes.sql?raw'
+import certificateIssuancesSql from './011_add_certificate_issuances.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -43,6 +44,11 @@ export const MIGRATIONS = Object.freeze([
   Object.freeze({ version: 8, name: '008_add_marriages.sql', sql: marriagesSql }),
   Object.freeze({ version: 9, name: '009_add_person_occupation.sql', sql: personOccupationSql }),
   Object.freeze({ version: 10, name: '010_add_dashboard_indexes.sql', sql: dashboardIndexesSql }),
+  Object.freeze({
+    version: 11,
+    name: '011_add_certificate_issuances.sql',
+    sql: certificateIssuancesSql,
+  }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

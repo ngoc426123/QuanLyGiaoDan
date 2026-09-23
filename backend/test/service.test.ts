@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { after, beforeEach, describe, it } from 'node:test'
+import ExcelJS from 'exceljs'
 import * as familyMemberService from '#/services/family-member.service.ts'
 import * as familyService from '#/services/family.service.ts'
 import * as marriageService from '#/services/marriage.service.ts'
@@ -596,6 +597,16 @@ describe('report.service', () => {
       assert.equal(readFileSync(xlsxPath).subarray(0, 2).toString(), 'PK')
       assert.equal(readFileSync(pdfPath).subarray(0, 4).toString(), '%PDF')
       assert.equal(readFileSync(profilePath).subarray(0, 4).toString(), '%PDF')
+
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.readFile(xlsxPath)
+      const sheet = workbook.getWorksheet('Báo cáo')!
+      assert.match(String(sheet.getCell('A1').value), /Danh sách giáo dân/)
+      assert.equal(sheet.getCell('A2').value, 'Tên thánh')
+      assert.equal(sheet.getCell('B2').value, 'Họ tên')
+      assert.equal(sheet.getCell('D3').value, '02/01/1990')
+      assert.equal(sheet.autoFilter, 'A2:L2')
+      assert.equal(sheet.pageSetup.printTitlesRow, '1:2')
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }

@@ -39,9 +39,8 @@
 }
 
 .nativePicker {
-  position: fixed;
-  width: 1px;
-  height: 1px;
+  position: absolute;
+  inset: 0;
   opacity: 0;
   pointer-events: none;
 }

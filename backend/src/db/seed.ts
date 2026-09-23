@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   'ui.sidebarWidth': 260,
   'general.language': 'vi',
   'general.parishName': '',
+  'general.dioceseName': '',
+  'general.parishPriestName': '',
   'general.startOfWeek': 1,
   'data.autoBackup': true,
   'data.backupIntervalDays': 7,

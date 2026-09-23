@@ -262,18 +262,20 @@ Seed phải **idempotent** (`INSERT OR IGNORE`) — chạy lại nhiều lần k
 Cấu trúc bảng `settings` là chuẩn template (`database-conventions.md` §2).
 Bảng dưới chỉ liệt kê **các khoá riêng** của dự án.
 
-| Key                       | Giá trị mặc định | Mô tả                                                      |
-| ------------------------- | ---------------- | ---------------------------------------------------------- |
-| `ui.theme`                | `"system"`       | Giao diện sáng / tối / theo hệ thống                       |
-| `ui.density`              | `"comfortable"`  | Mật độ hiển thị danh sách                                  |
-| `ui.sidebarWidth`         | `260`            | Độ rộng sidebar (px)                                       |
-| `general.language`        | `"vi"`           | Ngôn ngữ hiển thị                                          |
-| `general.parishName`      | `""`             | **Riêng dự án** — tên giáo xứ, hiện trên tiêu đề và bản in |
-| `general.startOfWeek`     | `1`              | Ngày đầu tuần (1 = Thứ Hai)                                |
-| `data.autoBackup`         | `true`           | Tự động sao lưu                                            |
-| `data.backupIntervalDays` | `7`              | Chu kỳ sao lưu (ngày)                                      |
-| `data.trashRetentionDays` | `30`             | Số ngày giữ bản ghi trong thùng rác                        |
-| `data.lastVacuumAt`       | `null`           | Mốc chạy `VACUUM` gần nhất, nội bộ để dọn DB mỗi 30 ngày   |
+| Key                        | Giá trị mặc định | Mô tả                                                      |
+| -------------------------- | ---------------- | ---------------------------------------------------------- |
+| `ui.theme`                 | `"system"`       | Giao diện sáng / tối / theo hệ thống                       |
+| `ui.density`               | `"comfortable"`  | Mật độ hiển thị danh sách                                  |
+| `ui.sidebarWidth`          | `260`            | Độ rộng sidebar (px)                                       |
+| `general.language`         | `"vi"`           | Ngôn ngữ hiển thị                                          |
+| `general.parishName`       | `""`             | **Riêng dự án** — tên giáo xứ, hiện trên tiêu đề và bản in |
+| `general.dioceseName`      | `""`             | Giáo phận quản lý giáo xứ, dùng trên chứng thư             |
+| `general.parishPriestName` | `""`             | Linh mục chánh xứ, dùng trên chứng thư                     |
+| `general.startOfWeek`      | `1`              | Ngày đầu tuần (1 = Thứ Hai)                                |
+| `data.autoBackup`          | `true`           | Tự động sao lưu                                            |
+| `data.backupIntervalDays`  | `7`              | Chu kỳ sao lưu (ngày)                                      |
+| `data.trashRetentionDays`  | `30`             | Số ngày giữ bản ghi trong thùng rác                        |
+| `data.lastVacuumAt`        | `null`           | Mốc chạy `VACUUM` gần nhất, nội bộ để dọn DB mỗi 30 ngày   |
 
 ---
 

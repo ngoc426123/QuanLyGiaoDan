@@ -93,6 +93,11 @@ export const CHANNELS = Object.freeze({
     EXPORT_PERSON_PROFILE_PDF: 'report:exportPersonProfilePdf',
   }),
 
+  CERTIFICATE: Object.freeze({
+    ISSUE: 'certificate:issue',
+    LIST: 'certificate:list',
+  }),
+
   IMPORT: Object.freeze({
     CHOOSE_CSV: 'import:chooseCsv',
     COMMIT_CSV: 'import:commitCsv',

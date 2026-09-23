@@ -130,7 +130,7 @@ Không chép lại ở đây.
 | ------------------- | -------------------------- | -------------- | ------------------------------------------------- |
 | `activity-log:list` | `{ entityType, entityId }` | Mảng nhật ký   | Đọc lịch sử chỉnh sửa append-only của một bản ghi |
 
-Khoá `settings` riêng của dự án (gồm `general.parishName`) liệt kê ở
+Khoá `settings` riêng của dự án (gồm thông tin giáo xứ và chứng thư) liệt kê ở
 [`database-schema.md`](./database-schema.md) §5.
 
 ---
