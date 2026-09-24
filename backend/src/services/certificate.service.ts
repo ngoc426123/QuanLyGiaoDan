@@ -57,6 +57,12 @@ function requireCertificateData(input: any) {
               birthDate: source.spouseBirthDate,
               parishName: source.spouseParishName,
               dioceseName: source.spouseDioceseName,
+              baptismDate: source.spouseBaptismDate,
+              baptismPlace: source.spouseBaptismPlace,
+              confirmationDate: source.spouseConfirmationDate,
+              confirmationPlace: source.spouseConfirmationPlace,
+              fatherName: source.spouseFatherName,
+              motherName: source.spouseMotherName,
             }
           : null,
     spouseSacraments:

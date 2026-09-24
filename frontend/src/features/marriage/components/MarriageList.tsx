@@ -43,6 +43,12 @@ function toFormValue(initialValue: any) {
     spouseBirthDate: initialValue?.spouseBirthDate ?? '',
     spouseParishName: initialValue?.spouseParishName ?? '',
     spouseDioceseName: initialValue?.spouseDioceseName ?? '',
+    spouseBaptismDate: initialValue?.spouseBaptismDate ?? '',
+    spouseBaptismPlace: initialValue?.spouseBaptismPlace ?? '',
+    spouseConfirmationDate: initialValue?.spouseConfirmationDate ?? '',
+    spouseConfirmationPlace: initialValue?.spouseConfirmationPlace ?? '',
+    spouseFatherName: initialValue?.spouseFatherName ?? '',
+    spouseMotherName: initialValue?.spouseMotherName ?? '',
     date: initialValue?.date ?? '',
     minister: initialValue?.minister ?? '',
     place: initialValue?.place ?? '',
@@ -208,44 +214,99 @@ function MarriageForm({
               <strong>Thông tin người ngoài giáo xứ</strong>
               <span>Không tạo hồ sơ giáo dân mới</span>
             </div>
-            <div className={styles.fieldGrid}>
-              <Input
-                label="Họ tên"
-                value={value.spouseName}
-                error={fieldErrors.spouseName}
-                onChange={(event: any) => setValue({ ...value, spouseName: event.target.value })}
-                maxLength={120}
-                required
-              />
-              <Input
-                label="Tên thánh"
-                value={value.spouseHolyName}
-                onChange={(event: any) =>
-                  setValue({ ...value, spouseHolyName: event.target.value })
-                }
-                maxLength={75}
-              />
-              <DateInput
-                label="Ngày sinh"
-                value={value.spouseBirthDate}
-                onChange={(date: string) => setValue({ ...value, spouseBirthDate: date })}
-              />
-              <Input
-                label="Giáo xứ"
-                value={value.spouseParishName}
-                onChange={(event: any) =>
-                  setValue({ ...value, spouseParishName: event.target.value })
-                }
-                maxLength={120}
-              />
-              <Input
-                label="Giáo phận"
-                value={value.spouseDioceseName}
-                onChange={(event: any) =>
-                  setValue({ ...value, spouseDioceseName: event.target.value })
-                }
-                maxLength={120}
-              />
+            <div className={styles.externalGroup}>
+              <h4>Thông tin cá nhân</h4>
+              <div className={styles.externalGroupGrid}>
+                <Input
+                  label="Họ tên"
+                  value={value.spouseName}
+                  error={fieldErrors.spouseName}
+                  onChange={(event: any) => setValue({ ...value, spouseName: event.target.value })}
+                  maxLength={120}
+                  required
+                />
+                <Input
+                  label="Tên thánh"
+                  value={value.spouseHolyName}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseHolyName: event.target.value })
+                  }
+                  maxLength={75}
+                />
+                <DateInput
+                  label="Ngày sinh"
+                  value={value.spouseBirthDate}
+                  onChange={(date: string) => setValue({ ...value, spouseBirthDate: date })}
+                />
+                <Input
+                  label="Giáo xứ"
+                  value={value.spouseParishName}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseParishName: event.target.value })
+                  }
+                  maxLength={120}
+                />
+                <Input
+                  label="Giáo phận"
+                  value={value.spouseDioceseName}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseDioceseName: event.target.value })
+                  }
+                  maxLength={120}
+                />
+              </div>
+            </div>
+            <div className={styles.externalGroup}>
+              <h4>Các bí tích</h4>
+              <div className={styles.sacramentGrid}>
+                <DateInput
+                  label="Ngày Rửa tội"
+                  value={value.spouseBaptismDate}
+                  onChange={(date: string) => setValue({ ...value, spouseBaptismDate: date })}
+                />
+                <Input
+                  label="Nơi cử hành Rửa tội"
+                  value={value.spouseBaptismPlace}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseBaptismPlace: event.target.value })
+                  }
+                  maxLength={255}
+                />
+                <DateInput
+                  label="Ngày Thêm sức"
+                  value={value.spouseConfirmationDate}
+                  onChange={(date: string) => setValue({ ...value, spouseConfirmationDate: date })}
+                />
+                <Input
+                  label="Nơi cử hành Thêm sức"
+                  value={value.spouseConfirmationPlace}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseConfirmationPlace: event.target.value })
+                  }
+                  maxLength={255}
+                />
+              </div>
+            </div>
+            <div className={styles.externalGroup}>
+              <h4>Thông tin gia đình</h4>
+              <div className={styles.externalGroupGrid}>
+                <Input
+                  label="Tên cha"
+                  value={value.spouseFatherName}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseFatherName: event.target.value })
+                  }
+                  maxLength={120}
+                />
+                <Input
+                  label="Tên mẹ"
+                  value={value.spouseMotherName}
+                  onChange={(event: any) =>
+                    setValue({ ...value, spouseMotherName: event.target.value })
+                  }
+                  maxLength={120}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -437,7 +498,24 @@ export function MarriageList() {
           onRowActivate={(row: any) => setEditing(row)}
           onRowDelete={(row: any) => setRemoving(row)}
           columns={[
-            { key: 'participants', label: 'Hai đương sự' },
+            {
+              key: 'participants',
+              label: 'Hai đương sự',
+              render: (row: any) => {
+                const names = String(row.participantNames || row.participants || '').split('|')
+                const holyNames = row.participantHolyNames ?? []
+                return (
+                  <div className={styles.participantList}>
+                    {names.map((name: string, index: number) => (
+                      <span key={`${name}-${index}`}>
+                        {holyNames[index] ? `${holyNames[index]} ` : ''}
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                )
+              },
+            },
             { key: 'date', label: 'Ngày hôn phối' },
             {
               key: 'status',

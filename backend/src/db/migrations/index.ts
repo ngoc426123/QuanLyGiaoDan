@@ -13,6 +13,7 @@ import optionalCertificateRegisterFieldsSql from './012_make_certificate_registe
 import externalMarriageParticipantSql from './013_support_external_marriage_participant.sql?raw'
 import marriageHistorySql from './014_allow_marriage_history.sql?raw'
 import marriageWitnessesSql from './015_add_marriage_witnesses.sql?raw'
+import externalParticipantSacramentDetailsSql from './016_add_external_participant_sacrament_details.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -72,6 +73,11 @@ export const MIGRATIONS = Object.freeze([
     version: 15,
     name: '015_add_marriage_witnesses.sql',
     sql: marriageWitnessesSql,
+  }),
+  Object.freeze({
+    version: 16,
+    name: '016_add_external_participant_sacrament_details.sql',
+    sql: externalParticipantSacramentDetailsSql,
   }),
 ])
 
