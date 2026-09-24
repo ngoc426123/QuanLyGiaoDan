@@ -73,6 +73,11 @@ describe('migrate', () => {
       '008_add_marriages.sql',
       '009_add_person_occupation.sql',
       '010_add_dashboard_indexes.sql',
+      '011_add_certificate_issuances.sql',
+      '012_make_certificate_register_fields_optional.sql',
+      '013_support_external_marriage_participant.sql',
+      '014_allow_marriage_history.sql',
+      '015_add_marriage_witnesses.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 

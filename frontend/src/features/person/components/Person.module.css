@@ -187,6 +187,57 @@
 }
 .marriageDetail {
   max-width: 720px;
+  grid-template-columns: minmax(140px, 0.42fr) minmax(0, 1fr);
+  column-gap: var(--space-5);
+  align-items: start;
+}
+
+.marriageDetail .marriageTabs {
+  grid-column: 1 / -1;
+}
+
+.marriageDetail dt {
+  padding-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.marriageDetail dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.marriageTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-border-default);
+}
+
+.marriageTab {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border-default);
+  border-radius: 50%;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.marriageTab[data-selected='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-bg-selected);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
 }
 
 @media (max-width: 1079px) {
@@ -211,6 +262,13 @@
   }
   .sacramentGrid {
     grid-template-columns: 1fr;
+  }
+  .marriageDetail {
+    grid-template-columns: 1fr;
+    row-gap: var(--space-1);
+  }
+  .marriageDetail dd {
+    margin-bottom: var(--space-2);
   }
   .details div {
     grid-template-columns: 1fr;

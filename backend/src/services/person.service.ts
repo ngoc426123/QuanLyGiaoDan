@@ -148,11 +148,13 @@ export function list(filter: any = {}) {
 /** Kèm hộ hiện hành và lịch sử hộ — `project/ipc-channels.md` §1.3. */
 export function getById(id) {
   const person = assertFound(personRepository.findById(id), NOT_FOUND_MESSAGE)
+  const marriages = marriageRepository.findManyByPersonId(id)
 
   return {
     ...person,
     sacraments: sacramentRepository.findByPersonId(id),
-    marriage: marriageRepository.findByPersonId(id),
+    marriages,
+    marriage: marriages[0] ?? null,
     currentMembership: familyMemberRepository.findCurrentByPersonId(id),
     membershipHistory: familyMemberRepository.findHistoryByPersonId(id),
   }

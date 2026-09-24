@@ -213,6 +213,29 @@ describe('person.service', () => {
     assert.equal(personService.getById(spouse.id).marriage.spouseId, person.id)
   })
 
+  it('ghi nhận người phối ngẫu ngoài giáo xứ và tìm được theo tên', () => {
+    const { data: person } = personService.create({
+      fullName: 'Nguyễn Văn An',
+      birthDate: '1980-01-01',
+    })
+
+    marriageService.create({
+      personId: person.id,
+      spouseId: null,
+      spouseName: 'Trần Thị Bình',
+      spouseHolyName: 'Maria',
+      spouseParishName: 'Giáo xứ Bình An',
+      date: '2020-05-05',
+      minister: 'Cha Phêrô',
+      place: 'Giáo xứ Tân Định',
+    })
+
+    const record = personService.getById(person.id)
+    assert.equal(record.marriage.spouseId, null)
+    assert.equal(record.marriage.spouseFullName, 'Trần Thị Bình')
+    assert.equal(marriageService.list({ search: 'tran thi binh' }).data.length, 1)
+  })
+
   it('sắp xếp theo tên gọi đúng bảng chữ cái tiếng Việt', () => {
     for (const givenName of ['Bé', 'Ánh', 'Cường', 'Đức']) {
       personService.create({ fullName: 'Nguyễn Văn ' + givenName, givenName })

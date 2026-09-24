@@ -10,6 +10,7 @@ import {
   newId,
   normalizeText,
   pageMeta,
+  toAscii,
 } from './service-helpers.ts'
 
 const NOT_FOUND_MESSAGE = 'Không tìm thấy hôn phối'
@@ -17,45 +18,93 @@ const NOT_FOUND_MESSAGE = 'Không tìm thấy hôn phối'
 function normalize(input) {
   return {
     personId: input.personId,
-    spouseId: input.spouseId,
+    spouseId: input.spouseId || null,
+    spouseName: normalizeText(input.spouseName, 120),
+    spouseHolyName: normalizeText(input.spouseHolyName, 75),
+    spouseBirthDate: input.spouseBirthDate || null,
+    spouseParishName: normalizeText(input.spouseParishName, 120),
+    spouseDioceseName: normalizeText(input.spouseDioceseName, 120),
     date: input.date,
     minister: normalizeText(input.minister, 120),
     place: normalizeText(input.place, 255),
+    status: input.status ?? 'married',
+    note: normalizeText(input.note, 1000),
+    witnessOne: normalizeText(input.witnessOne, 120),
+    witnessTwo: normalizeText(input.witnessTwo, 120),
   }
 }
 
 function participants(input, timestamp) {
+  if (!input.spouseId && !input.spouseName) {
+    throw fieldError('spouseName', 'Hãy chọn giáo dân hoặc nhập người phối ngẫu ngoài giáo xứ')
+  }
   if (input.personId === input.spouseId) throw fieldError('spouseId', 'Hai đương sự phải khác nhau')
-  const records = [input.personId, input.spouseId].map((id) =>
-    assertFound(personRepository.findRawById(id), 'Giáo dân được chọn không còn tồn tại'),
+  const person = assertFound(
+    personRepository.findRawById(input.personId),
+    'Giáo dân được chọn không còn tồn tại',
   )
-  for (const person of records) {
-    if (isBefore(input.date, person.birthDate) || isBefore(person.deathDate, input.date)) {
+  const records = [person]
+  if (input.spouseId) {
+    records.push(
+      assertFound(
+        personRepository.findRawById(input.spouseId),
+        'Người phối ngẫu không còn tồn tại',
+      ),
+    )
+  }
+  for (const current of records) {
+    if (isBefore(input.date, current.birthDate) || isBefore(current.deathDate, input.date)) {
       throw fieldError('date', 'Ngày hôn phối không phù hợp với hồ sơ đương sự')
     }
   }
-  return records.map((person) => ({
+  const internal = {
     id: newId(),
     personId: person.id,
     fullName: person.fullName,
+    fullNameAscii: person.fullNameAscii,
+    isExternal: false,
     createdAt: timestamp,
     updatedAt: timestamp,
-  }))
-}
-
-function assertAvailable(input, currentId?: string) {
-  for (const personId of [input.personId, input.spouseId]) {
-    const existing = marriageRepository.findByPersonId(personId)
-    if (existing && existing.id !== currentId) {
-      throw fieldError('personId', 'Một trong hai đương sự đã có thông tin hôn phối')
-    }
   }
+  if (input.spouseId) {
+    const spouse = records[1]
+    return [
+      internal,
+      {
+        id: newId(),
+        personId: spouse.id,
+        fullName: spouse.fullName,
+        fullNameAscii: spouse.fullNameAscii,
+        isExternal: false,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      },
+    ]
+  }
+  return [
+    internal,
+    {
+      id: newId(),
+      personId: null,
+      fullName: input.spouseName,
+      fullNameAscii: toAscii(input.spouseName),
+      isExternal: true,
+      holyName: input.spouseHolyName,
+      birthDate: input.spouseBirthDate,
+      parishName: input.spouseParishName,
+      dioceseName: input.spouseDioceseName,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  ]
 }
 
-export function list(filter = {}) {
+export function list(filter: any = {}) {
+  const search = normalizeText(filter.search)
+  const criteria = { ...filter, search: search ? toAscii(search) : undefined }
   return {
-    data: marriageRepository.findMany(filter),
-    meta: pageMeta(marriageRepository.count(), filter),
+    data: marriageRepository.findMany(criteria),
+    meta: pageMeta(marriageRepository.count(criteria), criteria),
   }
 }
 
@@ -63,7 +112,6 @@ export function create(input) {
   const value = normalize(input)
   const timestamp = now()
   return runInTransaction(() => {
-    assertAvailable(value)
     const rows = participants(value, timestamp)
     const id = newId()
     marriageRepository.insert({ id, ...value, createdAt: timestamp, updatedAt: timestamp })
@@ -78,7 +126,6 @@ export function update({ id, expectedUpdatedAt, patch }) {
   return runInTransaction(() => {
     const current = assertFound(marriageRepository.findById(id), NOT_FOUND_MESSAGE)
     assertVersion({ updatedAt: current.updated_at }, expectedUpdatedAt)
-    assertAvailable(value, id)
     const rows = participants(value, timestamp)
     marriageRepository.update(id, value, timestamp)
     marriageRepository.replaceParticipants(

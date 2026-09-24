@@ -1,7 +1,7 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
-import { Input } from '@/components/ui/Input.tsx'
+import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { AppClientError } from '@/shared/invoke.ts'
 import { calendarToday } from '@/shared/calendar.ts'
@@ -29,14 +29,6 @@ type Props = {
   mode?: 'add' | 'move'
   showHeadWarning?: boolean
 }
-
-const normalize = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase()
 
 const messageFor = (error: AppClientError) => {
   if (error.code !== 'CONFLICT') return error.message
@@ -67,12 +59,7 @@ export function FamilyMemberForm({
     moveDate: mode === 'move' ? calendarToday() : '',
     ...initialValue,
   })
-  const [search, setSearch] = useState('')
   const [error, setError] = useState<AppClientError | null>(null)
-  const visibleFamilies = useMemo(
-    () => families.filter((family) => normalize(family.name).includes(normalize(search))),
-    [families, search],
-  )
   const fieldErrors = (error?.details as { fieldErrors?: Record<string, string> } | undefined)
     ?.fieldErrors
 
@@ -102,38 +89,27 @@ export function FamilyMemberForm({
     <form className={styles.form} onSubmit={submit}>
       {mode === 'add' && (
         <>
-          <Input
-            label="Tìm giáo dân theo tên"
-            value={personSearch}
-            onChange={(event) => {
+          <SearchableSelect
+            label="Giáo dân cần thêm vào hộ"
+            value={value.personId}
+            options={people}
+            error={fieldErrors?.personId}
+            placeholder="Tìm giáo dân theo tên..."
+            emptyLabel={
+              personSearch.trim() ? 'Không tìm thấy giáo dân phù hợp' : 'Nhập tên để tìm giáo dân'
+            }
+            loading={peopleLoading}
+            getOptionLabel={(person: PersonChoice) =>
+              `${person.fullName}${person.familyName ? ` (${person.familyName})` : ''}`
+            }
+            getOptionValue={(person: PersonChoice) => person.id}
+            onSearchChange={(nextSearch: string) => {
               setValue({ ...value, personId: '' })
-              onPersonSearchChange?.(event.target.value)
+              onPersonSearchChange?.(nextSearch)
             }}
-            placeholder="Nhập ít nhất một phần họ tên"
+            onChange={(nextId: string) => setValue({ ...value, personId: nextId })}
+            required
           />
-          {personSearch.trim() ? (
-            <Select
-              label="Kết quả tìm kiếm"
-              value={value.personId}
-              error={fieldErrors?.personId}
-              onChange={(event) => setValue({ ...value, personId: event.target.value })}
-              required
-              disabled={peopleLoading}
-            >
-              <option value="">{peopleLoading ? 'Đang tìm giáo dân…' : 'Chọn giáo dân'}</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.fullName}
-                  {person.familyName ? ` (${person.familyName})` : ''}
-                </option>
-              ))}
-            </Select>
-          ) : (
-            <p className={styles.hint}>Nhập tên để tìm trong các giáo dân chưa thuộc hộ.</p>
-          )}
-          {personSearch.trim() && !peopleLoading && people.length === 0 && (
-            <p className={styles.hint}>Không tìm thấy giáo dân phù hợp.</p>
-          )}
         </>
       )}
       {mode === 'move' && (
@@ -143,28 +119,17 @@ export function FamilyMemberForm({
               Người này đang là chủ hộ. Sau khi chuyển, hộ cũ sẽ không còn chủ hộ.
             </p>
           )}
-          <Input
-            label="Tìm hộ đích"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Select
+          <SearchableSelect
             label="Hộ đích"
             value={value.toFamilyId ?? ''}
+            options={families}
             error={fieldErrors?.toFamilyId}
-            onChange={(event) => setValue({ ...value, toFamilyId: event.target.value })}
+            placeholder="Tìm hộ đích..."
+            getOptionLabel={(family: FamilyChoice) => family.name}
+            getOptionValue={(family: FamilyChoice) => family.id}
+            onChange={(nextId: string) => setValue({ ...value, toFamilyId: nextId })}
             required
-          >
-            <option value="">Chọn hộ đích</option>
-            {visibleFamilies.map((family) => (
-              <option key={family.id} value={family.id}>
-                {family.name}
-              </option>
-            ))}
-          </Select>
-          {search && visibleFamilies.length === 0 && (
-            <p className={styles.hint}>Không tìm thấy hộ đích phù hợp.</p>
-          )}
+          />
         </>
       )}
       <Select

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
+import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { relationshipOptions } from '@/features/family-member/familyMember.types.ts'
 import { calendarToday } from '@/shared/calendar.ts'
@@ -37,18 +38,15 @@ export function PersonBulkActions({ ids, families, onDone }: any) {
       </Button>
       {isMoveOpen && (
         <Modal title="Chuyển nhiều giáo dân sang hộ" onClose={() => setMoveOpen(false)}>
-          <Select
+          <SearchableSelect
             label="Hộ đích"
             value={familyId}
-            onChange={(event: any) => setFamilyId(event.target.value)}
-          >
-            <option value="">Chọn hộ</option>
-            {families.map((family: any) => (
-              <option key={family.id} value={family.id}>
-                {family.name}
-              </option>
-            ))}
-          </Select>
+            options={families}
+            placeholder="Tìm hộ theo tên..."
+            getOptionLabel={(family: any) => family.name}
+            getOptionValue={(family: any) => family.id}
+            onChange={(nextId: string) => setFamilyId(nextId)}
+          />
           <Select
             label="Quan hệ"
             value={relationship}

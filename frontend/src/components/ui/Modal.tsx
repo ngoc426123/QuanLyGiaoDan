@@ -4,7 +4,7 @@ import { Icon } from './Icon.tsx'
 import styles from './Modal.module.css'
 
 export const Modal = forwardRef<any, any>(function Modal(
-  { title, children, onClose, isOpen = true, variant = 'modal', ...rest },
+  { title, children, onClose, isOpen = true, variant = 'modal', size = 'default', ...rest },
   ref,
 ) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -29,6 +29,7 @@ export const Modal = forwardRef<any, any>(function Modal(
       aria-labelledby={titleId}
       className={styles.dialog}
       data-variant={variant}
+      data-size={size}
       onCancel={(event) => {
         event.preventDefault()
         onClose?.()

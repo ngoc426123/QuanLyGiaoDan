@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import styles from './Person.module.css'
 
@@ -305,19 +306,17 @@ export function PersonForm({
           <option value="restored">Khôi phục dữ liệu</option>
         </Select>
         {allowFamilyAssignment && (
-          <Select
+          <SearchableSelect
             label="Gán vào hộ"
             value={value.familyId}
+            options={families}
             error={fieldErrors.familyId}
-            onChange={(event: any) => set('familyId', event.target.value)}
-          >
-            <option value="">Chưa gán hộ</option>
-            {families.map((family: any) => (
-              <option key={family.id} value={family.id}>
-                {family.name}
-              </option>
-            ))}
-          </Select>
+            emptyOptionLabel="Chưa gán hộ"
+            placeholder="Tìm hộ theo tên..."
+            getOptionLabel={(family: any) => family.name}
+            getOptionValue={(family: any) => family.id}
+            onChange={(nextId: string) => set('familyId', nextId)}
+          />
         )}
         {allowFamilyAssignment && value.familyId && (
           <>

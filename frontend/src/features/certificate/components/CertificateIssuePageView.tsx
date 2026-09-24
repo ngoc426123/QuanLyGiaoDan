@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { Select } from '@/components/ui/Select.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { invoke } from '@/shared/invoke.ts'
@@ -28,6 +29,7 @@ export function CertificateIssuePageView() {
   const [registerBook, setRegisterBook] = useState('')
   const [registerPage, setRegisterPage] = useState('')
   const [registerEntry, setRegisterEntry] = useState('')
+  const [selectedMarriageId, setSelectedMarriageId] = useState('')
   const [draft, setDraft] = useState<any>(null)
   const [isPending, setPending] = useState(false)
   const record = person.data
@@ -37,14 +39,29 @@ export function CertificateIssuePageView() {
   )
   const available = options.filter((option) =>
     option.type === 'marriage'
-      ? Boolean(record?.marriage)
+      ? Boolean(record?.marriages?.length ?? record?.marriage)
       : Boolean(sacramentByType[option.source]),
   )
 
+  const marriages = record?.marriages ?? (record?.marriage ? [record.marriage] : [])
+  const selectedMarriage =
+    marriages.find((item: any) => item.id === selectedMarriageId) ?? marriages[0]
+
   useEffect(() => {
     if (!record || !settings.data || draft) return
-    const source = sacramentByType.baptism ?? sacramentByType.confirmation ?? record.marriage ?? {}
-    setType(available[0]?.type ?? 'baptism')
+    if (
+      !selectedMarriageId ||
+      !marriages.some((marriage: any) => marriage.id === selectedMarriageId)
+    ) {
+      setSelectedMarriageId(marriages[0]?.id ?? '')
+    }
+    const source =
+      type === 'marriage'
+        ? (selectedMarriage ?? {})
+        : (sacramentByType.baptism ?? sacramentByType.confirmation ?? {})
+    if (!available.some((option) => option.type === type)) {
+      setType(available[0]?.type ?? 'baptism')
+    }
     setDraft({
       dioceseName: text(settings.data['general.dioceseName']),
       deaneryName: text(settings.data['general.deaneryName']),
@@ -61,11 +78,22 @@ export function CertificateIssuePageView() {
       ceremonyDate: text(source.date),
       ceremonyPlace: text(source.place),
       minister: text(source.minister),
+      witnessOne: text(source.witnessOne),
+      witnessTwo: text(source.witnessTwo),
       sponsor: '',
-      spouseName: text(record.marriage?.spouseFullName),
+      spouseName: text(selectedMarriage?.spouseFullName),
       note: '',
     })
-  }, [available, draft, record, sacramentByType, settings.data])
+  }, [
+    available,
+    draft,
+    record,
+    sacramentByType,
+    settings.data,
+    selectedMarriage,
+    selectedMarriageId,
+    type,
+  ])
 
   // The selected type intentionally refreshes only the source fields in the draft.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,17 +101,19 @@ export function CertificateIssuePageView() {
     if (!draft) return
     const option = options.find((item) => item.type === type)
     const source =
-      option?.type === 'marriage' ? record?.marriage : sacramentByType[option?.source ?? '']
+      option?.type === 'marriage' ? selectedMarriage : sacramentByType[option?.source ?? '']
     setDraft((current: any) => ({
       ...current,
       ceremonyDate: text(source?.date),
       ceremonyPlace: text(source?.place),
       minister: text(source?.minister),
-      spouseName: text(record?.marriage?.spouseFullName),
+      witnessOne: text(source?.witnessOne),
+      witnessTwo: text(source?.witnessTwo),
+      spouseName: text(selectedMarriage?.spouseFullName),
     }))
     // Source fields are refreshed only when the selected type changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type])
+  }, [type, selectedMarriage])
 
   if (person.isPending || settings.isPending || !draft) return <Skeleton />
   if (person.isError || !record) return null
@@ -99,6 +129,7 @@ export function CertificateIssuePageView() {
         window.api.certificate.issue({
           personId: record.id,
           type,
+          marriageId: type === 'marriage' ? selectedMarriage?.id : undefined,
           registerBook,
           registerPage,
           registerEntry,
@@ -169,6 +200,24 @@ export function CertificateIssuePageView() {
             <span className={styles.editHint}>Có thể chỉnh sửa trực tiếp</span>
           </div>
           <div className={styles.preview}>
+            <section className={styles.previewSection}>
+              {type === 'marriage' && marriages.length > 1 && (
+                <Select
+                  label="Hồ sơ hôn phối"
+                  value={selectedMarriage?.id ?? ''}
+                  onChange={(event: any) => {
+                    setSelectedMarriageId(event.target.value)
+                    setDraft(null)
+                  }}
+                >
+                  {marriages.map((marriage: any, index: number) => (
+                    <option key={marriage.id} value={marriage.id}>
+                      {marriages.length - index} - {marriage.date} - {marriage.spouseFullName}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </section>
             <section className={styles.previewSection}>
               <h3>Thông tin giáo xứ</h3>
               <div className={styles.previewFields}>
@@ -267,6 +316,20 @@ export function CertificateIssuePageView() {
                   value={draft.minister}
                   onChange={(event: any) => set('minister', event.target.value)}
                 />
+                {type === 'marriage' && (
+                  <>
+                    <Input
+                      label="Người chứng hôn thứ nhất"
+                      value={draft.witnessOne}
+                      onChange={(event: any) => set('witnessOne', event.target.value)}
+                    />
+                    <Input
+                      label="Người chứng hôn thứ hai"
+                      value={draft.witnessTwo}
+                      onChange={(event: any) => set('witnessTwo', event.target.value)}
+                    />
+                  </>
+                )}
               </div>
             </section>
             <section className={styles.previewSection}>

@@ -25,9 +25,14 @@ function requireCertificateData(input: any) {
   const person = personRepository.findById(input.personId)
   if (!person) throw new AppError(ERROR_CODES.NOT_FOUND, 'Không tìm thấy giáo dân')
   const sacramentRecords = sacramentRepository.findByPersonId(person.id)
+  const marriageHistory = input.type === 'marriage'
+    ? marriageRepository.findManyByPersonId(person.id)
+    : []
   const source =
     input.type === 'marriage'
-      ? marriageRepository.findByPersonId(person.id)
+      ? (input.marriageId
+          ? marriageHistory.find((record: any) => record.id === input.marriageId)
+          : marriageHistory[0])
       : sacramentRecords.find((record: any) => record.type === input.type)
   if (!source)
     throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Giáo dân chưa có thông tin bí tích này')
@@ -41,6 +46,23 @@ function requireCertificateData(input: any) {
   const data = {
     person,
     source,
+    sacramentRecords,
+    spouse:
+      input.type === 'marriage' && source?.spouseId
+        ? personRepository.findById(source.spouseId)
+        : input.type === 'marriage' && source?.spouseFullName
+          ? {
+              fullName: source.spouseFullName,
+              holyName: source.spouseHolyName,
+              birthDate: source.spouseBirthDate,
+              parishName: source.spouseParishName,
+              dioceseName: source.spouseDioceseName,
+            }
+          : null,
+    spouseSacraments:
+      input.type === 'marriage' && source?.spouseId
+        ? sacramentRepository.findByPersonId(source.spouseId)
+        : [],
     parishName,
     deaneryName,
     dioceseName,
@@ -73,10 +95,20 @@ function requireCertificateData(input: any) {
           date: input.draft.ceremonyDate || null,
           place: input.draft.ceremonyPlace,
           minister: input.draft.minister,
+          witnessOne: input.draft.witnessOne,
+          witnessTwo: input.draft.witnessTwo,
           spouseFullName: input.draft.spouseName,
           sponsor: input.draft.sponsor,
           note: input.draft.note,
         },
+        spouse: data.spouse
+          ? {
+              ...data.spouse,
+              fullName: input.draft.spouseName || data.spouse.fullName,
+            }
+          : input.draft.spouseName
+            ? { fullName: input.draft.spouseName }
+            : null,
       }
   if (!result.parishName || !result.dioceseName || !result.parishPriestName)
     throw new AppError(
@@ -142,7 +174,7 @@ function sampleTitle(document: any, title: string) {
 }
 
 function personName(data: any) {
-  return `${data.person.holyName || ''} ${String(data.person.fullName || '').toUpperCase()}`.trim()
+  return `${data.person?.holyName || ''} ${String(data.person?.fullName || '').toUpperCase()}`.trim()
 }
 
 function parishLabel(value: string) {
@@ -262,11 +294,160 @@ function drawConfirmationTemplate(document: any, input: any, data: any) {
   textAt(document, data.parishPriestName || '', 330, 625, 229, 12, 'center')
 }
 
+function marriagePersonByGender(data: any, gender: string, fallback: any) {
+  const people = [data.person, data.spouse].filter(Boolean)
+  return (
+    people.find((person: any) => String(person.gender || '').toLowerCase() === gender) ?? fallback
+  )
+}
+
+function sacramentFor(person: any, records: any[], type: string) {
+  if (!person) return null
+  return records.find((record: any) => record.type === type) ?? null
+}
+
+function dottedRule(document: any, x1: number, y: number, x2: number) {
+  document
+    .save()
+    .strokeColor('#444')
+    .lineWidth(0.55)
+    .dash(1.2, { space: 1.8 })
+    .moveTo(x1, y)
+    .lineTo(x2, y)
+    .stroke()
+    .undash()
+    .restore()
+}
+
+function marriageField(document: any, label: string, value: string, y: number, options: any = {}) {
+  const labelWidth = options.labelWidth ?? 112
+  const valueX = options.valueX ?? 150
+  const valueWidth = options.valueWidth ?? 370
+  font(document, 'timesbd.ttf')
+  textAt(document, label, 54, y, labelWidth, options.labelSize ?? 11)
+  font(document, 'times.ttf')
+  textAt(document, value || '', valueX, y, valueWidth, options.valueSize ?? 11)
+  dottedRule(document, valueX, y + 16, options.ruleX2 ?? 520)
+}
+
+function drawMarriageTemplate(document: any, input: any, data: any) {
+  const selectedIsFemale = String(data.person.gender || '').toLowerCase() === 'nữ'
+  const male = marriagePersonByGender(data, 'nam', selectedIsFemale ? data.spouse : data.person)
+  const female = marriagePersonByGender(data, 'nữ', selectedIsFemale ? data.person : data.spouse)
+  const maleSacraments = male === data.person ? data.sacramentRecords : data.spouseSacraments
+  const femaleSacraments = female === data.person ? data.sacramentRecords : data.spouseSacraments
+  const maleBaptism = sacramentFor(male, maleSacraments, 'baptism')
+  const maleConfirmation = sacramentFor(male, maleSacraments, 'confirmation')
+  const femaleBaptism = sacramentFor(female, femaleSacraments, 'baptism')
+  const femaleConfirmation = sacramentFor(female, femaleSacraments, 'confirmation')
+
+  // The reference certificate places the parish block at left and the title at right.
+  font(document, 'timesbd.ttf')
+  textAt(document, data.dioceseName || '', 54, 50, 155, 12)
+  font(document, 'times.ttf')
+  textAt(document, `Giáo hạt: ${data.deaneryName || ''}`, 54, 68, 155, 12)
+  textAt(document, `Giáo xứ: ${data.parishName || ''}`, 54, 87, 155, 12)
+  textAt(document, `Địa chỉ: ${data.parishAddress || ''}`, 54, 106, 190, 11)
+  dottedRule(document, 54, 128, 225)
+  font(document, 'timesbd.ttf')
+  textAt(document, 'CHỨNG THƯ HÔN PHỐI', 245, 62, 305, 20, 'center')
+  font(document, 'times.ttf')
+  textAt(document, 'Tôi, Linh mục:', 54, 182, 90, 13)
+  textAt(document, data.parishPriestName || '', 150, 182, 370, 13)
+  dottedRule(document, 150, 199, 520)
+
+  font(document, 'timesbd.ttf')
+  textAt(document, 'CHỨNG NHẬN', 36, 214, 484, 19, 'center')
+  font(document, 'times.ttf')
+  marriageField(document, 'Bên Nam', personName({ person: male }), 251, {
+    valueX: 150,
+    valueWidth: 370,
+  })
+  marriageField(document, 'Sinh ngày', formatDate(male?.birthDate), 272)
+  textAt(document, `tại ${male?.birthPlace || ''}`, 315, 272, 205, 12)
+  marriageField(document, 'Rửa tội ngày', formatDate(maleBaptism?.date), 293)
+  textAt(document, `tại ${maleBaptism?.place || ''}`, 315, 293, 205, 12)
+  marriageField(document, 'Thêm sức ngày', formatDate(maleConfirmation?.date), 314)
+  textAt(document, `tại ${maleConfirmation?.place || ''}`, 315, 314, 205, 12)
+  marriageField(document, 'Cha', male?.fatherName || '', 335)
+  marriageField(document, 'Mẹ', male?.motherName || '', 356)
+  marriageField(document, 'Thuộc Giáo họ', male?.zoneName || '', 377, {
+    valueX: 160,
+    valueWidth: 155,
+  })
+  textAt(document, 'Giáo xứ', 320, 377, 65, 12)
+  textAt(document, data.parishName || '', 386, 377, 134, 12)
+  dottedRule(document, 386, 394, 520)
+
+  marriageField(document, 'Bên Nữ', personName({ person: female }), 405, {
+    valueX: 150,
+    valueWidth: 370,
+  })
+  marriageField(document, 'Sinh ngày', formatDate(female?.birthDate), 426)
+  textAt(document, `tại ${female?.birthPlace || ''}`, 315, 426, 205, 12)
+  marriageField(document, 'Rửa tội ngày', formatDate(femaleBaptism?.date), 447)
+  textAt(document, `tại ${femaleBaptism?.place || ''}`, 315, 447, 205, 12)
+  marriageField(document, 'Thêm sức ngày', formatDate(femaleConfirmation?.date), 468)
+  textAt(document, `tại ${femaleConfirmation?.place || ''}`, 315, 468, 205, 12)
+  marriageField(document, 'Cha', female?.fatherName || '', 489)
+  marriageField(document, 'Mẹ', female?.motherName || '', 510)
+  marriageField(document, 'Thuộc Giáo họ', female?.zoneName || '', 531, {
+    valueX: 160,
+    valueWidth: 155,
+  })
+  textAt(document, 'Giáo xứ', 320, 531, 65, 12)
+  textAt(document, data.parishName || '', 386, 531, 134, 12)
+  dottedRule(document, 386, 548, 520)
+
+  font(document, 'timesbd.ttf')
+  textAt(document, 'ĐÃ CỬ HÀNH BÍ TÍCH HÔN PHỐI', 36, 561, 484, 15, 'center')
+  font(document, 'times.ttf')
+  marriageField(document, 'Vào ngày', formatDate(data.source.date), 586)
+  marriageField(document, 'Tại', data.source.place || '', 607)
+  marriageField(document, 'Trước mặt người chứng hôn', data.source.minister || '', 628, {
+    labelWidth: 220,
+    valueX: 275,
+    valueWidth: 245,
+  })
+  marriageField(document, 'Và hai người chứng 1', data.source.witnessOne || '', 649, {
+    labelWidth: 220,
+    valueX: 275,
+    valueWidth: 245,
+  })
+  marriageField(document, '2', data.source.witnessTwo || '', 670, {
+    labelWidth: 220,
+    valueX: 275,
+    valueWidth: 245,
+  })
+  const registry = registryLine(input)
+  marriageField(document, 'Trích sổ Hôn phối Giáo xứ', registry, 691, {
+    labelWidth: 220,
+    valueX: 275,
+    valueWidth: 245,
+    valueSize: 10,
+  })
+  textAt(
+    document,
+    `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
+    304,
+    718,
+    216,
+    11,
+    'center',
+  )
+  font(document, 'timesbd.ttf')
+  textAt(document, 'Linh mục quản xứ', 304, 742, 216, 11, 'center')
+  font(document, 'timesi.ttf')
+  textAt(document, '(ký tên, đóng dấu)', 304, 758, 216, 11, 'center')
+  font(document, 'times.ttf')
+  textAt(document, data.parishPriestName || '', 304, 792, 216, 11, 'center')
+}
+
 async function writePdf(filePath: string, input: any, data: any) {
   await new Promise<void>((resolve, reject) => {
     const document = new PDFDocument({
       size: 'A4',
-      margin: 36,
+      margin: 24,
       info: { Title: titles[input.type] },
     })
     const stream = createWriteStream(filePath)
@@ -281,6 +462,11 @@ async function writePdf(filePath: string, input: any, data: any) {
     }
     if (input.type === 'confirmation') {
       drawConfirmationTemplate(document, input, data)
+      document.end()
+      return
+    }
+    if (input.type === 'marriage') {
+      drawMarriageTemplate(document, input, data)
       document.end()
       return
     }

@@ -22,6 +22,8 @@ const certificateDraftSchema = z
     ceremonyDate: draftField,
     ceremonyPlace: draftField,
     minister: draftField,
+    witnessOne: draftField.default(''),
+    witnessTwo: draftField.default(''),
     sponsor: draftField,
     spouseName: draftField,
     note: draftField,
@@ -32,6 +34,7 @@ export const certificateIssueSchema = z
   .object({
     personId: idSchema,
     type: certificateTypeSchema,
+    marriageId: idSchema.nullish(),
     registerBook: registerField(),
     registerPage: registerField(),
     registerEntry: registerField(),

@@ -52,7 +52,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const people = usePersons(
     {
       page: 1,
-      pageSize: 50,
+      pageSize: 200,
       search: personSearch.trim() || undefined,
       withoutFamily: true,
       sortBy: 'givenName',

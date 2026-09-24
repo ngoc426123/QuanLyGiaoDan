@@ -49,11 +49,15 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const addToast = useToastStore((state) => state.add)
   const [isRemoveOpen, setRemoveOpen] = useState(location.state?.action === 'remove')
   const [isMoveOpen, setMoveOpen] = useState(location.state?.action === 'move')
+  const [selectedMarriageId, setSelectedMarriageId] = useState<string | null>(null)
   const person = usePerson(id)
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const remove = useRemovePerson()
   const moveMember = useMoveFamilyMember()
   const exportProfile = useReportExport('pdf')
+  useEffect(() => {
+    setSelectedMarriageId(person.data?.marriages?.[0]?.id ?? person.data?.marriage?.id ?? null)
+  }, [person.data?.id, person.data?.marriages, person.data?.marriage?.id])
   useEffect(() => {
     if (person.error instanceof AppClientError && person.error.code === 'NOT_FOUND') {
       addToast('Giáo dân này không còn tồn tại.', true)
@@ -68,7 +72,9 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const sacramentByType = Object.fromEntries(
     (record.sacraments ?? []).map((sacrament: any) => [sacrament.type, sacrament]),
   )
-  const marriage = record.marriage
+  const marriages = record.marriages ?? (record.marriage ? [record.marriage] : [])
+  const marriage =
+    marriages.find((item: any) => item.id === selectedMarriageId) ?? marriages[0] ?? null
   return (
     <section>
       <Link to="/persons">Về danh sách giáo dân</Link>
@@ -176,9 +182,28 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         <div className={styles.sectionActions}>
           <Link to="/marriages">Quản lý hôn phối</Link>
         </div>
-        <dl className={`${styles.sacramentDetail} ${styles.marriageDetail}`}>
+        <div className={`${styles.sacramentDetail} ${styles.marriageDetail}`}>
+          {marriages.length > 1 && (
+            <div className={styles.marriageTabs} role="tablist" aria-label="Hồ sơ hôn phối">
+              {marriages.map((item: any, index: number) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={item.id === marriage?.id}
+                  className={styles.marriageTab}
+                  data-selected={item.id === marriage?.id}
+                  onClick={() => setSelectedMarriageId(item.id)}
+                >
+                  {marriages.length - index}
+                </button>
+              ))}
+            </div>
+          )}
           <dt>Tình trạng hôn phối</dt>
-          <dd>{marriage ? 'Đã kết hôn' : 'Độc thân'}</dd>
+          <dd>
+            {marriage ? (marriage.status === 'annulled' ? 'Tiêu hôn' : 'Kết hôn') : 'Độc thân'}
+          </dd>
           {marriage && (
             <>
               <dt>Người phối ngẫu</dt>
@@ -191,9 +216,11 @@ export function PersonDetail({ id }: { id: string | undefined }) {
               <dd>{marriage.minister || 'Chưa cập nhật'}</dd>
               <dt>Nơi cử hành</dt>
               <dd>{marriage.place || 'Chưa cập nhật'}</dd>
+              <dt>Ghi chú</dt>
+              <dd>{marriage.note || 'Chưa cập nhật'}</dd>
             </>
           )}
-        </dl>
+        </div>
       </section>
       <section className={styles.section} aria-labelledby="membership-heading">
         <div className={styles.sectionHeading}>

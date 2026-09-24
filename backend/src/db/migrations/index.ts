@@ -10,6 +10,9 @@ import personOccupationSql from './009_add_person_occupation.sql?raw'
 import dashboardIndexesSql from './010_add_dashboard_indexes.sql?raw'
 import certificateIssuancesSql from './011_add_certificate_issuances.sql?raw'
 import optionalCertificateRegisterFieldsSql from './012_make_certificate_register_fields_optional.sql?raw'
+import externalMarriageParticipantSql from './013_support_external_marriage_participant.sql?raw'
+import marriageHistorySql from './014_allow_marriage_history.sql?raw'
+import marriageWitnessesSql from './015_add_marriage_witnesses.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -54,6 +57,21 @@ export const MIGRATIONS = Object.freeze([
     version: 12,
     name: '012_make_certificate_register_fields_optional.sql',
     sql: optionalCertificateRegisterFieldsSql,
+  }),
+  Object.freeze({
+    version: 13,
+    name: '013_support_external_marriage_participant.sql',
+    sql: externalMarriageParticipantSql,
+  }),
+  Object.freeze({
+    version: 14,
+    name: '014_allow_marriage_history.sql',
+    sql: marriageHistorySql,
+  }),
+  Object.freeze({
+    version: 15,
+    name: '015_add_marriage_witnesses.sql',
+    sql: marriageWitnessesSql,
   }),
 ])
 
