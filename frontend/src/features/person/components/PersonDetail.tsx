@@ -19,7 +19,6 @@ import { AppClientError } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
 import { useReportExport } from '@/features/report/hooks/useCsvExport.ts'
-import { CertificateIssueDialog } from '@/features/certificate/components/CertificateIssueDialog.tsx'
 import { useRemovePerson } from '../hooks/usePersonMutations.ts'
 import { usePerson } from '../hooks/usePersons.ts'
 import styles from './Person.module.css'
@@ -50,7 +49,6 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const addToast = useToastStore((state) => state.add)
   const [isRemoveOpen, setRemoveOpen] = useState(location.state?.action === 'remove')
   const [isMoveOpen, setMoveOpen] = useState(location.state?.action === 'move')
-  const [certificateType, setCertificateType] = useState<string | null>(null)
   const person = usePerson(id)
   const families = useFamilies({ page: 1, pageSize: 50, sortBy: 'name', sortDir: 'asc' })
   const remove = useRemovePerson()
@@ -84,6 +82,9 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           }
         >
           Xuất PDF
+        </Button>
+        <Button onClick={() => navigate(`/persons/${record.id}/certificates/new`)}>
+          Cấp chứng thư
         </Button>
         <Button onClick={() => navigate(`/persons/${record.id}/edit`)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>
@@ -162,9 +163,6 @@ export function PersonDetail({ id }: { id: string | undefined }) {
                 <dd>{sacrament?.minister || 'Chưa cập nhật'}</dd>
                 <dt>Nơi cử hành</dt>
                 <dd>{sacrament?.place || 'Chưa cập nhật'}</dd>
-                {sacrament && (
-                  <Button onClick={() => setCertificateType(type)}>Cấp chứng thư</Button>
-                )}
               </dl>
             )
           })}
@@ -193,7 +191,6 @@ export function PersonDetail({ id }: { id: string | undefined }) {
               <dd>{marriage.minister || 'Chưa cập nhật'}</dd>
               <dt>Nơi cử hành</dt>
               <dd>{marriage.place || 'Chưa cập nhật'}</dd>
-              <Button onClick={() => setCertificateType('marriage')}>Cấp chứng thư</Button>
             </>
           )}
         </dl>
@@ -294,13 +291,6 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             }}
           />
         </Modal>
-      )}
-      {certificateType && (
-        <CertificateIssueDialog
-          personId={record.id}
-          type={certificateType}
-          onClose={() => setCertificateType(null)}
-        />
       )}
     </section>
   )

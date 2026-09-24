@@ -9,6 +9,7 @@ import marriagesSql from './008_add_marriages.sql?raw'
 import personOccupationSql from './009_add_person_occupation.sql?raw'
 import dashboardIndexesSql from './010_add_dashboard_indexes.sql?raw'
 import certificateIssuancesSql from './011_add_certificate_issuances.sql?raw'
+import optionalCertificateRegisterFieldsSql from './012_make_certificate_register_fields_optional.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -48,6 +49,11 @@ export const MIGRATIONS = Object.freeze([
     version: 11,
     name: '011_add_certificate_issuances.sql',
     sql: certificateIssuancesSql,
+  }),
+  Object.freeze({
+    version: 12,
+    name: '012_make_certificate_register_fields_optional.sql',
+    sql: optionalCertificateRegisterFieldsSql,
   }),
 ])
 

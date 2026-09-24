@@ -6,23 +6,25 @@
   border-radius: var(--radius-lg);
   background: var(--color-bg-base);
 }
-
-.section {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.section h3 {
+.panel h2 {
   margin: 0;
-  font-size: var(--font-size-sm);
 }
-
-.maintenanceFields {
-  width: min(100%, 20rem);
+.description {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
 }
-
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+@media (max-width: 720px) {
+  .fields {
+    grid-template-columns: 1fr;
+  }
 }

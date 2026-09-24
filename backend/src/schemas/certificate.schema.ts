@@ -1,21 +1,41 @@
 import { z } from 'zod'
 import { idSchema, listQueryShape } from './common.schema.ts'
 
-const certificateTypeSchema = z.enum(['baptism', 'first_communion', 'confirmation', 'marriage'])
-const registerField = (label: string) =>
-  z
-    .string()
-    .trim()
-    .min(1, { error: `${label} không được để trống` })
-    .max(80)
+const certificateTypeSchema = z.enum(['baptism', 'confirmation', 'marriage'])
+const registerField = () => z.string().trim().max(80)
+
+const draftField = z.string().max(500)
+const certificateDraftSchema = z
+  .object({
+    dioceseName: draftField,
+    deaneryName: draftField,
+    parishName: draftField,
+    parishAddress: draftField,
+    parishPhone: draftField,
+    parishPriestName: draftField,
+    personName: draftField,
+    holyName: draftField,
+    birthDate: draftField,
+    birthPlace: draftField,
+    fatherName: draftField,
+    motherName: draftField,
+    ceremonyDate: draftField,
+    ceremonyPlace: draftField,
+    minister: draftField,
+    sponsor: draftField,
+    spouseName: draftField,
+    note: draftField,
+  })
+  .strict()
 
 export const certificateIssueSchema = z
   .object({
     personId: idSchema,
     type: certificateTypeSchema,
-    registerBook: registerField('Số quyển'),
-    registerPage: registerField('Số tờ'),
-    registerEntry: registerField('Số thứ tự sổ'),
+    registerBook: registerField(),
+    registerPage: registerField(),
+    registerEntry: registerField(),
+    draft: certificateDraftSchema.optional(),
   })
   .strict()
 

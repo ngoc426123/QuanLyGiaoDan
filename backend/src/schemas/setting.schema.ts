@@ -24,10 +24,15 @@ export const settingSetSchema = z.discriminatedUnion(
       })
       .strict(),
     z.object({ key: z.literal('general.parishName'), value: z.string().trim().max(120) }).strict(),
+    z.object({ key: z.literal('general.deaneryName'), value: z.string().trim().max(120) }).strict(),
     z.object({ key: z.literal('general.dioceseName'), value: z.string().trim().max(120) }).strict(),
     z
       .object({ key: z.literal('general.parishPriestName'), value: z.string().trim().max(120) })
       .strict(),
+    z
+      .object({ key: z.literal('general.parishAddress'), value: z.string().trim().max(240) })
+      .strict(),
+    z.object({ key: z.literal('general.parishPhone'), value: z.string().trim().max(30) }).strict(),
     z
       .object({
         key: z.literal('data.trashRetentionDays'),

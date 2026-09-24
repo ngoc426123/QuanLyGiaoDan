@@ -8,7 +8,6 @@ import styles from './CertificateIssueDialog.module.css'
 
 const labels = Object.freeze({
   baptism: 'Rửa tội',
-  first_communion: 'Rước lễ lần đầu',
   confirmation: 'Thêm sức',
   marriage: 'Hôn phối',
 })
@@ -41,19 +40,16 @@ export function CertificateIssueDialog({ personId, type, onClose }: any) {
           label="Số quyển"
           value={registerBook}
           onChange={(event: any) => setRegisterBook(event.target.value)}
-          required
         />
         <Input
           label="Số tờ"
           value={registerPage}
           onChange={(event: any) => setRegisterPage(event.target.value)}
-          required
         />
         <Input
           label="Số thứ tự sổ"
           value={registerEntry}
           onChange={(event: any) => setRegisterEntry(event.target.value)}
-          required
         />
         <div className={styles.actions}>
           <Button type="submit" variant="primary" isPending={isPending}>

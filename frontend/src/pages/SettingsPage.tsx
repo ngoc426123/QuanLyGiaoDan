@@ -1,6 +1,7 @@
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { AppearanceSettings } from '@/features/setting/components/AppearanceSettings.tsx'
 import { DataSettings } from '@/features/setting/components/DataSettings.tsx'
+import { ParishSettings } from '@/features/setting/components/ParishSettings.tsx'
 import { DangerZoneSettings } from '@/features/setting/components/DangerZoneSettings.tsx'
 import { BackupSettings } from '@/features/backup/components/BackupSettings.tsx'
 import { useAppVersion } from '@/features/app/hooks/useAppInfo.ts'
@@ -11,6 +12,7 @@ export function SettingsPage() {
   return (
     <div className={styles.page}>
       <PageHeader title="Cài đặt" description="Tuỳ chỉnh giao diện và quản lý dữ liệu của bạn." />
+      <ParishSettings />
       <AppearanceSettings />
       <DataSettings />
       <BackupSettings />

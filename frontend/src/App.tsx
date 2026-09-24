@@ -19,6 +19,7 @@ import { SettingsPage } from '@/pages/SettingsPage.tsx'
 import { MarriageListPage } from '@/pages/MarriageListPage.tsx'
 import { ExportPage } from '@/pages/ExportPage.tsx'
 import { CertificateHistoryPage } from '@/pages/CertificateHistoryPage.tsx'
+import { CertificateIssuePage } from '@/pages/CertificateIssuePage.tsx'
 
 function AppRoutes() {
   return (
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="zones/:id" element={<ZoneDetailPage />} />
         <Route path="exports" element={<ExportPage />} />
         <Route path="certificates" element={<CertificateHistoryPage />} />
+        <Route path="persons/:id/certificates/new" element={<CertificateIssuePage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="trash" element={<TrashPage />} />
         <Route path="settings" element={<SettingsPage />} />

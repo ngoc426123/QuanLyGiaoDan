@@ -7,3 +7,13 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.typePicker {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.typePicker p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
