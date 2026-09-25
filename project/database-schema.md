@@ -9,6 +9,11 @@
 Domain: **Quản lý giáo dân giáo xứ**. Nguồn đặc tả gốc là `diagrams.jpg` ở gốc repo;
 bảng ánh xạ diagram → schema nằm ở `plan/00-domain-lock-in.md` §3.
 
+> **P22 (2026-09-25):** `persons` là danh mục người dùng chung. `person_type = 'parish'`
+> là giáo dân trong xứ; `person_type = 'external'` là người ngoài xứ. Chỉ giáo dân trong xứ
+> được tham gia `family_members` và các báo cáo mục vụ. Bí tích, hôn phối và quan hệ cha/mẹ
+> đều dùng một khoá ngoại `person_id`.
+
 ---
 
 ## 1. Sơ đồ quan hệ (ERD)
@@ -108,7 +113,7 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 | `idx_families_deleted_at` | `deleted_at`             | Lọc bản ghi còn sống                     |
 | `idx_families_name_ascii` | `name_ascii, deleted_at` | Sắp xếp và tìm kiếm không dấu            |
 
-### 2.3. `persons` — Giáo dân
+### 2.3. `persons` — Danh mục người
 
 | Cột                | Kiểu | Ràng buộc                             | Mô tả                                                                       |
 | ------------------ | ---- | ------------------------------------- | --------------------------------------------------------------------------- |
@@ -129,16 +134,22 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 | `pastoral_note`    | TEXT | NULL                                  | Ghi chú mục vụ; không đưa vào FTS                                           |
 | `source`           | TEXT | NULL, CHECK enum                      | `manual` / `csv_import` / `transferred` / `restored`                        |
 | `note`             | TEXT | NULL                                  | Ghi chú                                                                     |
+| `person_type`      | TEXT | NOT NULL, CHECK enum                  | `parish` (giáo dân trong xứ) hoặc `external` (người ngoài xứ)               |
+| `parish_name`      | TEXT | NULL, CHECK(length ≤ 120)             | Giáo xứ của người ngoài xứ                                                  |
+| `diocese_name`     | TEXT | NULL, CHECK(length ≤ 120)             | Giáo phận của người ngoài xứ                                                |
+| `father_name`      | TEXT | NULL, CHECK(length ≤ 120)             | Tên cha tự khai, dùng khi hồ sơ ngoài xứ chưa có liên kết                   |
+| `mother_name`      | TEXT | NULL, CHECK(length ≤ 120)             | Tên mẹ tự khai, dùng khi hồ sơ ngoài xứ chưa có liên kết                    |
 
 **Index**
 
-| Tên                            | Cột                                                                | Mục đích                       |
-| ------------------------------ | ------------------------------------------------------------------ | ------------------------------ |
-| `idx_persons_full_name_ascii`  | `full_name_ascii, deleted_at`                                      | Tìm kiếm không dấu             |
-| `idx_persons_deleted_at`       | `deleted_at`                                                       | Lọc bản ghi còn sống           |
-| `idx_persons_given_name_ascii` | `given_name_ascii, deleted_at`                                     | Sắp xếp danh sách theo tên gọi |
-| `idx_persons_birth_date`       | `birth_date` `WHERE birth_date IS NOT NULL AND deleted_at IS NULL` | Danh sách sinh nhật            |
-| `idx_persons_death_date`       | `death_date` `WHERE death_date IS NOT NULL AND deleted_at IS NULL` | Lọc còn sống / đã qua đời      |
+| Tên                            | Cột                                                                | Mục đích                             |
+| ------------------------------ | ------------------------------------------------------------------ | ------------------------------------ |
+| `idx_persons_full_name_ascii`  | `full_name_ascii, deleted_at`                                      | Tìm kiếm không dấu                   |
+| `idx_persons_deleted_at`       | `deleted_at`                                                       | Lọc bản ghi còn sống                 |
+| `idx_persons_given_name_ascii` | `given_name_ascii, deleted_at`                                     | Sắp xếp danh sách theo tên gọi       |
+| `idx_persons_birth_date`       | `birth_date` `WHERE birth_date IS NOT NULL AND deleted_at IS NULL` | Danh sách sinh nhật                  |
+| `idx_persons_death_date`       | `death_date` `WHERE death_date IS NOT NULL AND deleted_at IS NULL` | Lọc còn sống / đã qua đời            |
+| `idx_persons_type_deleted_at`  | `person_type, deleted_at`                                          | Phân biệt giáo dân và người ngoài xứ |
 
 **Ràng buộc nghiệp vụ** _(thực thi ở tầng Service)_
 
@@ -147,28 +158,43 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 3. Các ngày trong `sacraments` không được **sau** `death_date` và không được **trước** `birth_date`.
 4. Thứ tự tự nhiên Rửa tội ≤ Rước lễ lần đầu ≤ Thêm sức — **cảnh báo**,
    không chặn (sổ cũ hay thiếu dữ liệu).
+5. Người `external` không được tham gia `family_members`, giáo họ hay các báo cáo giáo dân.
 
 ### 2.3a. `sacraments` — Bí tích
 
 | Cột         | Kiểu | Ràng buộc                    | Mô tả                                                                                |
 | ----------- | ---- | ---------------------------- | ------------------------------------------------------------------------------------ |
-| `person_id` | TEXT | NOT NULL, FK → `persons(id)` | Giáo dân nhận bí tích                                                                |
+| `person_id` | TEXT | NOT NULL, FK → `persons(id)` | Người nhận bí tích (trong xứ hoặc ngoài xứ)                                          |
 | `type`      | TEXT | NOT NULL, CHECK enum         | `baptism` / `first_communion` / `confirmation`; `marriage` cũ chỉ còn để tương thích |
 | `date`      | TEXT | NOT NULL                     | Ngày cử hành, `YYYY-MM-DD`                                                           |
 | `minister`  | TEXT | NULL, CHECK(length ≤ 120)    | Linh mục cử hành                                                                     |
 | `place`     | TEXT | NULL, CHECK(length ≤ 255)    | Nơi cử hành                                                                          |
 
-Mỗi giáo dân chỉ có một bản ghi còn hiệu lực cho mỗi loại bí tích. Migration 006 chuyển bốn cột
-ngày cũ sang bảng này; những cột cũ chỉ còn để tương thích DB đã phát hành, không còn được đọc/ghi.
+Mỗi người chỉ có một bản ghi còn hiệu lực cho mỗi loại bí tích. Người ngoài xứ chỉ được nhập
+Rửa tội và Thêm sức. Migration 006 chuyển bốn cột ngày cũ sang bảng này; những cột cũ chỉ còn
+để tương thích DB đã phát hành, không còn được đọc/ghi.
 
 ### 2.3b. `marriages` và `marriage_participants` — Hôn phối
 
 `marriages` lưu một lần thông tin cử hành: `date`, `minister`, `place`. `marriage_participants`
-liên kết hai giáo dân với bản ghi này và lưu `full_name` là bản chụp tên lúc cử hành, để chứng thư
-không đổi theo các lần sửa hồ sơ sau này. Một giáo dân chỉ có tối đa một hôn phối còn hiệu lực.
+chỉ liên kết đúng hai người qua `marriage_id` và `person_id`; cả giáo dân lẫn người ngoài xứ đều
+tham chiếu `persons`. Thông tin hồ sơ hiện hành là nguồn dữ liệu khi lập chứng thư; mỗi lần cấp
+chứng thư sẽ ghi `snapshot_json` bất biến trong `certificate_issuances`.
 
 Các dòng `sacraments.type = 'marriage'` có trước migration 008 được giữ nguyên như lịch sử cũ vì
 chúng không có thông tin người phối ngẫu để tự chuyển đổi chính xác.
+
+### 2.3c. `person_parents` — Liên kết cha/mẹ
+
+| Cột                | Kiểu | Ràng buộc                    | Mô tả                                    |
+| ------------------ | ---- | ---------------------------- | ---------------------------------------- |
+| `child_person_id`  | TEXT | NOT NULL, FK → `persons(id)` | Người con                                |
+| `role`             | TEXT | NOT NULL, CHECK enum         | `father` hoặc `mother`                   |
+| `parent_person_id` | TEXT | NOT NULL, FK → `persons(id)` | Hồ sơ cha hoặc mẹ, trong xứ hay ngoài xứ |
+
+Unique partial index trên `(child_person_id, role)` bảo đảm mỗi người con tối đa một cha và một mẹ
+còn hiệu lực. Một người có thể là cha/mẹ của không giới hạn số người con.
+DB cấm tự liên kết; Service không kiểm tra giới tính và kiểm tra hồ sơ cha/mẹ còn hoạt động.
 
 ### 2.4. `family_members` — Thành viên hộ
 
@@ -311,21 +337,21 @@ dùng mặc định, **không** ném lỗi ra người dùng.
 Nguyên tắc chốt: **chỉ cho sắp xếp theo cột đã có index**, đúng luật "mọi cột dùng trong
 `WHERE` / `ORDER BY` / `JOIN` phải có index" (`database-conventions.md` §4).
 
-| Kênh          | `sortBy` cho phép (camelCase)             | Cột SQL                                             | Mặc định        | Index phục vụ                                                                           |
-| ------------- | ----------------------------------------- | --------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------- |
-| `zone:list`   | `name`                                    | `name`                                              | `name` ASC      | `uq_zones_name` (partial, `deleted_at IS NULL`)                                         |
-| `family:list` | `name`                                    | `name`                                              | `name` ASC      | `idx_families_name`                                                                     |
-| `person:list` | `givenName`, `fullNameAscii`, `birthDate` | `given_name_ascii`, `full_name_ascii`, `birth_date` | `givenName` ASC | `idx_persons_given_name_ascii`, `idx_persons_full_name_ascii`, `idx_persons_birth_date` |
+| Kênh          | `sortBy` cho phép (camelCase)                     | Cột SQL                                                           | Mặc định         | Index phục vụ                                                                                                            |
+| ------------- | ------------------------------------------------- | ----------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `zone:list`   | `name`, `createdAt`                               | `name`, `created_at`                                              | `createdAt` DESC | `uq_zones_name`, `idx_zones_created_at_active`                                                                           |
+| `family:list` | `name`, `createdAt`                               | `name`, `created_at`                                              | `createdAt` DESC | `idx_families_name`, `idx_families_created_at_active`                                                                    |
+| `person:list` | `givenName`, `fullName`, `birthDate`, `createdAt` | `given_name_ascii`, `full_name_ascii`, `birth_date`, `created_at` | `createdAt` DESC | `idx_persons_given_name_ascii`, `idx_persons_full_name_ascii`, `idx_persons_birth_date`, `idx_persons_created_at_active` |
 
-`sortDir` cũng đối chiếu whitelist (`ASC` / `DESC`), mặc định `ASC`.
+`sortDir` cũng đối chiếu whitelist (`ASC` / `DESC`); danh sách trên dùng mặc định theo từng endpoint.
 
 **Ba hệ quả đã cân nhắc và chấp nhận:**
 
-| Điều                                             | Lý do                                                                                                                                                              |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Không** cho sắp theo `createdAt` / `updatedAt` | Tốn thêm 6 index chỉ để phục vụ một kiểu sắp xếp chưa màn hình nào cần. Khi Phase 4–5 thật sự cần → thêm index bằng **migration mới**, đồng thời mở rộng whitelist |
-| **Không** thêm index cho `gender`                | Độ chọn lọc thấp (2 giá trị); SQLite sẽ bỏ qua index, quét theo `deleted_at` vẫn nhanh hơn                                                                         |
-| `givenName` cho phép NULL                        | Sắp ASC thì NULL đứng trước — đúng mong muốn: người chưa điền tên gọi nổi lên đầu để dễ bổ sung                                                                    |
+| Điều                              | Lý do                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Không cho sắp theo `updatedAt`    | Không có màn hình nào cần sắp theo thời điểm cập nhật; chỉ mở rộng bằng migration mới khi phát sinh nhu cầu |
+| **Không** thêm index cho `gender` | Độ chọn lọc thấp (2 giá trị); SQLite sẽ bỏ qua index, quét theo `deleted_at` vẫn nhanh hơn                  |
+| `givenName` cho phép NULL         | Sắp ASC thì NULL đứng trước — đúng mong muốn: người chưa điền tên gọi nổi lên đầu để dễ bổ sung             |
 
 ## 9. Chỉ mục Dashboard
 

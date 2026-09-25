@@ -8,6 +8,7 @@ export function clearAll() {
   prepare("INSERT INTO families_fts(families_fts) VALUES('rebuild')").run()
   prepare('DELETE FROM activity_logs').run()
   const members = prepare('DELETE FROM family_members').run().changes
+  prepare('DELETE FROM person_parents').run()
   prepare('DELETE FROM sacraments').run()
   prepare('DELETE FROM marriage_participants').run()
   prepare('DELETE FROM marriages').run()

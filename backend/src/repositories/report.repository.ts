@@ -18,7 +18,7 @@ function rowsInBatches(sql: string, params: unknown[] = []) {
 }
 
 export function findPersonsForCsv(filter: any) {
-  const clauses = ['p.deleted_at IS NULL']
+  const clauses = ['p.deleted_at IS NULL', "p.person_type = 'parish'"]
   const params: unknown[] = []
 
   if (filter.zoneId) {
@@ -108,6 +108,7 @@ export function findSacramentsForCsv(filter: any) {
   const clauses = [
     's.deleted_at IS NULL',
     'p.deleted_at IS NULL',
+    "p.person_type = 'parish'",
     "s.type IN ('baptism', 'first_communion', 'confirmation')",
   ]
   const params: unknown[] = []
@@ -138,8 +139,9 @@ export function findSacramentsForCsv(filter: any) {
 
 export function findMarriagesForCsv(filter: any) {
   return rowsInBatches(
-    "SELECT m.date, m.minister, m.place, group_concat(mp.full_name, ' và ') AS participants" +
+    "SELECT m.date, m.minister, m.place, group_concat(p.full_name, ' và ') AS participants" +
       ' FROM marriages m JOIN marriage_participants mp ON mp.marriage_id = m.id AND mp.deleted_at IS NULL' +
+      ' JOIN persons p ON p.id = mp.person_id' +
       ' WHERE m.deleted_at IS NULL AND m.date >= ? AND m.date < ?' +
       ' GROUP BY m.id ORDER BY m.date DESC',
     [filter.month + '-01', nextMonth(filter.month) + '-01'],
@@ -147,7 +149,7 @@ export function findMarriagesForCsv(filter: any) {
 }
 
 export function findPastoralForCsv(filter: any) {
-  const clauses = ['p.deleted_at IS NULL']
+  const clauses = ['p.deleted_at IS NULL', "p.person_type = 'parish'"]
   const params: unknown[] = []
   if (filter.zoneId) {
     clauses.push('z.id = ?')
@@ -175,9 +177,9 @@ export function findPastoralForCsv(filter: any) {
 
 export function findSummaryForCsv() {
   return rowsInBatches(
-    'SELECT (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL) AS person_count,' +
-      ' (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND death_date IS NULL) AS living_person_count,' +
-      ' (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND death_date IS NOT NULL) AS deceased_person_count,' +
+    "SELECT (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND person_type = 'parish') AS person_count," +
+      " (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND death_date IS NULL) AS living_person_count," +
+      " (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND death_date IS NOT NULL) AS deceased_person_count," +
       ' (SELECT COUNT(*) FROM families WHERE deleted_at IS NULL) AS family_count,' +
       ' (SELECT COUNT(*) FROM zones WHERE deleted_at IS NULL) AS zone_count,' +
       ' (SELECT COUNT(*) FROM marriages WHERE deleted_at IS NULL) AS marriage_count',
@@ -190,15 +192,15 @@ export function findDataQualityForCsv() {
       ' LEFT JOIN family_members fm ON fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL' +
       ' LEFT JOIN families f ON f.id = fm.family_id AND f.deleted_at IS NULL' +
       ' LEFT JOIN zones z ON z.id = f.zone_id AND z.deleted_at IS NULL' +
-      ' WHERE p.deleted_at IS NULL AND p.birth_date IS NULL UNION ALL' +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND p.birth_date IS NULL UNION ALL" +
       " SELECT p.full_name, 'Chưa thuộc hộ' AS issue, NULL AS family_name, NULL AS zone_name FROM persons p" +
-      ' WHERE p.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM family_members fm' +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND NOT EXISTS (SELECT 1 FROM family_members fm" +
       ' WHERE fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL) UNION ALL' +
       " SELECT p.full_name, 'Thiếu số điện thoại' AS issue, f.name AS family_name, z.name AS zone_name FROM persons p" +
       ' LEFT JOIN family_members fm ON fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL' +
       ' LEFT JOIN families f ON f.id = fm.family_id AND f.deleted_at IS NULL' +
       ' LEFT JOIN zones z ON z.id = f.zone_id AND z.deleted_at IS NULL' +
-      " WHERE p.deleted_at IS NULL AND (p.phone IS NULL OR trim(p.phone) = '')" +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND (p.phone IS NULL OR trim(p.phone) = '')" +
       ' ORDER BY full_name ASC',
   )
 }
@@ -209,7 +211,7 @@ export function findBirthdaysForCsv(filter: any) {
       ' FROM persons p LEFT JOIN family_members fm ON fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL' +
       ' LEFT JOIN families f ON f.id = fm.family_id AND f.deleted_at IS NULL' +
       ' LEFT JOIN zones z ON z.id = f.zone_id AND z.deleted_at IS NULL' +
-      ' WHERE p.deleted_at IS NULL AND p.death_date IS NULL AND p.birth_date IS NOT NULL' +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND p.death_date IS NULL AND p.birth_date IS NOT NULL" +
       ' AND substr(p.birth_date, 6, 2) = ? ORDER BY substr(p.birth_date, 9, 2), p.full_name_ascii ASC',
     [filter.month.slice(5)],
   )

@@ -5,6 +5,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { AppClientError } from '@/shared/invoke.ts'
 import { calendarToday } from '@/shared/calendar.ts'
+import { personName } from '@/features/person/personName.ts'
 import {
   relationshipOptions,
   type FamilyChoice,
@@ -100,7 +101,7 @@ export function FamilyMemberForm({
             }
             loading={peopleLoading}
             getOptionLabel={(person: PersonChoice) =>
-              `${person.fullName}${person.familyName ? ` (${person.familyName})` : ''}`
+              `${personName(person)}${person.familyName ? ` (${person.familyName})` : ''}`
             }
             getOptionValue={(person: PersonChoice) => person.id}
             onSearchChange={(nextSearch: string) => {

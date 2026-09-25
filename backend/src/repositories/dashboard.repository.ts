@@ -16,7 +16,7 @@ function limitedList(sql: string, params: unknown[] = []) {
 export function getSummary(month: string) {
   const next = nextMonth(month)
   const totals = prepare(
-    'SELECT (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND death_date IS NULL) AS living_person_count,' +
+    "SELECT (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND death_date IS NULL) AS living_person_count," +
       ' (SELECT COUNT(*) FROM families WHERE deleted_at IS NULL) AS family_count,' +
       ' (SELECT COUNT(*) FROM zones WHERE deleted_at IS NULL) AS zone_count',
   ).get()
@@ -32,20 +32,20 @@ export function getSummary(month: string) {
       ' ORDER BY f.name_ascii ASC LIMIT 200',
   ).all()
   const personsWithoutFamily = prepare(
-    'SELECT p.id, p.full_name AS full_name FROM persons p WHERE p.deleted_at IS NULL AND NOT EXISTS (' +
+    "SELECT p.id, p.full_name AS full_name FROM persons p WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND NOT EXISTS (" +
       'SELECT 1 FROM family_members fm WHERE fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL)' +
       ' ORDER BY p.full_name_ascii ASC LIMIT 200',
   ).all()
   const personsWithoutBirthDate = limitedList(
     'SELECT p.id, p.full_name AS full_name FROM persons p' +
-      ' WHERE p.deleted_at IS NULL AND p.birth_date IS NULL' +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND p.birth_date IS NULL" +
       ' ORDER BY p.full_name_ascii ASC',
   )
   const duplicatePhoneRows = prepare(
     'SELECT p.id, p.full_name AS full_name, p.phone FROM persons p' +
-      ' JOIN (SELECT phone FROM persons WHERE deleted_at IS NULL AND phone IS NOT NULL' +
+      " JOIN (SELECT phone FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND phone IS NOT NULL" +
       ' GROUP BY phone HAVING COUNT(*) > 1) duplicates ON duplicates.phone = p.phone' +
-      ' WHERE p.deleted_at IS NULL ORDER BY p.phone ASC, p.full_name_ascii ASC LIMIT ?',
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' ORDER BY p.phone ASC, p.full_name_ascii ASC LIMIT ?",
   ).all(LIST_LIMIT * 2)
   const duplicatePhones = new Map<string, { phone: string; persons: any[] }>()
   for (const row of duplicatePhoneRows) {
@@ -55,7 +55,7 @@ export function getSummary(month: string) {
   }
   const duplicatePhoneCount = prepare(
     'SELECT COUNT(*) AS total FROM (' +
-      ' SELECT phone FROM persons WHERE deleted_at IS NULL AND phone IS NOT NULL' +
+      " SELECT phone FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND phone IS NOT NULL" +
       ' GROUP BY phone HAVING COUNT(*) > 1)',
   ).get().total
   const birthdays = prepare(
@@ -64,7 +64,7 @@ export function getSummary(month: string) {
       ' LEFT JOIN family_members fm ON fm.person_id = p.id AND fm.deleted_at IS NULL AND fm.to_date IS NULL' +
       ' LEFT JOIN families f ON f.id = fm.family_id AND f.deleted_at IS NULL' +
       ' LEFT JOIN zones z ON z.id = f.zone_id AND z.deleted_at IS NULL' +
-      ' WHERE p.deleted_at IS NULL AND p.death_date IS NULL AND p.birth_date IS NOT NULL' +
+      " WHERE p.deleted_at IS NULL AND p.person_type = 'parish' AND p.death_date IS NULL AND p.birth_date IS NOT NULL" +
       ' AND substr(p.birth_date, 6, 2) = ?' +
       ' ORDER BY substr(p.birth_date, 9, 2) ASC, p.full_name_ascii ASC LIMIT ?',
   ).all(month.slice(5), LIST_LIMIT)
@@ -76,7 +76,7 @@ export function getSummary(month: string) {
   ).get(month + '-01', next + '-01')
   const monthlyCounts = prepare(
     'SELECT' +
-      ' (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND death_date >= ? AND death_date < ?) AS death_count,' +
+      " (SELECT COUNT(*) FROM persons WHERE deleted_at IS NULL AND person_type = 'parish' AND death_date >= ? AND death_date < ?) AS death_count," +
       ' (SELECT COUNT(*) FROM marriages WHERE deleted_at IS NULL AND date >= ? AND date < ?) AS marriage_count',
   ).get(month + '-01', next + '-01', month + '-01', next + '-01')
   return {

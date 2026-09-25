@@ -8,7 +8,7 @@ import { likePattern, orderBy, paginate, prepare } from './query-helpers.ts'
  */
 
 /** Whitelist `ORDER BY` — `project/database-schema.md` §8. */
-const SORT_COLUMNS = Object.freeze({ name: 'z.name_ascii' })
+const SORT_COLUMNS = Object.freeze({ name: 'z.name_ascii', createdAt: 'z.created_at' })
 
 const SELECT_COLUMNS = 'id, name, name_ascii, holy_name, note, created_at, updated_at'
 
@@ -87,7 +87,7 @@ export function findMany(filter: any = {}) {
     where +
     ' GROUP BY z.id' +
     ' ORDER BY ' +
-    orderBy(SORT_COLUMNS, 'name', filter) +
+    orderBy(SORT_COLUMNS, 'createdAt', filter, 'DESC') +
     ' LIMIT ? OFFSET ?'
 
   return prepare(sql)

@@ -4,6 +4,7 @@ import * as familyRepository from '#/repositories/family.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
 import * as marriageRepository from '#/repositories/marriage.repository.ts'
 import * as sacramentRepository from '#/repositories/sacrament.repository.ts'
+import * as personParentRepository from '#/repositories/person-parent.repository.ts'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
@@ -78,11 +79,101 @@ function normalizePatch(input: any) {
       place: normalizeText(row.place, 255),
     }))
   }
+  for (const field of ['personType', 'parishName', 'dioceseName', 'fatherName', 'motherName']) {
+    if (Object.hasOwn(input, field))
+      patch[field] =
+        field === 'personType'
+          ? input[field]
+          : normalizeText(
+              input[field],
+              field === 'parishName' || field === 'dioceseName' ? 120 : 120,
+            )
+  }
+  if (Object.hasOwn(input, 'parents')) patch.parents = input.parents ?? {}
   for (const field of DATE_FIELDS) {
     if (Object.hasOwn(input, field)) patch[field] = input[field] ?? null
   }
 
   return patch
+}
+
+function validateParents(parents: any, childId?: string) {
+  const roles = [
+    ['fatherId', 'fatherExternalName', 'cha'],
+    ['motherId', 'motherExternalName', 'mẹ'],
+  ]
+  for (const [idField, externalNameField, label] of roles) {
+    if (parents?.[idField] && parents?.[externalNameField])
+      throw fieldError('parents', `Chỉ chọn hoặc tạo mới một hồ sơ ${label}`)
+  }
+  for (const parentId of roles.map(([idField]) => parents?.[idField]).filter(Boolean)) {
+    if (parentId === childId)
+      throw fieldError('parents', 'Không thể liên kết một người với chính mình')
+    if (!personRepository.findRawById(parentId))
+      throw fieldError('parents', 'Giáo dân được chọn không còn tồn tại')
+  }
+}
+
+function validateSacramentsForPersonType(personType: string, sacraments: any[]) {
+  if (
+    personType === 'external' &&
+    sacraments.some((sacrament) => !['baptism', 'confirmation'].includes(sacrament.type))
+  ) {
+    throw fieldError('sacraments', 'Người ngoài giáo xứ chỉ lưu Bí tích Rửa tội và Thêm sức')
+  }
+}
+
+function createExternalParent(fullName: string, timestamp: string) {
+  const created = personRepository.insert({
+    id: newId(),
+    fullName,
+    fullNameAscii: toAscii(fullName),
+    givenName: null,
+    givenNameAscii: null,
+    holyName: null,
+    gender: null,
+    birthDate: null,
+    deathDate: null,
+    phone: null,
+    email: null,
+    occupation: null,
+    secondaryPhone: null,
+    residenceStatus: null,
+    pastoralStatus: null,
+    pastoralNote: null,
+    source: 'manual',
+    note: null,
+    personType: 'external',
+    parishName: null,
+    dioceseName: null,
+    fatherName: null,
+    motherName: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  })
+  recordActivity({ entityType: 'person', entityId: created.id, action: 'created', timestamp })
+  return created
+}
+
+function saveParents(childId: string, parents: any, timestamp: string) {
+  const roles = [
+    ['father', 'fatherId', 'fatherExternalName'],
+    ['mother', 'motherId', 'motherExternalName'],
+  ]
+  personParentRepository.replaceForChild(
+    childId,
+    roles
+      .map(([role, idField, externalNameField]) => {
+        const parentId =
+          parents?.[idField] ||
+          (parents?.[externalNameField]
+            ? createExternalParent(parents[externalNameField], timestamp).id
+            : null)
+        return parentId ? { id: newId(), role, parentPersonId: parentId } : null
+      })
+      .filter(Boolean),
+    timestamp,
+  )
 }
 
 /**
@@ -150,6 +241,7 @@ export function getById(id) {
   const person = assertFound(personRepository.findById(id), NOT_FOUND_MESSAGE)
   const marriages = marriageRepository.findManyByPersonId(id)
 
+  const parents = personParentRepository.findByChildId(id)
   return {
     ...person,
     sacraments: sacramentRepository.findByPersonId(id),
@@ -157,6 +249,12 @@ export function getById(id) {
     marriage: marriages[0] ?? null,
     currentMembership: familyMemberRepository.findCurrentByPersonId(id),
     membershipHistory: familyMemberRepository.findHistoryByPersonId(id),
+    parents: {
+      fatherId: parents.find((item) => item.role === 'father')?.personId ?? null,
+      motherId: parents.find((item) => item.role === 'mother')?.personId ?? null,
+      father: parents.find((item) => item.role === 'father') ?? null,
+      mother: parents.find((item) => item.role === 'mother') ?? null,
+    },
   }
 }
 
@@ -166,6 +264,8 @@ export function getById(id) {
  */
 export function create(input: any) {
   const patch = normalizePatch(input)
+  if (patch.parents) validateParents(patch.parents)
+  validateSacramentsForPersonType(patch.personType ?? 'parish', patch.sacraments ?? [])
   const warnings = validateDates({ ...patch, sacraments: patch.sacraments ?? [] })
   const timestamp = now()
 
@@ -189,6 +289,11 @@ export function create(input: any) {
       pastoralNote: patch.pastoralNote ?? null,
       source: patch.source ?? 'manual',
       note: patch.note ?? null,
+      personType: patch.personType ?? 'parish',
+      parishName: patch.parishName ?? null,
+      dioceseName: patch.dioceseName ?? null,
+      fatherName: patch.fatherName ?? null,
+      motherName: patch.motherName ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -201,6 +306,7 @@ export function create(input: any) {
         updatedAt: timestamp,
       })
     }
+    if (patch.parents) saveParents(created.id, patch.parents, timestamp)
     if (input.family) {
       const membership = openMembership({ ...input.family, personId: created.id }, timestamp)
       recordActivity({
@@ -228,9 +334,24 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
     const current = assertFound(personRepository.findRawById(id), NOT_FOUND_MESSAGE)
     assertVersion(current, expectedUpdatedAt)
 
+    if (current.personType === 'parish' && normalized.personType === 'external') {
+      const membership = familyMemberRepository.findCurrentByPersonId(id)
+      if (membership) {
+        throw fieldError(
+          'personType',
+          'Không thể chuyển sang người ngoài xứ khi hồ sơ đang thuộc một hộ gia đình',
+        )
+      }
+    }
+
     // Kiểm tra ngày trên bản ghi **sau khi gộp**: sửa mỗi ngày sinh vẫn phải đối chiếu
     // với các ngày bí tích đang có sẵn trong DB.
     const currentSacraments = sacramentRepository.findByPersonId(id)
+    if (normalized.parents) validateParents(normalized.parents, id)
+    validateSacramentsForPersonType(
+      normalized.personType ?? current.personType,
+      normalized.sacraments ?? currentSacraments,
+    )
     const currentMarriage = marriageRepository.findByPersonId(id)
     warnings = validateDates({
       ...current,
@@ -242,6 +363,7 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
       personRepository.update(id, normalized, timestamp),
       NOT_FOUND_MESSAGE,
     )
+    if (normalized.parents) saveParents(id, normalized.parents, timestamp)
     if (normalized.sacraments) {
       sacramentRepository.softDeleteInitiationByPersonId(id, timestamp)
       for (const sacrament of normalized.sacraments) {
@@ -290,6 +412,7 @@ export function remove({ id }: any) {
     const membership = familyMemberRepository.findCurrentByPersonId(id)
 
     familyMemberRepository.softDeleteCurrentByPersonId(id, timestamp)
+    personParentRepository.softDeleteByChildId(id, timestamp)
     sacramentRepository.softDeleteByPersonId(id, timestamp)
     marriageRepository.softDeleteByPersonIds([id], timestamp)
     personRepository.softDelete(id, timestamp)
@@ -364,6 +487,7 @@ export function bulkRemove({ ids }: any) {
     }
     const memberships = familyMemberRepository.findCurrentByPersonIds(ids)
     familyMemberRepository.softDeleteCurrentByPersonIds(ids, timestamp)
+    for (const personId of ids) personParentRepository.softDeleteByChildId(personId, timestamp)
     sacramentRepository.softDeleteByPersonIds(ids, timestamp)
     marriageRepository.softDeleteByPersonIds(ids, timestamp)
     const count = personRepository.softDeleteMany(ids, timestamp)

@@ -14,6 +14,8 @@ import externalMarriageParticipantSql from './013_support_external_marriage_part
 import marriageHistorySql from './014_allow_marriage_history.sql?raw'
 import marriageWitnessesSql from './015_add_marriage_witnesses.sql?raw'
 import externalParticipantSacramentDetailsSql from './016_add_external_participant_sacrament_details.sql?raw'
+import unifiedPeopleSql from './017_unify_people_and_add_parent_links.sql?raw'
+import directoryCreatedAtIndexesSql from './018_add_directory_created_at_indexes.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -78,6 +80,16 @@ export const MIGRATIONS = Object.freeze([
     version: 16,
     name: '016_add_external_participant_sacrament_details.sql',
     sql: externalParticipantSacramentDetailsSql,
+  }),
+  Object.freeze({
+    version: 17,
+    name: '017_unify_people_and_add_parent_links.sql',
+    sql: unifiedPeopleSql,
+  }),
+  Object.freeze({
+    version: 18,
+    name: '018_add_directory_created_at_indexes.sql',
+    sql: directoryCreatedAtIndexesSql,
   }),
 ])
 

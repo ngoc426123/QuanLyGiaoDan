@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
+import { personName } from '@/features/person/personName.ts'
 import { useDashboard } from '../hooks/useDashboard.ts'
 import styles from './Dashboard.module.css'
 
@@ -124,7 +125,7 @@ export function Dashboard() {
                 key: 'fullName',
                 label: 'Giáo dân',
                 render: (person: any) => (
-                  <Link to={`/persons/${person.id}`}>{person.fullName}</Link>
+                  <Link to={`/persons/${person.id}`}>{personName(person)}</Link>
                 ),
               },
               { key: 'birthDate', label: 'Ngày sinh' },
@@ -170,7 +171,7 @@ export function Dashboard() {
               <ul>
                 {data.personsWithoutFamily.map((person: { id: string; fullName: string }) => (
                   <li key={person.id}>
-                    <Link to={`/persons/${person.id}`}>{person.fullName}</Link>
+                    <Link to={`/persons/${person.id}`}>{personName(person)}</Link>
                   </li>
                 ))}
               </ul>
@@ -184,7 +185,7 @@ export function Dashboard() {
               <ul>
                 {data.dataQuality.personsWithoutBirthDate.records.map((person: any) => (
                   <li key={person.id}>
-                    <Link to={`/persons/${person.id}`}>{person.fullName}</Link>
+                    <Link to={`/persons/${person.id}`}>{personName(person)}</Link>
                   </li>
                 ))}
               </ul>
@@ -203,7 +204,7 @@ export function Dashboard() {
                       {group.persons.map((person: any, index: number) => (
                         <span key={person.id}>
                           {index > 0 && ', '}
-                          <Link to={`/persons/${person.id}`}>{person.fullName}</Link>
+                          <Link to={`/persons/${person.id}`}>{personName(person)}</Link>
                         </span>
                       ))}
                     </span>

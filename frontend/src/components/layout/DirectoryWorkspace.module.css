@@ -18,6 +18,38 @@
   min-width: 0;
 }
 
+.tabs {
+  display: inline-flex;
+  width: fit-content;
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.tabs button {
+  min-width: 128px;
+  height: var(--control-height);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-right: var(--border-width) solid var(--color-border-control);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-base);
+  font: inherit;
+}
+
+.tabs button:last-child {
+  border-right: 0;
+}
+
+.tabs button:hover {
+  background: var(--color-bg-hover);
+}
+
+.tabs .tabActive {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+
 @media (max-width: 1120px) {
   .filters {
     grid-template-columns: repeat(3, minmax(150px, 1fr));

@@ -43,6 +43,109 @@
   font-size: var(--font-size-md);
 }
 
+.parentGroup {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.parentGroup > h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.parentColumn {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.parentColumn h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.externalParentActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.externalParentActions > button {
+  width: 100%;
+}
+
+.quickAdded {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg-subtle);
+}
+
+.quickAdded span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.quickForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.quickActions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.personTypeControl {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+}
+
+.personTypeControl > span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.personTypeControl > div {
+  display: inline-flex;
+  width: fit-content;
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.personTypeControl button {
+  min-width: 112px;
+  height: var(--control-height);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-right: var(--border-width) solid var(--color-border-control);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-base);
+  font: inherit;
+}
+
+.personTypeControl button:last-child {
+  border-right: 0;
+}
+
+.personTypeControl button:hover {
+  background: var(--color-bg-subtle);
+}
+
+.personTypeControl .personTypeActive {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+
 .sacramentGrid {
   display: grid;
   grid-column: 1 / -1;
@@ -249,6 +352,9 @@
   }
   .sacramentGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .quickForm {
+    grid-template-columns: 1fr;
   }
 }
 

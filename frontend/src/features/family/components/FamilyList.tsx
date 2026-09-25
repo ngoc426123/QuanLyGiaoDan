@@ -28,8 +28,8 @@ export function FamilyList() {
   const [search, setSearch] = useState('')
   const [zoneId, setZoneId] = useState(location.state?.filters?.zoneId ?? '')
   const [page, setPage] = useState(1)
-  const [sortBy, setSortBy] = useState('name')
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [sortDir, setSortDir] = useState('desc')
   const requestedZoneId = location.state?.filters?.zoneId
   const filter = useMemo(
     () => ({
@@ -53,8 +53,8 @@ export function FamilyList() {
   const clearFilters = () => {
     setSearch('')
     setZoneId('')
-    setSortBy('name')
-    setSortDir('asc')
+    setSortBy('createdAt')
+    setSortDir('desc')
     setPage(1)
   }
   const familySearch = useComposedSearch(search, (nextSearch) => {

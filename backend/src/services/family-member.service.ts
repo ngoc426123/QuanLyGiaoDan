@@ -41,11 +41,16 @@ function assertFamilyExists(familyId) {
 }
 
 function assertPersonExists(personId) {
-  if (personRepository.exists(personId)) return
+  const person = personRepository.findRawById(personId)
+  if (person?.personType === 'parish') return
 
-  throw new AppError(ERROR_CODES.FOREIGN_KEY_VIOLATION, 'Giáo dân được chọn không còn tồn tại', {
-    fieldErrors: { personId: 'Giáo dân được chọn không còn tồn tại' },
-  })
+  throw new AppError(
+    ERROR_CODES.FOREIGN_KEY_VIOLATION,
+    'Chỉ giáo dân trong giáo xứ mới được gán vào hộ',
+    {
+      fieldErrors: { personId: 'Chỉ giáo dân trong giáo xứ mới được gán vào hộ' },
+    },
+  )
 }
 
 /** Chỉ một chủ hộ tại vị. Bỏ qua chính dòng đang sửa (`exceptId`). */

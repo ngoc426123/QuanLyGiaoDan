@@ -57,6 +57,9 @@ hiện có báo cáo mục vụ theo tháng (sinh nhật, bí tích, hôn phối
 liệu (hộ thiếu chủ hộ, người chưa thuộc hộ, thiếu ngày sinh, số điện thoại trùng). Các hạng mục còn lại
 được ưu tiên theo phản hồi sử dụng thực tế trong `plan/phase-8-extensions.md`.
 
+**◐ Phase 8 (2026-09-25):** mở rộng mô hình người dùng chung cho người trong và ngoài giáo xứ,
+liên kết cha/mẹ và dùng dữ liệu này trong chứng thư Rửa tội, Thêm sức và Hôn phối.
+
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 
 | Phase | Sai lệch                                                | Lý do                                                                                                |

@@ -1,5 +1,6 @@
 import * as marriageRepository from '#/repositories/marriage.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
+import * as sacramentRepository from '#/repositories/sacrament.repository.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
 import {
@@ -113,6 +114,55 @@ function participants(input, timestamp) {
   ]
 }
 
+function createExternalSpouse(value, timestamp) {
+  const external = personRepository.insert({
+    id: newId(),
+    fullName: value.spouseName,
+    fullNameAscii: toAscii(value.spouseName),
+    givenName: null,
+    givenNameAscii: null,
+    holyName: value.spouseHolyName,
+    gender: null,
+    birthDate: value.spouseBirthDate,
+    deathDate: null,
+    phone: null,
+    email: null,
+    occupation: null,
+    secondaryPhone: null,
+    residenceStatus: null,
+    pastoralStatus: null,
+    pastoralNote: null,
+    source: 'transferred',
+    note: null,
+    personType: 'external',
+    parishName: value.spouseParishName,
+    dioceseName: value.spouseDioceseName,
+    fatherName: value.spouseFatherName,
+    motherName: value.spouseMotherName,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  })
+  for (const row of [
+    { type: 'baptism', date: value.spouseBaptismDate, place: value.spouseBaptismPlace },
+    {
+      type: 'confirmation',
+      date: value.spouseConfirmationDate,
+      place: value.spouseConfirmationPlace,
+    },
+  ]) {
+    if (row.date)
+      sacramentRepository.insert({
+        id: newId(),
+        personId: external.id,
+        ...row,
+        minister: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+  }
+  return external
+}
+
 export function list(filter: any = {}) {
   const search = normalizeText(filter.search)
   const criteria = { ...filter, search: search ? toAscii(search) : undefined }
@@ -126,6 +176,9 @@ export function create(input) {
   const value = normalize(input)
   const timestamp = now()
   return runInTransaction(() => {
+    if (!value.spouseId) {
+      value.spouseId = createExternalSpouse(value, timestamp).id
+    }
     const rows = participants(value, timestamp)
     const id = newId()
     marriageRepository.insert({ id, ...value, createdAt: timestamp, updatedAt: timestamp })
@@ -140,6 +193,7 @@ export function update({ id, expectedUpdatedAt, patch }) {
   return runInTransaction(() => {
     const current = assertFound(marriageRepository.findById(id), NOT_FOUND_MESSAGE)
     assertVersion({ updatedAt: current.updated_at }, expectedUpdatedAt)
+    if (!value.spouseId) value.spouseId = createExternalSpouse(value, timestamp).id
     const rows = participants(value, timestamp)
     marriageRepository.update(id, value, timestamp)
     marriageRepository.replaceParticipants(

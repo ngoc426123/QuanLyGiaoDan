@@ -74,9 +74,14 @@ export function paginate(input: any = {}) {
  * @param {{ sortBy?: string, sortDir?: string }} [input]
  * @returns {string} ví dụ `given_name ASC`
  */
-export function orderBy(allowed, defaultKey, input: any = {}) {
-  const column = Object.hasOwn(allowed, input.sortBy) ? allowed[input.sortBy] : allowed[defaultKey]
-  const direction = String(input.sortDir).toUpperCase() === 'DESC' ? 'DESC' : 'ASC'
+export function orderBy(allowed, defaultKey, input: any = {}, defaultDirection = 'ASC') {
+  const hasRequestedSort = Object.hasOwn(allowed, input.sortBy)
+  const column = hasRequestedSort ? allowed[input.sortBy] : allowed[defaultKey]
+  const direction = input.sortDir
+    ? String(input.sortDir).toUpperCase() === 'DESC'
+      ? 'DESC'
+      : 'ASC'
+    : defaultDirection
 
   return `${column} ${direction}`
 }

@@ -14,7 +14,8 @@ const SELECT_COLUMNS =
   'p.id, p.full_name, p.given_name, p.full_name_ascii, p.given_name_ascii,' +
   ' p.holy_name, p.gender,' +
   ' p.birth_date, p.death_date, p.phone, p.email, p.occupation, p.secondary_phone, p.residence_status,' +
-  ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.created_at, p.updated_at'
+  ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.person_type, p.parish_name, p.diocese_name,' +
+  ' p.father_name, p.mother_name, p.created_at, p.updated_at'
 
 const UPDATABLE = Object.freeze({
   fullName: 'full_name',
@@ -34,6 +35,11 @@ const UPDATABLE = Object.freeze({
   pastoralNote: 'pastoral_note',
   source: 'source',
   note: 'note',
+  personType: 'person_type',
+  parishName: 'parish_name',
+  dioceseName: 'diocese_name',
+  fatherName: 'father_name',
+  motherName: 'mother_name',
 })
 
 /**
@@ -72,6 +78,11 @@ export function toDomain(row) {
     pastoralNote: row.pastoral_note ?? null,
     source: row.source ?? null,
     note: row.note ?? null,
+    personType: row.person_type ?? 'parish',
+    parishName: row.parish_name ?? null,
+    dioceseName: row.diocese_name ?? null,
+    fatherName: row.father_name ?? null,
+    motherName: row.mother_name ?? null,
     isAlive: row.death_date === null || row.death_date === undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -85,6 +96,11 @@ export function toDomain(row) {
 function buildFilter(filter: any = {}) {
   const clauses = ['p.deleted_at IS NULL']
   const params = []
+
+  if (filter.personType !== 'all') {
+    clauses.push('p.person_type = ?')
+    params.push(filter.personType === 'external' ? 'external' : 'parish')
+  }
 
   if (filter.familyId) {
     clauses.push('f.id = ?')
@@ -163,7 +179,7 @@ export function findMany(filter: any = {}) {
     ' WHERE ' +
     where +
     ' ORDER BY ' +
-    orderBy(SORT_COLUMNS, 'givenName', filter) +
+    orderBy(SORT_COLUMNS, 'createdAt', filter, 'DESC') +
     ' LIMIT ? OFFSET ?'
 
   return prepare(sql)
@@ -184,8 +200,8 @@ export function insert(record) {
     'INSERT INTO persons (id, full_name, given_name, full_name_ascii, given_name_ascii,' +
       ' holy_name, gender,' +
       ' birth_date, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
-      ' pastoral_note, source, note, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' pastoral_note, source, note, person_type, parish_name, diocese_name, father_name, mother_name, created_at, updated_at)' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,
@@ -205,6 +221,11 @@ export function insert(record) {
     record.pastoralNote,
     record.source,
     record.note,
+    record.personType ?? 'parish',
+    record.parishName ?? null,
+    record.dioceseName ?? null,
+    record.fatherName ?? null,
+    record.motherName ?? null,
     record.createdAt,
     record.updatedAt,
   )

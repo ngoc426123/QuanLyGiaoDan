@@ -13,6 +13,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
+import { personName } from '@/features/person/personName.ts'
 import { invoke, invokeWithMeta } from '@/shared/invoke.ts'
 import styles from './Marriage.module.css'
 
@@ -171,7 +172,7 @@ function MarriageForm({
               options={personOptions}
               error={fieldErrors.personId}
               placeholder="Tìm tên giáo dân..."
-              getOptionLabel={(person: any) => person.fullName}
+              getOptionLabel={personName}
               getOptionValue={(person: any) => person.id}
               onChange={(nextId: string) => selectPerson('personId', nextId)}
               onSearchChange={onPersonSearchChange}
@@ -201,7 +202,7 @@ function MarriageForm({
             options={spouseOptions}
             error={fieldErrors.spouseId || fieldErrors.spouseName}
             placeholder="Tìm tên người phối ngẫu..."
-            getOptionLabel={(person: any) => person.fullName}
+            getOptionLabel={personName}
             getOptionValue={(person: any) => person.id}
             onChange={(nextId: string) => selectPerson('spouseId', nextId)}
             onSearchChange={onPersonSearchChange}
@@ -218,20 +219,20 @@ function MarriageForm({
               <h4>Thông tin cá nhân</h4>
               <div className={styles.externalGroupGrid}>
                 <Input
-                  label="Họ tên"
-                  value={value.spouseName}
-                  error={fieldErrors.spouseName}
-                  onChange={(event: any) => setValue({ ...value, spouseName: event.target.value })}
-                  maxLength={120}
-                  required
-                />
-                <Input
                   label="Tên thánh"
                   value={value.spouseHolyName}
                   onChange={(event: any) =>
                     setValue({ ...value, spouseHolyName: event.target.value })
                   }
                   maxLength={75}
+                />
+                <Input
+                  label="Họ tên"
+                  value={value.spouseName}
+                  error={fieldErrors.spouseName}
+                  onChange={(event: any) => setValue({ ...value, spouseName: event.target.value })}
+                  maxLength={120}
+                  required
                 />
                 <DateInput
                   label="Ngày sinh"
@@ -315,7 +316,7 @@ function MarriageForm({
             <strong>CẢNH BÁO: đương sự đã có lịch sử hôn phối.</strong>
             <span>
               {existingMarriageWarnings
-                .map(({ person }) => person?.fullName)
+                .map(({ person }) => personName(person ?? {}))
                 .filter(Boolean)
                 .join(' và ')}
               {' đã có hồ sơ trước đó.'}

@@ -49,6 +49,20 @@ const personExtensions = Object.freeze({
       error: 'Mỗi loại bí tích chỉ được nhập một lần',
     })
     .optional(),
+  personType: z.enum(['parish', 'external']).optional(),
+  parishName: optionalText(120, 'Giáo xứ'),
+  dioceseName: optionalText(120, 'Giáo phận'),
+  fatherName: optionalText(120, 'Tên cha'),
+  motherName: optionalText(120, 'Tên mẹ'),
+  parents: z
+    .object({
+      fatherId: idSchema.nullish(),
+      motherId: idSchema.nullish(),
+      fatherExternalName: optionalText(120, 'Tên cha ngoài giáo xứ'),
+      motherExternalName: optionalText(120, 'Tên mẹ ngoài giáo xứ'),
+    })
+    .strict()
+    .optional(),
 })
 
 export const personListSchema = z
@@ -60,6 +74,7 @@ export const personListSchema = z
       withoutFamily: z.boolean({ error: 'Bộ lọc chưa thuộc hộ không hợp lệ' }).optional(),
       gender: z.enum(['male', 'female'], { error: 'Giới tính không hợp lệ' }).nullish(),
       isAlive: z.boolean({ error: 'Bộ lọc còn sống không hợp lệ' }).nullish(),
+      personType: z.enum(['parish', 'external', 'all']).optional(),
     },
     { error: 'Tham số danh sách giáo dân không hợp lệ' },
   )

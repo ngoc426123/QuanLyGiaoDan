@@ -1,6 +1,7 @@
 import { prepare } from './query-helpers.ts'
 import * as marriageRepository from './marriage.repository.ts'
 import * as sacramentRepository from './sacrament.repository.ts'
+import * as personParentRepository from './person-parent.repository.ts'
 
 const RESTORE_SQL = Object.freeze({
   zone: 'UPDATE zones SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL',
@@ -29,6 +30,7 @@ export function restore(type: string, id: string, updatedAt: string) {
   if (restored && type === 'person') {
     sacramentRepository.restoreByPersonId(id, updatedAt)
     marriageRepository.restoreByPersonId(id, updatedAt, updatedAt)
+    personParentRepository.restoreByChildId(id, updatedAt, updatedAt)
   }
   return restored
 }
@@ -45,6 +47,7 @@ export function hardRemove(type: string, id: string) {
   if (type === 'person') {
     sacramentRepository.hardDeleteByPersonId(id)
     marriageRepository.hardDeleteByPersonId(id)
+    personParentRepository.hardDeleteByPersonId(id)
   }
   return prepare(HARD_REMOVE_SQL[type]).run(id).changes > 0
 }

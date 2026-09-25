@@ -21,6 +21,7 @@ import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
 import { useReportExport } from '@/features/report/hooks/useCsvExport.ts'
 import { useRemovePerson } from '../hooks/usePersonMutations.ts'
 import { usePerson } from '../hooks/usePersons.ts'
+import { personName } from '../personName.ts'
 import styles from './Person.module.css'
 
 const genderLabel = (value: string | null) =>
@@ -72,13 +73,18 @@ export function PersonDetail({ id }: { id: string | undefined }) {
   const sacramentByType = Object.fromEntries(
     (record.sacraments ?? []).map((sacrament: any) => [sacrament.type, sacrament]),
   )
+  const isExternal = record.personType === 'external'
+  const visibleSacramentTypes = isExternal ? ['baptism', 'confirmation'] : initiationSacramentTypes
   const marriages = record.marriages ?? (record.marriage ? [record.marriage] : [])
   const marriage =
     marriages.find((item: any) => item.id === selectedMarriageId) ?? marriages[0] ?? null
   return (
     <section>
       <Link to="/persons">Về danh sách giáo dân</Link>
-      <PageHeader title="Hồ sơ giáo dân" description={record.fullName}>
+      <PageHeader
+        title={isExternal ? 'Hồ sơ người ngoài xứ' : 'Hồ sơ giáo dân'}
+        description={personName(record)}
+      >
         <Button
           variant="secondary"
           isPending={exportProfile.isPending}
@@ -97,20 +103,49 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           Xoá
         </Button>
       </PageHeader>
+      <section className={styles.detailSection} aria-labelledby="parents-heading">
+        <h2 id="parents-heading">Cha mẹ</h2>
+        <p>
+          Cha:{' '}
+          {record.parents?.father ? (
+            <Link to={`/persons/${record.parents.father.personId}`}>
+              {personName(record.parents.father)}
+            </Link>
+          ) : (
+            'Chưa cập nhật'
+          )}
+        </p>
+        <p>
+          Mẹ:{' '}
+          {record.parents?.mother ? (
+            <Link to={`/persons/${record.parents.mother.personId}`}>
+              {personName(record.parents.mother)}
+            </Link>
+          ) : (
+            'Chưa cập nhật'
+          )}
+        </p>
+      </section>
       <section className={styles.detailSection} aria-labelledby="administrative-heading">
         <div className={styles.sectionHeading}>
           <h2 id="administrative-heading">Thông tin hành chính</h2>
-          <p>Thông tin nhận diện, liên hệ và tình trạng hiện tại của giáo dân.</p>
+          <p>
+            {isExternal
+              ? 'Thông tin cơ bản của người ngoài xứ.'
+              : 'Thông tin nhận diện, liên hệ và tình trạng hiện tại của giáo dân.'}
+          </p>
         </div>
         <dl className={styles.details}>
           <div>
             <dt>Tên thánh</dt>
             <dd>{record.holyName || 'Chưa cập nhật'}</dd>
           </div>
-          <div>
-            <dt>Giới tính</dt>
-            <dd>{genderLabel(record.gender)}</dd>
-          </div>
+          {!isExternal && (
+            <div>
+              <dt>Giới tính</dt>
+              <dd>{genderLabel(record.gender)}</dd>
+            </div>
+          )}
           <div>
             <dt>Ngày sinh</dt>
             <dd>{record.birthDate || 'Chưa cập nhật'}</dd>
@@ -119,22 +154,38 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             <dt>Số điện thoại</dt>
             <dd>{record.phone || 'Chưa cập nhật'}</dd>
           </div>
-          <div>
-            <dt>Email</dt>
-            <dd>{record.email || 'Chưa cập nhật'}</dd>
-          </div>
-          <div>
-            <dt>Nghề nghiệp</dt>
-            <dd>{record.occupation || 'Chưa cập nhật'}</dd>
-          </div>
-          <div>
-            <dt>Số liên hệ thay thế</dt>
-            <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
-          </div>
-          <div>
-            <dt>Tình trạng cư trú</dt>
-            <dd>{residenceLabel[record.residenceStatus] || 'Chưa cập nhật'}</dd>
-          </div>
+          {isExternal && (
+            <>
+              <div>
+                <dt>Giáo xứ</dt>
+                <dd>{record.parishName || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt>Giáo phận</dt>
+                <dd>{record.dioceseName || 'Chưa cập nhật'}</dd>
+              </div>
+            </>
+          )}
+          {!isExternal && (
+            <>
+              <div>
+                <dt>Email</dt>
+                <dd>{record.email || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt>Nghề nghiệp</dt>
+                <dd>{record.occupation || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt>Số liên hệ thay thế</dt>
+                <dd>{record.secondaryPhone || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt>Tình trạng cư trú</dt>
+                <dd>{residenceLabel[record.residenceStatus] || 'Chưa cập nhật'}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Tình trạng mục vụ</dt>
             <dd>{pastoralLabel[record.pastoralStatus] || 'Chưa cập nhật'}</dd>
@@ -147,10 +198,12 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             <dt>Ghi chú</dt>
             <dd>{record.note || 'Không có ghi chú'}</dd>
           </div>
-          <div>
-            <dt>Ghi chú mục vụ</dt>
-            <dd>{record.pastoralNote || 'Không có ghi chú'}</dd>
-          </div>
+          {!isExternal && (
+            <div>
+              <dt>Ghi chú mục vụ</dt>
+              <dd>{record.pastoralNote || 'Không có ghi chú'}</dd>
+            </div>
+          )}
         </dl>
       </section>
       <section className={styles.section} aria-labelledby="sacraments-heading">
@@ -159,7 +212,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           <p>Thông tin các bí tích khai tâm đã được ghi nhận.</p>
         </div>
         <div className={styles.sacramentGrid}>
-          {initiationSacramentTypes.map((type) => {
+          {visibleSacramentTypes.map((type) => {
             const sacrament = sacramentByType[type]
             return (
               <dl key={type} className={styles.sacramentDetail}>

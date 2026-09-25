@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { invoke } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { usePerson } from '@/features/person/hooks/usePersons.ts'
+import { personName } from '@/features/person/personName.ts'
 import { useSettings } from '@/features/setting/hooks/useSettings.ts'
 import styles from './CertificateIssuePageView.module.css'
 
@@ -73,8 +74,12 @@ export function CertificateIssuePageView() {
       holyName: text(record.holyName),
       birthDate: text(record.birthDate),
       birthPlace: '',
-      fatherName: '',
-      motherName: '',
+      fatherName: text(
+        record.parents?.father ? personName(record.parents.father) : record.fatherName,
+      ),
+      motherName: text(
+        record.parents?.mother ? personName(record.parents.mother) : record.motherName,
+      ),
       ceremonyDate: text(source.date),
       ceremonyPlace: text(source.place),
       minister: text(source.minister),
@@ -148,7 +153,7 @@ export function CertificateIssuePageView() {
 
   return (
     <section className={styles.page}>
-      <PageHeader title="Cấp chứng thư" description={record.fullName}>
+      <PageHeader title="Cấp chứng thư" description={personName(record)}>
         <Button onClick={() => navigate(`/persons/${record.id}`)}>Quay lại hồ sơ</Button>
       </PageHeader>
       <form className={styles.layout} onSubmit={exportCertificate}>

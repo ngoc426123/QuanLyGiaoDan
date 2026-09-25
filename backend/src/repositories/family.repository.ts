@@ -103,7 +103,7 @@ export function findMany(filter: any = {}) {
     where +
     ' GROUP BY f.id' +
     ' ORDER BY ' +
-    orderBy(SORT_COLUMNS, 'name', filter) +
+    orderBy(SORT_COLUMNS, 'createdAt', filter, 'DESC') +
     ' LIMIT ? OFFSET ?'
 
   return prepare(sql)

@@ -231,7 +231,7 @@ describe('person.service', () => {
     })
 
     const record = personService.getById(person.id)
-    assert.equal(record.marriage.spouseId, null)
+    assert.ok(record.marriage.spouseId)
     assert.equal(record.marriage.spouseFullName, 'Trần Thị Bình')
     assert.equal(marriageService.list({ search: 'tran thi binh' }).data.length, 1)
   })
@@ -487,8 +487,9 @@ describe('zone.service / family.service', () => {
   it('phân trang: trang 2 trả đúng phần còn lại', () => {
     for (const name of ['Giáo họ A', 'Giáo họ B', 'Giáo họ C']) zoneService.create({ name })
 
-    const page1 = zoneService.list({ page: 1, pageSize: 2 })
-    const page2 = zoneService.list({ page: 2, pageSize: 2 })
+    const filter = { pageSize: 2, sortBy: 'name', sortDir: 'asc' }
+    const page1 = zoneService.list({ ...filter, page: 1 })
+    const page2 = zoneService.list({ ...filter, page: 2 })
 
     assert.equal(page1.data.length, 2)
     assert.equal(page2.data.length, 1)
@@ -506,7 +507,7 @@ describe('zone.service / family.service', () => {
 
     // Sắp trên cột có dấu sẽ ra Bến Tre, Cửa Lò, Ân Phú, Đông Hà — sai.
     assert.deepEqual(
-      zoneService.list({}).data.map((zone) => zone.name),
+      zoneService.list({ sortBy: 'name', sortDir: 'asc' }).data.map((zone) => zone.name),
       ['Giáo họ Ân Phú', 'Giáo họ Bến Tre', 'Giáo họ Cửa Lò', 'Giáo họ Đông Hà'],
     )
   })

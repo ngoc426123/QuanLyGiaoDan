@@ -25,7 +25,7 @@ export function ZoneList() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const filter = useMemo(
-    () => ({ page, pageSize: 50, search, sortBy: 'name', sortDir: 'asc' }),
+    () => ({ page, pageSize: 50, search, sortBy: 'createdAt', sortDir: 'desc' }),
     [page, search],
   )
   const query = useZones(filter)
