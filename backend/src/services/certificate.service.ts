@@ -15,6 +15,8 @@ const titles = Object.freeze({
   marriage: 'CHỨNG THƯ HÔN PHỐI',
 })
 
+const CERTIFICATE_MARGINS = Object.freeze({ top: 22, right: 22, bottom: 22, left: 22 })
+
 function formatDate(value: string | null) {
   if (!value) return 'Chưa cập nhật'
   const [year, month, day] = value.slice(0, 10).split('-')
@@ -145,7 +147,16 @@ function registryLine(input: any) {
 }
 
 function drawRule(document: any, x1: number, y: number, x2: number) {
-  document.save().strokeColor('#555').lineWidth(0.6).moveTo(x1, y).lineTo(x2, y).stroke().restore()
+  document
+    .save()
+    .strokeColor('#444')
+    .lineWidth(0.55)
+    .dash(1.2, { space: 1.8 })
+    .moveTo(x1, y)
+    .lineTo(x2, y)
+    .stroke()
+    .undash()
+    .restore()
 }
 
 function textAt(
@@ -157,10 +168,26 @@ function textAt(
   size = 12,
   align: 'left' | 'center' | 'right' = 'left',
 ) {
+  const layout = document.marriageCoordinateLayout
+  const targetX = layout ? layout.x(x) : x
+  const targetWidth = layout ? layout.width(width) : width
   document
-    .fontSize(size === 12 ? 13 : size)
+    .fontSize(size)
     .fillColor('#111')
-    .text(value || '', x, y, { width, align, lineBreak: false })
+    .text(value || '', targetX, y, { width: targetWidth, align, lineBreak: false })
+}
+
+function labelAt(
+  document: any,
+  value: string,
+  x: number,
+  y: number,
+  width: number,
+  align: 'left' | 'center' | 'right' = 'left',
+) {
+  font(document, 'timesbd.ttf')
+  textAt(document, value, x, y, width, 12, align)
+  font(document, 'times.ttf')
 }
 
 function sampleHeader(document: any, data: any) {
@@ -193,34 +220,34 @@ function drawBaptismTemplate(document: any, input: any, data: any) {
   sampleHeader(document, data)
   sampleTitle(document, 'CHỨNG CHỈ RỬA TỘI')
   font(document, 'times.ttf')
-  textAt(document, '(Tên thánh, họ và tên)', 54, 235, 150, 12)
+  labelAt(document, '(Tên thánh, họ và tên)', 36, 235, 150)
   textAt(document, personName(data), 190, 235, 365, 12)
   drawRule(document, 190, 252, 520)
-  textAt(document, 'Sinh ngày:', 36, 256, 90, 12)
+  labelAt(document, 'Sinh ngày:', 36, 256, 90)
   textAt(document, formatDate(data.person.birthDate), 110, 256, 165, 12)
   drawRule(document, 110, 273, 250)
   textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 292, 256, 150, 12)
   drawRule(document, 430, 273, 520)
-  textAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180, 12)
+  labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 294, 520)
-  textAt(document, 'và bà (tên thánh, họ tên):', 36, 300, 180, 12)
+  labelAt(document, 'và bà (tên thánh, họ tên):', 36, 300, 180)
   textAt(document, data.person.motherName || '', 190, 300, 330, 12)
   drawRule(document, 190, 317, 520)
-  textAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 323, 210, 12)
+  labelAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 323, 210)
   textAt(document, formatDate(data.source.date), 270, 323, 75, 12)
   drawRule(document, 270, 338, 345)
   textAt(document, 'tại Nhà thờ', 350, 323, 90, 12)
   textAt(document, data.source.place || '', 430, 323, 90, 12)
   drawRule(document, 430, 338, 520)
-  textAt(document, 'Do Linh mục:', 36, 346, 100, 12)
+  labelAt(document, 'Do Linh mục:', 36, 346, 100)
   textAt(document, data.source.minister || '', 145, 346, 375, 12)
   drawRule(document, 145, 363, 520)
-  textAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 369, 235, 12)
+  labelAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 369, 235)
   textAt(document, data.source.sponsor || '', 285, 369, 235, 12)
   drawRule(document, 285, 386, 520)
-  textAt(document, 'Số Rửa tội số:', 36, 392, 110, 12)
-  textAt(document, registryLine(input), 155, 392, 365, 11)
+  labelAt(document, 'Số Rửa tội số:', 36, 392, 110)
+  textAt(document, registryLine(input), 155, 392, 365, 12)
   drawRule(document, 155, 409, 520)
   textAt(
     document,
@@ -235,69 +262,73 @@ function drawBaptismTemplate(document: any, input: any, data: any) {
   textAt(
     document,
     `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
-    330,
+    304,
     500,
-    229,
-    11,
+    216,
+    12,
     'center',
   )
-  textAt(document, 'Linh mục chứng nhận', 330, 535, 229, 12, 'center')
+  labelAt(document, 'Linh mục quản xứ', 304, 524, 216, 'center')
   font(document, 'timesi.ttf')
-  textAt(document, data.parishPriestName || '', 330, 625, 229, 12, 'center')
+  textAt(document, '(ký tên, đóng dấu)', 304, 539, 216, 12, 'center')
+  font(document, 'times.ttf')
+  textAt(document, data.parishPriestName || '', 304, 643, 216, 12, 'center')
 }
 
 function drawConfirmationTemplate(document: any, input: any, data: any) {
   sampleHeader(document, data)
   sampleTitle(document, 'CHỨNG CHỈ THÊM SỨC')
   font(document, 'times.ttf')
-  textAt(document, '(Tên thánh, họ và tên)', 36, 235, 150, 12)
+  labelAt(document, '(Tên thánh, họ và tên)', 36, 235, 150)
   textAt(document, personName(data), 190, 235, 365, 12)
   drawRule(document, 190, 252, 520)
-  textAt(document, 'Sinh ngày:', 36, 256, 90, 12)
+  labelAt(document, 'Sinh ngày:', 36, 256, 90)
   textAt(document, formatDate(data.person.birthDate), 110, 256, 165, 12)
   drawRule(document, 110, 271, 250)
   textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 292, 256, 150, 12)
   drawRule(document, 430, 271, 520)
-  textAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180, 12)
+  labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 292, 520)
-  textAt(document, 'và bà (tên thánh, họ tên):', 36, 298, 180, 12)
-  textAt(document, data.person.motherName || '', 190, 298, 330, 12)
-  drawRule(document, 190, 313, 520)
-  textAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 319, 210, 12)
-  textAt(document, formatDate(data.baptismSource?.date), 270, 319, 75, 12)
-  drawRule(document, 270, 334, 345)
-  textAt(document, 'tại Nhà thờ', 350, 319, 90, 12)
-  textAt(document, data.baptismSource?.place || '', 430, 319, 90, 12)
-  drawRule(document, 430, 334, 520)
-  textAt(document, 'Đã nhận Bí tích Thêm sức ngày:', 36, 340, 220, 12)
-  textAt(document, formatDate(data.source.date), 270, 340, 75, 12)
-  drawRule(document, 270, 355, 345)
-  textAt(document, 'tại Nhà thờ', 350, 340, 90, 12)
-  textAt(document, data.source.place || '', 430, 340, 90, 12)
-  drawRule(document, 430, 355, 520)
-  textAt(document, 'Do TGM/ĐGM/LM:', 36, 361, 145, 12)
-  textAt(document, data.source.minister || '', 145, 361, 375, 12)
-  drawRule(document, 145, 376, 520)
-  textAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 382, 235, 12)
-  textAt(document, data.source.sponsor || '', 285, 382, 235, 12)
-  drawRule(document, 285, 397, 520)
-  textAt(document, 'Số Thêm sức số:', 36, 403, 125, 12)
-  textAt(document, registryLine(input), 155, 403, 365, 11)
-  drawRule(document, 155, 418, 520)
+  labelAt(document, 'và bà (tên thánh, họ tên):', 36, 300, 180)
+  textAt(document, data.person.motherName || '', 190, 300, 330, 12)
+  drawRule(document, 190, 317, 520)
+  labelAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 323, 210)
+  textAt(document, formatDate(data.baptismSource?.date), 270, 323, 75, 12)
+  drawRule(document, 270, 338, 345)
+  textAt(document, 'tại Nhà thờ', 350, 323, 90, 12)
+  textAt(document, data.baptismSource?.place || '', 430, 323, 90, 12)
+  drawRule(document, 430, 338, 520)
+  labelAt(document, 'Đã nhận Bí tích Thêm sức ngày:', 36, 346, 220)
+  textAt(document, formatDate(data.source.date), 270, 346, 75, 12)
+  drawRule(document, 270, 361, 345)
+  textAt(document, 'tại Nhà thờ', 350, 346, 90, 12)
+  textAt(document, data.source.place || '', 430, 346, 90, 12)
+  drawRule(document, 430, 361, 520)
+  labelAt(document, 'Do TGM/ĐGM/LM:', 36, 369, 145)
+  textAt(document, data.source.minister || '', 145, 369, 375, 12)
+  drawRule(document, 145, 386, 520)
+  labelAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 392, 235)
+  textAt(document, data.source.sponsor || '', 285, 392, 235, 12)
+  drawRule(document, 285, 409, 520)
+  labelAt(document, 'Số Thêm sức số:', 36, 415, 125)
+  textAt(document, registryLine(input), 155, 415, 365, 12)
+  drawRule(document, 155, 432, 520)
   drawRule(document, 36, 459, 520)
   textAt(
     document,
     `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
-    330,
+    304,
     500,
-    229,
-    11,
+    216,
+    12,
     'center',
   )
-  textAt(document, 'Linh mục chứng nhận', 330, 535, 229, 12, 'center')
+  labelAt(document, 'Linh mục quản xứ', 304, 524, 216, 'center')
   font(document, 'timesi.ttf')
-  textAt(document, data.parishPriestName || '', 330, 625, 229, 12, 'center')
+  textAt(document, '(ký tên, đóng dấu)', 304, 539, 216, 12, 'center')
+  font(document, 'times.ttf')
+  textAt(document, data.parishPriestName || '', 304, 643, 216, 12, 'center')
 }
 
 function marriagePersonByGender(data: any, gender: string, fallback: any) {
@@ -309,20 +340,40 @@ function marriagePersonByGender(data: any, gender: string, fallback: any) {
 
 function sacramentFor(person: any, records: any[], type: string) {
   if (!person) return null
-  return records.find((record: any) => record.type === type) ?? null
+  const record = records.find((item: any) => item.type === type)
+  if (record) return record
+
+  // Người phối ngẫu ngoài giáo xứ không có hồ sơ bí tích riêng; thông tin này được
+  // lưu cùng hôn phối để vẫn có thể hiện trên chứng thư.
+  const isBaptism = type === 'baptism'
+  const date = isBaptism ? person.baptismDate : person.confirmationDate
+  const place = isBaptism ? person.baptismPlace : person.confirmationPlace
+  return date || place ? { date, place } : null
+}
+
+const MARRIAGE_BODY_SIZE = 12
+const MARRIAGE_TOP_MARGIN = 22
+const MARRIAGE_BOTTOM_MARGIN = 22
+const MARRIAGE_LINE_SPACING_SCALE = 0.96
+
+function marriageY(document: any, value: number) {
+  const sourceTop = 50
+  return MARRIAGE_TOP_MARGIN + (value - sourceTop) * MARRIAGE_LINE_SPACING_SCALE
+}
+
+function marriageSignatureY(document: any) {
+  return document.page.height - MARRIAGE_BOTTOM_MARGIN - MARRIAGE_BODY_SIZE * 1.2
+}
+
+function marriageHeaderY(line: number) {
+  return MARRIAGE_TOP_MARGIN + line * 15
 }
 
 function dottedRule(document: any, x1: number, y: number, x2: number) {
-  document
-    .save()
-    .strokeColor('#444')
-    .lineWidth(0.55)
-    .dash(1.2, { space: 1.8 })
-    .moveTo(x1, y)
-    .lineTo(x2, y)
-    .stroke()
-    .undash()
-    .restore()
+  const layout = document.marriageCoordinateLayout
+  const startX = layout ? layout.x(x1) : x1
+  const endX = layout ? layout.x(x2) : x2
+  document.save().strokeColor('#444').lineWidth(0.55).dash(1.2, { space: 1.8 }).moveTo(startX, y).lineTo(endX, y).stroke().undash().restore()
 }
 
 function marriageField(document: any, label: string, value: string, y: number, options: any = {}) {
@@ -330,13 +381,27 @@ function marriageField(document: any, label: string, value: string, y: number, o
   const valueX = options.valueX ?? 150
   const valueWidth = options.valueWidth ?? 370
   font(document, 'timesbd.ttf')
-  textAt(document, label, 54, y, labelWidth, options.labelSize ?? 11)
+  textAt(document, label, 54, y, labelWidth, MARRIAGE_BODY_SIZE)
   font(document, 'times.ttf')
-  textAt(document, value || '', valueX, y, valueWidth, options.valueSize ?? 11)
+  textAt(document, value || '', valueX, y, valueWidth, MARRIAGE_BODY_SIZE)
   dottedRule(document, valueX, y + 16, options.ruleX2 ?? 520)
 }
 
+function marriageRegistryLine(input: any) {
+  if (![input.registerBook, input.registerPage, input.registerEntry].some(Boolean)) return ''
+  return `Quyển: ${input.registerBook || '—'}     Tờ: ${input.registerPage || '—'}     STT: ${input.registerEntry || '—'}`
+}
+
 function drawMarriageTemplate(document: any, input: any, data: any) {
+  const sourceLeft = 36
+  const sourceRight = 550
+  const availableWidth = document.page.width - CERTIFICATE_MARGINS.left - CERTIFICATE_MARGINS.right
+  const scaleX = availableWidth / (sourceRight - sourceLeft)
+  document.marriageCoordinateLayout = {
+    x: (value: number) => CERTIFICATE_MARGINS.left + (value - sourceLeft) * scaleX,
+    width: (value: number) => value * scaleX,
+  }
+  const y = (value: number) => marriageY(document, value)
   const selectedIsFemale = String(data.person.gender || '').toLowerCase() === 'nữ'
   const male = marriagePersonByGender(data, 'nam', selectedIsFemale ? data.spouse : data.person)
   const female = marriagePersonByGender(data, 'nữ', selectedIsFemale ? data.person : data.spouse)
@@ -347,113 +412,81 @@ function drawMarriageTemplate(document: any, input: any, data: any) {
   const femaleBaptism = sacramentFor(female, femaleSacraments, 'baptism')
   const femaleConfirmation = sacramentFor(female, femaleSacraments, 'confirmation')
 
-  // The reference certificate places the parish block at left and the title at right.
   font(document, 'timesbd.ttf')
-  textAt(document, data.dioceseName || '', 54, 50, 155, 12)
+  textAt(document, data.dioceseName || '', 54, marriageHeaderY(0), 155, MARRIAGE_BODY_SIZE)
   font(document, 'times.ttf')
-  textAt(document, `Giáo hạt: ${data.deaneryName || ''}`, 54, 68, 155, 12)
-  textAt(document, `Giáo xứ: ${data.parishName || ''}`, 54, 87, 155, 12)
-  textAt(document, `Địa chỉ: ${data.parishAddress || ''}`, 54, 106, 190, 11)
-  dottedRule(document, 54, 128, 225)
+  textAt(document, `Giáo hạt: ${data.deaneryName || ''}`, 54, marriageHeaderY(1), 155, MARRIAGE_BODY_SIZE)
+  textAt(document, `Giáo xứ: ${data.parishName || ''}`, 54, marriageHeaderY(2), 155, MARRIAGE_BODY_SIZE)
+  textAt(document, `Địa chỉ: ${data.parishAddress || ''}`, 54, marriageHeaderY(3), 190, MARRIAGE_BODY_SIZE)
   font(document, 'timesbd.ttf')
-  textAt(document, 'CHỨNG THƯ HÔN PHỐI', 245, 62, 305, 20, 'center')
+  textAt(document, 'CHỨNG THƯ HÔN PHỐI', 245, y(62), 305, 20, 'center')
   font(document, 'times.ttf')
-  textAt(document, 'Tôi, Linh mục:', 54, 182, 90, 13)
-  textAt(document, data.parishPriestName || '', 150, 182, 370, 13)
-  dottedRule(document, 150, 199, 520)
+  textAt(document, 'Tôi, Linh mục:', 54, y(182), 90, MARRIAGE_BODY_SIZE)
+  textAt(document, data.parishPriestName || '', 150, y(182), 370, MARRIAGE_BODY_SIZE)
+  dottedRule(document, 150, y(199), 520)
 
   font(document, 'timesbd.ttf')
-  textAt(document, 'CHỨNG NHẬN', 36, 214, 484, 19, 'center')
+  textAt(document, 'CHỨNG NHẬN', 36, y(214), 484, 19, 'center')
   font(document, 'times.ttf')
-  marriageField(document, 'Bên Nam', personName({ person: male }), 251, {
-    valueX: 150,
-    valueWidth: 370,
-  })
-  marriageField(document, 'Sinh ngày', formatDate(male?.birthDate), 272)
-  textAt(document, `tại ${male?.birthPlace || ''}`, 315, 272, 205, 12)
-  marriageField(document, 'Rửa tội ngày', formatDate(maleBaptism?.date), 293)
-  textAt(document, `tại ${maleBaptism?.place || ''}`, 315, 293, 205, 12)
-  marriageField(document, 'Thêm sức ngày', formatDate(maleConfirmation?.date), 314)
-  textAt(document, `tại ${maleConfirmation?.place || ''}`, 315, 314, 205, 12)
-  marriageField(document, 'Cha', male?.fatherName || '', 335)
-  marriageField(document, 'Mẹ', male?.motherName || '', 356)
-  marriageField(document, 'Thuộc Giáo họ', male?.zoneName || '', 377, {
-    valueX: 160,
-    valueWidth: 155,
-  })
-  textAt(document, 'Giáo xứ', 320, 377, 65, 12)
-  textAt(document, data.parishName || '', 386, 377, 134, 12)
-  dottedRule(document, 386, 394, 520)
+  marriageField(document, 'Bên Nam', personName({ person: male }), y(251))
+  marriageField(document, 'Sinh ngày', formatDate(male?.birthDate), y(272))
+  textAt(document, `tại ${male?.birthPlace || ''}`, 315, y(272), 205, MARRIAGE_BODY_SIZE)
+  marriageField(document, 'Rửa tội ngày', formatDate(maleBaptism?.date), y(293))
+  marriageField(document, 'Thêm sức ngày', formatDate(maleConfirmation?.date), y(314))
+  marriageField(document, 'Cha', male?.fatherName || '', y(335))
+  marriageField(document, 'Mẹ', male?.motherName || '', y(356))
+  marriageField(document, 'Thuộc Giáo họ', male?.zoneName || '', y(377))
+  textAt(document, 'Giáo xứ', 320, y(377), 65, MARRIAGE_BODY_SIZE)
+  textAt(document, male?.parishName || data.parishName || '', 386, y(377), 134, MARRIAGE_BODY_SIZE)
+  textAt(document, `tại ${maleBaptism?.place || ''}`, 315, y(293), 205, MARRIAGE_BODY_SIZE)
+  textAt(document, `tại ${maleConfirmation?.place || ''}`, 315, y(314), 205, MARRIAGE_BODY_SIZE)
 
-  marriageField(document, 'Bên Nữ', personName({ person: female }), 405, {
-    valueX: 150,
-    valueWidth: 370,
-  })
-  marriageField(document, 'Sinh ngày', formatDate(female?.birthDate), 426)
-  textAt(document, `tại ${female?.birthPlace || ''}`, 315, 426, 205, 12)
-  marriageField(document, 'Rửa tội ngày', formatDate(femaleBaptism?.date), 447)
-  textAt(document, `tại ${femaleBaptism?.place || ''}`, 315, 447, 205, 12)
-  marriageField(document, 'Thêm sức ngày', formatDate(femaleConfirmation?.date), 468)
-  textAt(document, `tại ${femaleConfirmation?.place || ''}`, 315, 468, 205, 12)
-  marriageField(document, 'Cha', female?.fatherName || '', 489)
-  marriageField(document, 'Mẹ', female?.motherName || '', 510)
-  marriageField(document, 'Thuộc Giáo họ', female?.zoneName || '', 531, {
-    valueX: 160,
-    valueWidth: 155,
-  })
-  textAt(document, 'Giáo xứ', 320, 531, 65, 12)
-  textAt(document, data.parishName || '', 386, 531, 134, 12)
-  dottedRule(document, 386, 548, 520)
+  marriageField(document, 'Bên Nữ', personName({ person: female }), y(405))
+  marriageField(document, 'Sinh ngày', formatDate(female?.birthDate), y(426))
+  textAt(document, `tại ${female?.birthPlace || ''}`, 315, y(426), 205, MARRIAGE_BODY_SIZE)
+  marriageField(document, 'Rửa tội ngày', formatDate(femaleBaptism?.date), y(447))
+  marriageField(document, 'Thêm sức ngày', formatDate(femaleConfirmation?.date), y(468))
+  marriageField(document, 'Cha', female?.fatherName || '', y(489))
+  marriageField(document, 'Mẹ', female?.motherName || '', y(510))
+  marriageField(document, 'Thuộc Giáo họ', female?.zoneName || '', y(531))
+  textAt(document, 'Giáo xứ', 320, y(531), 65, MARRIAGE_BODY_SIZE)
+  textAt(document, female?.parishName || data.parishName || '', 386, y(531), 134, MARRIAGE_BODY_SIZE)
+  textAt(document, `tại ${femaleBaptism?.place || ''}`, 315, y(447), 205, MARRIAGE_BODY_SIZE)
+  textAt(document, `tại ${femaleConfirmation?.place || ''}`, 315, y(468), 205, MARRIAGE_BODY_SIZE)
 
   font(document, 'timesbd.ttf')
-  textAt(document, 'ĐÃ CỬ HÀNH BÍ TÍCH HÔN PHỐI', 36, 561, 484, 15, 'center')
+  textAt(document, 'ĐÃ CỬ HÀNH BÍ TÍCH HÔN PHỐI', 36, y(561), 484, 15, 'center')
   font(document, 'times.ttf')
-  marriageField(document, 'Vào ngày', formatDate(data.source.date), 586)
-  marriageField(document, 'Tại', data.source.place || '', 607)
-  marriageField(document, 'Trước mặt người chứng hôn', data.source.minister || '', 628, {
-    labelWidth: 220,
-    valueX: 275,
-    valueWidth: 245,
-  })
-  marriageField(document, 'Và hai người chứng 1', data.source.witnessOne || '', 649, {
-    labelWidth: 220,
-    valueX: 275,
-    valueWidth: 245,
-  })
-  marriageField(document, '2', data.source.witnessTwo || '', 670, {
-    labelWidth: 220,
-    valueX: 275,
-    valueWidth: 245,
-  })
-  const registry = registryLine(input)
-  marriageField(document, 'Trích sổ Hôn phối Giáo xứ', registry, 691, {
-    labelWidth: 220,
-    valueX: 275,
-    valueWidth: 245,
-    valueSize: 10,
-  })
+  marriageField(document, 'Vào ngày', formatDate(data.source.date), y(586))
+  marriageField(document, 'Tại', data.source.place || '', y(607))
+  marriageField(document, 'Trước mặt người chứng hôn', data.source.minister || '', y(628), { labelWidth: 220, valueX: 275, valueWidth: 245 })
+  marriageField(document, 'Người chứng thứ nhất', data.source.witnessOne || '', y(649), { labelWidth: 220, valueX: 275, valueWidth: 245 })
+  marriageField(document, 'Người chứng thứ hai', data.source.witnessTwo || '', y(670), { labelWidth: 220, valueX: 275, valueWidth: 245 })
+  const registry = marriageRegistryLine(input)
+  marriageField(document, 'Trích sổ Hôn phối Giáo xứ', registry, y(691), { labelWidth: 220, valueX: 275, valueWidth: 245 })
+  textAt(document, `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`, 304, y(718), 216, MARRIAGE_BODY_SIZE, 'center')
+  font(document, 'timesbd.ttf')
+  textAt(document, 'Linh mục quản xứ', 304, y(742), 216, MARRIAGE_BODY_SIZE, 'center')
+  font(document, 'timesi.ttf')
+  textAt(document, '(ký tên, đóng dấu)', 304, y(758), 216, MARRIAGE_BODY_SIZE, 'center')
+  font(document, 'times.ttf')
   textAt(
     document,
-    `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
+    data.parishPriestName || '',
     304,
-    718,
+    marriageSignatureY(document),
     216,
-    11,
+    MARRIAGE_BODY_SIZE,
     'center',
   )
-  font(document, 'timesbd.ttf')
-  textAt(document, 'Linh mục quản xứ', 304, 742, 216, 11, 'center')
-  font(document, 'timesi.ttf')
-  textAt(document, '(ký tên, đóng dấu)', 304, 758, 216, 11, 'center')
-  font(document, 'times.ttf')
-  textAt(document, data.parishPriestName || '', 304, 792, 216, 11, 'center')
+  delete document.marriageCoordinateLayout
 }
 
 async function writePdf(filePath: string, input: any, data: any) {
   await new Promise<void>((resolve, reject) => {
     const document = new PDFDocument({
       size: 'A4',
-      margin: 24,
+      margins: CERTIFICATE_MARGINS,
       info: { Title: titles[input.type] },
     })
     const stream = createWriteStream(filePath)
