@@ -174,11 +174,25 @@ function drawRule(document: any, x1: number, y: number, x2: number) {
     .strokeColor('#444')
     .lineWidth(0.55)
     .dash(1.2, { space: 1.8 })
-    .moveTo(x1, y)
-    .lineTo(x2, y)
+    .moveTo(x1, y - 2)
+    .lineTo(x2, y - 2)
     .stroke()
     .undash()
     .restore()
+}
+
+function fitSingleLine(
+  document: any,
+  value: string,
+  x: number,
+  y: number,
+  width: number,
+  maxSize = 12,
+  minSize = 8,
+) {
+  let size = maxSize
+  while (size > minSize && document.fontSize(size).widthOfString(value) > width) size -= 0.5
+  textAt(document, value, x, y, width, size, 'center')
 }
 
 function textAt(
@@ -213,19 +227,18 @@ function labelAt(
 }
 
 function sampleHeader(document: any, data: any) {
-  font(document, 'timesbd.ttf')
-  textAt(document, data.dioceseName || 'TỔNG GIÁO PHẬN', 36, 50, 523, 13)
   font(document, 'times.ttf')
-  textAt(document, `Giáo hạt: ${data.deaneryName || ''}`, 36, 68, 523)
-  textAt(document, `Giáo xứ: ${data.parishName || ''}`, 36, 84, 523)
-  textAt(document, `Điện thoại: ${data.parishPhone || ''}`, 36, 100, 523)
-  textAt(document, `Địa chỉ: ${data.parishAddress || ''}`, 36, 116, 523)
+  textAt(document, data.dioceseName || 'TỔNG GIÁO PHẬN', 36, 50, 523)
+  textAt(document, `Giáo hạt: ${data.deaneryName || ''}`, 36, 66, 523)
+  textAt(document, `Giáo xứ: ${data.parishName || ''}`, 36, 82, 523)
+  textAt(document, `Điện thoại: ${data.parishPhone || ''}`, 36, 98, 523)
+  textAt(document, `Địa chỉ: ${data.parishAddress || ''}`, 36, 114, 523)
 }
 
 function sampleTitle(document: any, title: string) {
   font(document, 'timesbd.ttf')
-  textAt(document, title, 36, 148, 523, 20, 'center')
-  textAt(document, '---†---', 36, 175, 523, 13, 'center')
+  textAt(document, title, 36, 176, 523, 20, 'center')
+  textAt(document, '---†---', 36, 203, 523, 13, 'center')
 }
 
 function personName(data: any) {
@@ -243,52 +256,50 @@ function drawBaptismTemplate(document: any, input: any, data: any) {
   sampleTitle(document, 'CHỨNG CHỈ RỬA TỘI')
   font(document, 'times.ttf')
   labelAt(document, '(Tên thánh, họ và tên)', 36, 235, 150)
-  textAt(document, personName(data), 190, 235, 365, 12)
-  drawRule(document, 190, 252, 520)
-  labelAt(document, 'Sinh ngày:', 36, 256, 90)
-  textAt(document, formatDate(data.person.birthDate), 110, 256, 165, 12)
-  drawRule(document, 110, 273, 250)
-  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 292, 256, 150, 12)
-  drawRule(document, 430, 273, 520)
+  textAt(document, personName(data), 155, 235, 400, 12)
+  drawRule(document, 155, 252, 520)
+  labelAt(document, 'Sinh ngày:', 36, 256, 70)
+  textAt(document, formatDate(data.person.birthDate), 95, 256, 72, 12)
+  drawRule(document, 95, 273, 170)
+  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 175, 256, 125, 12)
+  drawRule(document, 270, 273, 520)
   labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 294, 520)
   labelAt(document, 'và bà (tên thánh, họ tên):', 36, 300, 180)
-  textAt(document, data.person.motherName || '', 190, 300, 330, 12)
-  drawRule(document, 190, 317, 520)
+  textAt(document, data.person.motherName || '', 170, 300, 350, 12)
+  drawRule(document, 170, 317, 520)
   labelAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 323, 210)
-  textAt(document, formatDate(data.source.date), 270, 323, 75, 12)
-  drawRule(document, 270, 338, 345)
-  textAt(document, 'tại Nhà thờ', 350, 323, 90, 12)
-  textAt(document, data.source.place || '', 430, 323, 90, 12)
-  drawRule(document, 430, 338, 520)
+  textAt(document, formatDate(data.source.date), 205, 323, 68, 12)
+  drawRule(document, 205, 338, 273)
+  textAt(document, 'tại Nhà thờ', 282, 323, 78, 12)
+  textAt(document, data.source.place || '', 340, 323, 180, 12)
+  drawRule(document, 340, 338, 520)
   labelAt(document, 'Do Linh mục:', 36, 346, 100)
-  textAt(document, data.source.minister || '', 145, 346, 375, 12)
-  drawRule(document, 145, 363, 520)
+  textAt(document, data.source.minister || '', 125, 346, 395, 12)
+  drawRule(document, 125, 363, 520)
   labelAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 369, 235)
-  textAt(document, data.source.sponsor || '', 285, 369, 235, 12)
-  drawRule(document, 285, 386, 520)
+  textAt(document, data.source.sponsor || '', 220, 369, 300, 12)
+  drawRule(document, 220, 386, 520)
   labelAt(document, 'Số Rửa tội số:', 36, 392, 110)
-  textAt(document, registryLine(input), 155, 392, 365, 12)
-  drawRule(document, 155, 409, 520)
+  textAt(document, registryLine(input), 125, 392, 395, 12)
+  drawRule(document, 125, 409, 520)
   textAt(
     document,
     data.source.note || 'Ghi chú trong sổ Rửa tội (về hôn phối...)',
     36,
     415,
-    300,
+    230,
     12,
   )
-  drawRule(document, 300, 432, 520)
+  drawRule(document, 230, 432, 520)
   drawRule(document, 36, 459, 520)
-  textAt(
+  fitSingleLine(
     document,
     `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
     304,
     500,
     216,
-    12,
-    'center',
   )
   labelAt(document, 'Linh mục quản xứ', 304, 524, 216, 'center')
   font(document, 'timesi.ttf')
@@ -302,49 +313,47 @@ function drawConfirmationTemplate(document: any, input: any, data: any) {
   sampleTitle(document, 'CHỨNG CHỈ THÊM SỨC')
   font(document, 'times.ttf')
   labelAt(document, '(Tên thánh, họ và tên)', 36, 235, 150)
-  textAt(document, personName(data), 190, 235, 365, 12)
-  drawRule(document, 190, 252, 520)
-  labelAt(document, 'Sinh ngày:', 36, 256, 90)
-  textAt(document, formatDate(data.person.birthDate), 110, 256, 165, 12)
-  drawRule(document, 110, 271, 250)
-  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 292, 256, 150, 12)
-  drawRule(document, 430, 271, 520)
+  textAt(document, personName(data), 155, 235, 400, 12)
+  drawRule(document, 155, 252, 520)
+  labelAt(document, 'Sinh ngày:', 36, 256, 70)
+  textAt(document, formatDate(data.person.birthDate), 95, 256, 72, 12)
+  drawRule(document, 95, 271, 170)
+  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 175, 256, 125, 12)
+  drawRule(document, 270, 271, 520)
   labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 292, 520)
   labelAt(document, 'và bà (tên thánh, họ tên):', 36, 300, 180)
-  textAt(document, data.person.motherName || '', 190, 300, 330, 12)
-  drawRule(document, 190, 317, 520)
+  textAt(document, data.person.motherName || '', 170, 300, 350, 12)
+  drawRule(document, 170, 317, 520)
   labelAt(document, 'Đã nhận Bí tích Rửa tội ngày:', 36, 323, 210)
-  textAt(document, formatDate(data.baptismSource?.date), 270, 323, 75, 12)
-  drawRule(document, 270, 338, 345)
-  textAt(document, 'tại Nhà thờ', 350, 323, 90, 12)
-  textAt(document, data.baptismSource?.place || '', 430, 323, 90, 12)
-  drawRule(document, 430, 338, 520)
+  textAt(document, formatDate(data.baptismSource?.date), 205, 323, 68, 12)
+  drawRule(document, 205, 338, 273)
+  textAt(document, 'tại Nhà thờ', 282, 323, 78, 12)
+  textAt(document, data.baptismSource?.place || '', 340, 323, 180, 12)
+  drawRule(document, 340, 338, 520)
   labelAt(document, 'Đã nhận Bí tích Thêm sức ngày:', 36, 346, 220)
-  textAt(document, formatDate(data.source.date), 270, 346, 75, 12)
-  drawRule(document, 270, 361, 345)
-  textAt(document, 'tại Nhà thờ', 350, 346, 90, 12)
-  textAt(document, data.source.place || '', 430, 346, 90, 12)
-  drawRule(document, 430, 361, 520)
+  textAt(document, formatDate(data.source.date), 205, 346, 68, 12)
+  drawRule(document, 205, 361, 273)
+  textAt(document, 'tại Nhà thờ', 282, 346, 78, 12)
+  textAt(document, data.source.place || '', 340, 346, 180, 12)
+  drawRule(document, 340, 361, 520)
   labelAt(document, 'Do TGM/ĐGM/LM:', 36, 369, 145)
-  textAt(document, data.source.minister || '', 145, 369, 375, 12)
-  drawRule(document, 145, 386, 520)
+  textAt(document, data.source.minister || '', 160, 369, 360, 12)
+  drawRule(document, 160, 386, 520)
   labelAt(document, 'Người đỡ đầu (tên thánh, họ tên):', 36, 392, 235)
-  textAt(document, data.source.sponsor || '', 285, 392, 235, 12)
-  drawRule(document, 285, 409, 520)
+  textAt(document, data.source.sponsor || '', 220, 392, 300, 12)
+  drawRule(document, 220, 409, 520)
   labelAt(document, 'Số Thêm sức số:', 36, 415, 125)
-  textAt(document, registryLine(input), 155, 415, 365, 12)
-  drawRule(document, 155, 432, 520)
+  textAt(document, registryLine(input), 125, 415, 395, 12)
+  drawRule(document, 125, 432, 520)
   drawRule(document, 36, 459, 520)
-  textAt(
+  fitSingleLine(
     document,
     `Giáo xứ ${parishLabel(data.parishName)}, ngày ${formatDate(now())}`,
     304,
     500,
     216,
-    12,
-    'center',
   )
   labelAt(document, 'Linh mục quản xứ', 304, 524, 216, 'center')
   font(document, 'timesi.ttf')
@@ -395,7 +404,7 @@ function marriageSignatureY(document: any) {
 }
 
 function marriageHeaderY(line: number) {
-  return MARRIAGE_TOP_MARGIN + line * 15
+  return MARRIAGE_TOP_MARGIN + line * 16
 }
 
 function dottedRule(document: any, x1: number, y: number, x2: number) {
@@ -450,7 +459,7 @@ function drawMarriageTemplate(document: any, input: any, data: any) {
   const femaleBaptism = sacramentFor(female, femaleSacraments, 'baptism')
   const femaleConfirmation = sacramentFor(female, femaleSacraments, 'confirmation')
 
-  font(document, 'timesbd.ttf')
+  font(document, 'times.ttf')
   textAt(document, data.dioceseName || '', 54, marriageHeaderY(0), 155, MARRIAGE_BODY_SIZE)
   font(document, 'times.ttf')
   textAt(
