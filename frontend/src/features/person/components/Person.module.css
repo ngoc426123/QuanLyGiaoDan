@@ -90,6 +90,28 @@
   font-size: var(--font-size-sm);
 }
 
+.quickAddedDetails {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+}
+
+.quickAddedDetails div {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 2fr);
+  gap: var(--space-2);
+}
+
+.quickAddedDetails dt {
+  color: var(--color-text-muted);
+}
+
+.quickAddedDetails dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .quickActions {
   display: flex;
   justify-content: flex-end;

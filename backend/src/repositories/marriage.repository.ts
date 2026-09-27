@@ -16,6 +16,7 @@ function toDomain(row: any) {
     spouseIsExternal: row.spouse_person_type === 'external',
     spouseHolyName: row.spouse_holy_name ?? null,
     spouseBirthDate: row.spouse_birth_date ?? null,
+    spouseBirthPlace: row.spouse_birth_place ?? null,
     spouseParishName: row.spouse_parish_name ?? null,
     spouseDioceseName: row.spouse_diocese_name ?? null,
     spouseBaptismDate: row.spouse_baptism_date ?? null,
@@ -35,7 +36,7 @@ const SPOUSE_COLUMNS =
   'm.id, m.date, m.minister, m.place, m.status, m.note, m.witness_one, m.witness_two,' +
   ' m.created_at, m.updated_at, spouse.person_id AS spouse_id,' +
   ' spouse_person.person_type AS spouse_person_type, spouse_person.full_name AS spouse_full_name,' +
-  ' spouse_person.holy_name AS spouse_holy_name, spouse_person.birth_date AS spouse_birth_date,' +
+  ' spouse_person.holy_name AS spouse_holy_name, spouse_person.birth_date AS spouse_birth_date, spouse_person.birth_place AS spouse_birth_place,' +
   ' spouse_person.parish_name AS spouse_parish_name, spouse_person.diocese_name AS spouse_diocese_name,' +
   ' spouse_person.phone AS spouse_phone, spouse_person.note AS spouse_note,' +
   " (SELECT date FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS spouse_baptism_date," +
@@ -78,7 +79,7 @@ export function findById(id: string) {
 
 export function findParticipantsByMarriageId(marriageId: string) {
   return prepare(
-    "SELECT mp.person_id AS personId, p.full_name AS fullName, p.full_name_ascii AS fullNameAscii, p.person_type AS personType, p.holy_name AS holyName, p.birth_date AS birthDate, p.parish_name AS parishName, p.diocese_name AS dioceseName, p.father_name AS fatherName, p.mother_name AS motherName, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismPlace, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationPlace FROM marriage_participants mp JOIN persons p ON p.id = mp.person_id WHERE mp.marriage_id = ? AND mp.deleted_at IS NULL ORDER BY mp.created_at",
+    "SELECT mp.person_id AS personId, p.full_name AS fullName, p.full_name_ascii AS fullNameAscii, p.person_type AS personType, p.holy_name AS holyName, p.birth_date AS birthDate, p.birth_place AS birthPlace, p.parish_name AS parishName, p.diocese_name AS dioceseName, p.father_name AS fatherName, p.mother_name AS motherName, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismPlace, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationPlace FROM marriage_participants mp JOIN persons p ON p.id = mp.person_id WHERE mp.marriage_id = ? AND mp.deleted_at IS NULL ORDER BY mp.created_at",
   ).all(marriageId)
 }
 

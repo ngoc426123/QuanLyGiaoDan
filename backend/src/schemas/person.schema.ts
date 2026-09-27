@@ -55,6 +55,7 @@ const personExtensions = Object.freeze({
   dioceseName: optionalText(120, 'Giáo phận'),
   fatherName: optionalText(120, 'Tên cha'),
   motherName: optionalText(120, 'Tên mẹ'),
+  birthPlace: optionalText(255, 'Nơi sinh'),
   parents: z
     .object({
       fatherId: idSchema.nullish(),

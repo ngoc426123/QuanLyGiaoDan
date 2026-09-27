@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { useCreatePerson } from '../hooks/usePersonMutations.ts'
 import { personName } from '../personName.ts'
 import { ExternalPersonForm } from './ExternalPersonFields.tsx'
 import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
+import { formatDate } from '@/shared/date.ts'
 import styles from './Person.module.css'
 
 const emptyValue = {
@@ -18,6 +20,7 @@ const emptyValue = {
   holyName: '',
   gender: '',
   birthDate: '',
+  birthPlace: '',
   phone: '',
   email: '',
   occupation: '',
@@ -59,6 +62,7 @@ const editableFields = [
   'holyName',
   'gender',
   'birthDate',
+  'birthPlace',
   'phone',
   'email',
   'occupation',
@@ -78,6 +82,7 @@ const externalEditableFields = new Set([
   'personType',
   'holyName',
   'birthDate',
+  'birthPlace',
   'phone',
   'note',
   'parishName',
@@ -172,6 +177,7 @@ function QuickExternalParentForm({ onCancel, onCreated }: any) {
     holyName: '',
     fullName: '',
     birthDate: '',
+    birthPlace: '',
     phone: '',
     parishName: '',
     dioceseName: '',
@@ -293,6 +299,13 @@ export function PersonForm({
           error={fieldErrors.birthDate}
           onChange={(next: string) => set('birthDate', next)}
         />
+        <BirthPlaceInput
+          label="Nơi sinh"
+          value={value.birthPlace}
+          error={fieldErrors.birthPlace}
+          onChange={(event: any) => set('birthPlace', event.target.value)}
+          maxLength={255}
+        />
         <Input
           label="Số điện thoại"
           value={value.phone}
@@ -405,19 +418,16 @@ export function PersonForm({
               </div>
               {mode === 'external' && quickAdded[role.key] && (
                 <div className={styles.quickAdded}>
-                  <strong>Đã thêm: {personName(quickAdded[role.key])}</strong>
-                  {(quickAdded[role.key].parishName || quickAdded[role.key].dioceseName) && (
-                    <span>
-                      {[
-                        quickAdded[role.key].parishName &&
-                          `Giáo xứ: ${quickAdded[role.key].parishName}`,
-                        quickAdded[role.key].dioceseName &&
-                          `Giáo phận: ${quickAdded[role.key].dioceseName}`,
-                      ]
-                        .filter(Boolean)
-                        .join(' | ')}
-                    </span>
-                  )}
+                  <strong>Đã thêm người ngoài xứ</strong>
+                  <dl className={styles.quickAddedDetails}>
+                    <div><dt>Tên thánh, họ và tên</dt><dd>{personName(quickAdded[role.key])}</dd></div>
+                    <div><dt>Ngày sinh</dt><dd>{formatDate(quickAdded[role.key].birthDate) || 'Chưa cập nhật'}</dd></div>
+                    <div><dt>Nơi sinh</dt><dd>{quickAdded[role.key].birthPlace || 'Chưa cập nhật'}</dd></div>
+                    <div><dt>Giáo xứ</dt><dd>{quickAdded[role.key].parishName || 'Chưa cập nhật'}</dd></div>
+                    <div><dt>Giáo phận</dt><dd>{quickAdded[role.key].dioceseName || 'Chưa cập nhật'}</dd></div>
+                    <div><dt>Số điện thoại</dt><dd>{quickAdded[role.key].phone || 'Chưa cập nhật'}</dd></div>
+                    <div><dt>Ghi chú</dt><dd>{quickAdded[role.key].note || 'Không có ghi chú'}</dd></div>
+                  </dl>
                 </div>
               )}
               {openExternalParentForms[role.key] && (

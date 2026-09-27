@@ -57,6 +57,7 @@ function toFormValue(initialValue: any) {
     spouseName: initialValue?.spouseName ?? participants[1]?.fullName ?? '',
     spouseHolyName: initialValue?.spouseHolyName ?? '',
     spouseBirthDate: initialValue?.spouseBirthDate ?? '',
+    spouseBirthPlace: initialValue?.spouseBirthPlace ?? '',
     spouseParishName: initialValue?.spouseParishName ?? '',
     spouseDioceseName: initialValue?.spouseDioceseName ?? '',
     spouseBaptismDate: initialValue?.spouseBaptismDate ?? '',
@@ -235,7 +236,7 @@ export function MarriageForm({
               value={value}
               onChange={(field: string, next: string) => setValue((current: any) => ({ ...current, [field]: next }))}
               fieldErrors={fieldErrors}
-              fields={{ holyName: 'spouseHolyName', fullName: 'spouseName', birthDate: 'spouseBirthDate', parishName: 'spouseParishName', dioceseName: 'spouseDioceseName', baptismDate: 'spouseBaptismDate', baptismPlace: 'spouseBaptismPlace', baptismSponsor: 'spouseBaptismSponsor', confirmationDate: 'spouseConfirmationDate', confirmationPlace: 'spouseConfirmationPlace', confirmationSponsor: 'spouseConfirmationSponsor', phone: 'spousePhone', note: 'spouseNote' }}
+              fields={{ holyName: 'spouseHolyName', fullName: 'spouseName', birthDate: 'spouseBirthDate', birthPlace: 'spouseBirthPlace', parishName: 'spouseParishName', dioceseName: 'spouseDioceseName', baptismDate: 'spouseBaptismDate', baptismPlace: 'spouseBaptismPlace', baptismSponsor: 'spouseBaptismSponsor', confirmationDate: 'spouseConfirmationDate', confirmationPlace: 'spouseConfirmationPlace', confirmationSponsor: 'spouseConfirmationSponsor', phone: 'spousePhone', note: 'spouseNote' }}
             >
             <div className={styles.externalGroup}>
               <h4>Thông tin gia đình</h4>

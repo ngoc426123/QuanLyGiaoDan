@@ -156,6 +156,10 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             <dd>{formatDate(record.birthDate) || 'Chưa cập nhật'}</dd>
           </div>
           <div>
+            <dt>Nơi sinh</dt>
+            <dd>{record.birthPlace || 'Chưa cập nhật'}</dd>
+          </div>
+          <div>
             <dt>Số điện thoại</dt>
             <dd>{record.phone || 'Chưa cập nhật'}</dd>
           </div>

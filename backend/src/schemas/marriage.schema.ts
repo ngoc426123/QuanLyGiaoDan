@@ -14,6 +14,7 @@ const marriageFields = {
   spouseName: optionalText(120, 'Tên người phối ngẫu'),
   spouseHolyName: optionalText(75, 'Tên thánh người phối ngẫu'),
   spouseBirthDate: calendarDateSchema.or(z.literal('')).nullish(),
+  spouseBirthPlace: optionalText(255, 'Nơi sinh người phối ngẫu'),
   spouseParishName: optionalText(120, 'Giáo xứ người phối ngẫu'),
   spouseDioceseName: optionalText(120, 'Giáo phận người phối ngẫu'),
   spouseBaptismDate: calendarDateSchema.or(z.literal('')).nullish(),

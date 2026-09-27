@@ -41,6 +41,7 @@ const TEXT_FIELDS = Object.freeze([
   ['secondaryPhone', 20],
   ['pastoralNote', undefined],
   ['note', undefined],
+  ['birthPlace', 255],
 ])
 
 const DATE_FIELDS = Object.freeze(['birthDate', 'deathDate'])
@@ -134,6 +135,7 @@ function createExternalParent(fullName: string, timestamp: string) {
     holyName: null,
     gender: null,
     birthDate: null,
+    birthPlace: null,
     deathDate: null,
     phone: null,
     email: null,
@@ -280,6 +282,7 @@ export function create(input: any) {
       holyName: patch.holyName ?? null,
       gender: patch.gender ?? null,
       birthDate: patch.birthDate ?? null,
+      birthPlace: patch.birthPlace ?? null,
       deathDate: patch.deathDate ?? null,
       phone: patch.phone ?? null,
       email: patch.email ?? null,

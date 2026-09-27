@@ -13,7 +13,7 @@ const SORT_COLUMNS = Object.freeze({
 const SELECT_COLUMNS =
   'p.id, p.full_name, p.given_name, p.full_name_ascii, p.given_name_ascii,' +
   ' p.holy_name, p.gender,' +
-  ' p.birth_date, p.death_date, p.phone, p.email, p.occupation, p.secondary_phone, p.residence_status,' +
+  ' p.birth_date, p.birth_place, p.death_date, p.phone, p.email, p.occupation, p.secondary_phone, p.residence_status,' +
   ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.person_type, p.parish_name, p.diocese_name,' +
   ' p.father_name, p.mother_name, p.created_at, p.updated_at'
 
@@ -25,6 +25,7 @@ const UPDATABLE = Object.freeze({
   holyName: 'holy_name',
   gender: 'gender',
   birthDate: 'birth_date',
+  birthPlace: 'birth_place',
   deathDate: 'death_date',
   phone: 'phone',
   email: 'email',
@@ -68,6 +69,7 @@ export function toDomain(row) {
     holyName: row.holy_name ?? null,
     gender: row.gender ?? null,
     birthDate: row.birth_date ?? null,
+    birthPlace: row.birth_place ?? null,
     deathDate: row.death_date ?? null,
     phone: row.phone ?? null,
     email: row.email ?? null,
@@ -199,9 +201,9 @@ export function insert(record) {
   prepare(
     'INSERT INTO persons (id, full_name, given_name, full_name_ascii, given_name_ascii,' +
       ' holy_name, gender,' +
-      ' birth_date, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
+      ' birth_date, birth_place, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
       ' pastoral_note, source, note, person_type, parish_name, diocese_name, father_name, mother_name, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,
@@ -211,6 +213,7 @@ export function insert(record) {
     record.holyName,
     record.gender,
     record.birthDate,
+    record.birthPlace,
     record.deathDate,
     record.phone,
     record.email,

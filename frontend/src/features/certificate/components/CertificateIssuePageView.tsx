@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
@@ -77,7 +78,7 @@ export function CertificateIssuePageView() {
       personName: text(record.fullName),
       holyName: text(record.holyName),
       birthDate: text(record.birthDate),
-      birthPlace: '',
+      birthPlace: text(record.birthPlace),
       fatherName: text(
         record.parents?.father ? personName(record.parents.father) : record.fatherName,
       ),
@@ -292,7 +293,7 @@ export function CertificateIssuePageView() {
                   value={draft.birthDate}
                   onChange={(value: string) => set('birthDate', value)}
                 />
-                <Input
+                <BirthPlaceInput
                   label="Nơi sinh"
                   value={draft.birthPlace}
                   onChange={(event: any) => set('birthPlace', event.target.value)}

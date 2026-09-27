@@ -80,6 +80,7 @@ function requireCertificateData(input: any) {
               fullName: source.spouseFullName,
               holyName: source.spouseHolyName,
               birthDate: source.spouseBirthDate,
+              birthPlace: source.spouseBirthPlace,
               parishName: source.spouseParishName,
               dioceseName: source.spouseDioceseName,
               baptismDate: source.spouseBaptismDate,
@@ -117,7 +118,7 @@ function requireCertificateData(input: any) {
           fullName: input.draft.personName,
           holyName: input.draft.holyName,
           birthDate: input.draft.birthDate || null,
-          birthPlace: input.draft.birthPlace,
+          birthPlace: data.person.birthPlace,
           fatherName: input.draft.fatherName,
           motherName: input.draft.motherName,
         },
@@ -261,8 +262,9 @@ function drawBaptismTemplate(document: any, input: any, data: any) {
   labelAt(document, 'Sinh ngày:', 36, 256, 70)
   textAt(document, formatDate(data.person.birthDate), 95, 256, 72, 12)
   drawRule(document, 95, 273, 170)
-  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 175, 256, 125, 12)
-  drawRule(document, 270, 273, 520)
+  textAt(document, 'tại', 175, 256, 20, 12)
+  drawRule(document, 195, 273, 520)
+  textAt(document, data.person.birthPlace || '', 195, 256, 325, 12)
   labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 294, 520)
@@ -318,8 +320,9 @@ function drawConfirmationTemplate(document: any, input: any, data: any) {
   labelAt(document, 'Sinh ngày:', 36, 256, 70)
   textAt(document, formatDate(data.person.birthDate), 95, 256, 72, 12)
   drawRule(document, 95, 271, 170)
-  textAt(document, `tại ${data.person.birthPlace || '(tỉnh/thành phố)'}`, 175, 256, 125, 12)
-  drawRule(document, 270, 271, 520)
+  textAt(document, 'tại', 175, 256, 20, 12)
+  drawRule(document, 195, 271, 520)
+  textAt(document, data.person.birthPlace || '', 195, 256, 325, 12)
   labelAt(document, 'Con ông (tên thánh, họ tên):', 36, 277, 180)
   textAt(document, data.person.fatherName || '', 190, 277, 330, 12)
   drawRule(document, 190, 292, 520)
@@ -371,9 +374,8 @@ function marriagePersonByGender(data: any, gender: 'male' | 'female', fallback: 
   return people.find(matchesGender) ?? fallback
 }
 
-function marriageBirthParish(person: any, parishName: string) {
-  if (person?.personType === 'external') return String(person.parishName || '').trim()
-  return String(parishName || '').trim()
+function marriageBirthPlace(person: any) {
+  return String(person?.birthPlace || '').trim()
 }
 
 function sacramentFor(person: any, records: any[], type: string) {
@@ -500,7 +502,7 @@ function drawMarriageTemplate(document: any, input: any, data: any) {
   marriageField(document, 'Sinh ngày', formatDate(male?.birthDate), y(272))
   textAt(
     document,
-    `tại ${marriageBirthParish(male, data.parishName)}`,
+    `tại ${marriageBirthPlace(male)}`,
     315,
     y(272),
     205,
@@ -520,7 +522,7 @@ function drawMarriageTemplate(document: any, input: any, data: any) {
   marriageField(document, 'Sinh ngày', formatDate(female?.birthDate), y(426))
   textAt(
     document,
-    `tại ${marriageBirthParish(female, data.parishName)}`,
+    `tại ${marriageBirthPlace(female)}`,
     315,
     y(426),
     205,

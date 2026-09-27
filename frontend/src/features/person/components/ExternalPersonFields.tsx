@@ -2,6 +2,7 @@ import { type ReactNode, useId } from 'react'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
 import styles from './ExternalPersonFields.module.css'
 
@@ -9,6 +10,7 @@ const defaultFields = Object.freeze({
   holyName: 'holyName',
   fullName: 'fullName',
   birthDate: 'birthDate',
+  birthPlace: 'birthPlace',
   parishName: 'parishName',
   dioceseName: 'dioceseName',
   baptismDate: 'baptismDate',
@@ -54,6 +56,7 @@ export function ExternalPersonForm({
           <HolyNameInput label="Tên thánh" value={get('holyName')} onChange={(event: any) => set('holyName', event.target.value)} maxLength={75} />
           <Input label="Họ và tên" value={get('fullName')} error={fieldErrors[fields.fullName]} onChange={(event: any) => set('fullName', event.target.value)} maxLength={120} required />
           <DateInput label="Ngày sinh" value={get('birthDate')} error={fieldErrors[fields.birthDate]} onChange={(date: string) => set('birthDate', date)} />
+          <BirthPlaceInput label="Nơi sinh" value={get('birthPlace')} error={fieldErrors[fields.birthPlace]} onChange={(event: any) => set('birthPlace', event.target.value)} maxLength={255} />
           <ParishNameInput label="Giáo xứ" value={get('parishName')} onChange={(event: any) => set('parishName', event.target.value)} />
           <Input label="Giáo phận" value={get('dioceseName')} onChange={(event: any) => set('dioceseName', event.target.value)} maxLength={120} />
         </div>
