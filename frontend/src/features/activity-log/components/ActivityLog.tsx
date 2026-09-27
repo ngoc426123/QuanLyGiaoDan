@@ -3,6 +3,7 @@ import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useActivityLog } from '../hooks/useActivityLog.ts'
+import { formatDateTime } from '@/shared/date.ts'
 
 const actionLabels: Record<string, string> = {
   created: 'Tạo mới',
@@ -34,7 +35,7 @@ export function ActivityLog({
         {
           key: 'createdAt',
           label: 'Thời điểm',
-          render: (row: any) => new Date(row.createdAt).toLocaleString('vi-VN'),
+          render: (row: any) => formatDateTime(row.createdAt),
         },
         {
           key: 'action',

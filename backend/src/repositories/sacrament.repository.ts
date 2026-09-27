@@ -10,6 +10,7 @@ export function toDomain(row) {
     date: row.date,
     minister: row.minister ?? null,
     place: row.place ?? null,
+    sponsor: row.sponsor ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -17,7 +18,7 @@ export function toDomain(row) {
 
 export function findByPersonId(personId: string) {
   return prepare(
-    'SELECT id, person_id, type, date, minister, place, created_at, updated_at' +
+    'SELECT id, person_id, type, date, minister, place, sponsor, created_at, updated_at' +
       ' FROM sacraments WHERE person_id = ? AND deleted_at IS NULL' +
       " ORDER BY CASE type WHEN 'baptism' THEN 1 WHEN 'first_communion' THEN 2" +
       " WHEN 'confirmation' THEN 3 WHEN 'marriage' THEN 4 END",
@@ -62,8 +63,8 @@ export function hardDeleteByPersonId(personId: string) {
 
 export function insert(record) {
   prepare(
-    'INSERT INTO sacraments (id, person_id, type, date, minister, place, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO sacraments (id, person_id, type, date, minister, place, sponsor, created_at, updated_at)' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.personId,
@@ -71,6 +72,7 @@ export function insert(record) {
     record.date,
     record.minister,
     record.place,
+    record.sponsor,
     record.createdAt,
     record.updatedAt,
   )

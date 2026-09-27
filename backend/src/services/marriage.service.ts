@@ -27,8 +27,12 @@ function normalize(input) {
     spouseDioceseName: normalizeText(input.spouseDioceseName, 120),
     spouseBaptismDate: input.spouseBaptismDate || null,
     spouseBaptismPlace: normalizeText(input.spouseBaptismPlace, 255),
+    spouseBaptismSponsor: normalizeText(input.spouseBaptismSponsor, 120),
     spouseConfirmationDate: input.spouseConfirmationDate || null,
     spouseConfirmationPlace: normalizeText(input.spouseConfirmationPlace, 255),
+    spouseConfirmationSponsor: normalizeText(input.spouseConfirmationSponsor, 120),
+    spousePhone: normalizeText(input.spousePhone, 20),
+    spouseNote: normalizeText(input.spouseNote, 2000),
     spouseFatherName: normalizeText(input.spouseFatherName, 120),
     spouseMotherName: normalizeText(input.spouseMotherName, 120),
     date: input.date,
@@ -125,7 +129,7 @@ function createExternalSpouse(value, timestamp) {
     gender: null,
     birthDate: value.spouseBirthDate,
     deathDate: null,
-    phone: null,
+    phone: value.spousePhone,
     email: null,
     occupation: null,
     secondaryPhone: null,
@@ -133,7 +137,7 @@ function createExternalSpouse(value, timestamp) {
     pastoralStatus: null,
     pastoralNote: null,
     source: 'transferred',
-    note: null,
+    note: value.spouseNote,
     personType: 'external',
     parishName: value.spouseParishName,
     dioceseName: value.spouseDioceseName,
@@ -143,11 +147,17 @@ function createExternalSpouse(value, timestamp) {
     updatedAt: timestamp,
   })
   for (const row of [
-    { type: 'baptism', date: value.spouseBaptismDate, place: value.spouseBaptismPlace },
+    {
+      type: 'baptism',
+      date: value.spouseBaptismDate,
+      place: value.spouseBaptismPlace,
+      sponsor: value.spouseBaptismSponsor,
+    },
     {
       type: 'confirmation',
       date: value.spouseConfirmationDate,
       place: value.spouseConfirmationPlace,
+      sponsor: value.spouseConfirmationSponsor,
     },
   ]) {
     if (row.date)

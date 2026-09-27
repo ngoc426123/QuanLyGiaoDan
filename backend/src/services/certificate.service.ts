@@ -8,12 +8,18 @@ import * as settingRepository from '#/repositories/setting.repository.ts'
 import * as personParentRepository from '#/repositories/person-parent.repository.ts'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { now } from './clock.ts'
-import { newId, pageMeta } from './service-helpers.ts'
+import { assertFound, newId, pageMeta, toAscii } from './service-helpers.ts'
 
 const titles = Object.freeze({
   baptism: 'CHỨNG THƯ RỬA TỘI',
   confirmation: 'CHỨNG THƯ THÊM SỨC',
   marriage: 'CHỨNG THƯ HÔN PHỐI',
+})
+
+const filenameTypeLabels = Object.freeze({
+  baptism: 'BAPTISM',
+  confirmation: 'CONFIRMATION',
+  marriage: 'MARRIAGE',
 })
 
 const CERTIFICATE_MARGINS = Object.freeze({ top: 22, right: 22, bottom: 22, left: 22 })
@@ -42,6 +48,8 @@ function requireCertificateData(input: any) {
   }
   const person = attachParents(personRepository.findById(input.personId))
   if (!person) throw new AppError(ERROR_CODES.NOT_FOUND, 'Không tìm thấy giáo dân')
+  if (person.personType === 'external')
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Không cấp chứng thư cho người ngoài xứ')
   const sacramentRecords = sacramentRepository.findByPersonId(person.id)
   const marriageHistory =
     input.type === 'marriage' ? marriageRepository.findManyByPersonId(person.id) : []
@@ -121,7 +129,6 @@ function requireCertificateData(input: any) {
           witnessOne: input.draft.witnessOne,
           witnessTwo: input.draft.witnessTwo,
           spouseFullName: input.draft.spouseName,
-          sponsor: input.draft.sponsor,
           note: input.draft.note,
         },
         spouse: data.spouse
@@ -686,6 +693,8 @@ export function list(filter: any = {}) {
   }
 }
 
-export function suggestedFilename(type: string) {
-  return `chung-thu-${type}.pdf`
+export function suggestedFilename(personId: string, type: keyof typeof filenameTypeLabels) {
+  const person = assertFound(personRepository.findById(personId), 'Không tìm thấy giáo dân')
+  const compactName = toAscii(person.fullName).replaceAll(' ', '').toUpperCase()
+  return `${compactName}-${filenameTypeLabels[type]}.pdf`
 }

@@ -22,6 +22,7 @@ import { useReportExport } from '@/features/report/hooks/useCsvExport.ts'
 import { useRemovePerson } from '../hooks/usePersonMutations.ts'
 import { usePerson } from '../hooks/usePersons.ts'
 import { personName } from '../personName.ts'
+import { formatDate } from '@/shared/date.ts'
 import styles from './Person.module.css'
 
 const genderLabel = (value: string | null) =>
@@ -85,19 +86,23 @@ export function PersonDetail({ id }: { id: string | undefined }) {
         title={isExternal ? 'Hồ sơ người ngoài xứ' : 'Hồ sơ giáo dân'}
         description={personName(record)}
       >
-        <Button
-          variant="secondary"
-          isPending={exportProfile.isPending}
-          disabled={exportProfile.isPending}
-          onClick={() =>
-            exportProfile.mutate({ report: 'personProfile', filter: { personId: record.id } })
-          }
-        >
-          Xuất PDF
-        </Button>
-        <Button onClick={() => navigate(`/persons/${record.id}/certificates/new`)}>
-          Cấp chứng thư
-        </Button>
+        {!isExternal && (
+          <>
+            <Button
+              variant="secondary"
+              isPending={exportProfile.isPending}
+              disabled={exportProfile.isPending}
+              onClick={() =>
+                exportProfile.mutate({ report: 'personProfile', filter: { personId: record.id } })
+              }
+            >
+              Xuất PDF
+            </Button>
+            <Button onClick={() => navigate(`/persons/${record.id}/certificates/new`)}>
+              Cấp chứng thư
+            </Button>
+          </>
+        )}
         <Button onClick={() => navigate(`/persons/${record.id}/edit`)}>Sửa</Button>
         <Button variant="danger" onClick={() => setRemoveOpen(true)}>
           Xoá
@@ -148,7 +153,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           )}
           <div>
             <dt>Ngày sinh</dt>
-            <dd>{record.birthDate || 'Chưa cập nhật'}</dd>
+            <dd>{formatDate(record.birthDate) || 'Chưa cập nhật'}</dd>
           </div>
           <div>
             <dt>Số điện thoại</dt>
@@ -192,7 +197,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
           </div>
           <div>
             <dt>Ngày qua đời</dt>
-            <dd>{record.deathDate || 'Chưa cập nhật'}</dd>
+            <dd>{formatDate(record.deathDate) || 'Chưa cập nhật'}</dd>
           </div>
           <div>
             <dt>Ghi chú</dt>
@@ -217,11 +222,17 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             return (
               <dl key={type} className={styles.sacramentDetail}>
                 <dt>{sacramentLabel[type]}</dt>
-                <dd>{sacrament?.date || 'Chưa cập nhật'}</dd>
+                <dd>{formatDate(sacrament?.date) || 'Chưa cập nhật'}</dd>
                 <dt>Linh mục cử hành</dt>
                 <dd>{sacrament?.minister || 'Chưa cập nhật'}</dd>
                 <dt>Nơi cử hành</dt>
                 <dd>{sacrament?.place || 'Chưa cập nhật'}</dd>
+                {(type === 'baptism' || type === 'confirmation') && (
+                  <>
+                    <dt>Người đỡ đầu</dt>
+                    <dd>{sacrament?.sponsor || 'Chưa cập nhật'}</dd>
+                  </>
+                )}
               </dl>
             )
           })}
@@ -264,7 +275,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
                 <Link to={`/persons/${marriage.spouseId}`}>{marriage.spouseFullName}</Link>
               </dd>
               <dt>Ngày cử hành</dt>
-              <dd>{marriage.date}</dd>
+              <dd>{formatDate(marriage.date)}</dd>
               <dt>Linh mục cử hành</dt>
               <dd>{marriage.minister || 'Chưa cập nhật'}</dd>
               <dt>Nơi cử hành</dt>
@@ -298,7 +309,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
                 label: 'Quan hệ',
                 render: (member: any) => relationshipLabel(member.relationship as Relationship),
               },
-              { key: 'fromDate', label: 'Ngày vào hộ' },
+              { key: 'fromDate', label: 'Ngày vào hộ', render: (member: any) => formatDate(member.fromDate) },
             ]}
           />
         ) : (
@@ -323,11 +334,11 @@ export function PersonDetail({ id }: { id: string | undefined }) {
                 label: 'Quan hệ',
                 render: (member: any) => relationshipLabel(member.relationship as Relationship),
               },
-              { key: 'fromDate', label: 'Từ ngày' },
+              { key: 'fromDate', label: 'Từ ngày', render: (member: any) => formatDate(member.fromDate) },
               {
                 key: 'toDate',
                 label: 'Đến ngày',
-                render: (member: any) => member.toDate || 'Hiện hành',
+                render: (member: any) => formatDate(member.toDate) || 'Hiện hành',
               },
             ]}
           />

@@ -2,11 +2,13 @@ import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
 import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
-import { Modal } from '@/components/ui/Modal.tsx'
 import { useCreatePerson } from '../hooks/usePersonMutations.ts'
 import { personName } from '../personName.ts'
+import { ExternalPersonForm } from './ExternalPersonFields.tsx'
+import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
 import styles from './Person.module.css'
 
 const emptyValue = {
@@ -27,12 +29,14 @@ const emptyValue = {
   baptismDate: '',
   baptismMinister: '',
   baptismPlace: '',
+  baptismSponsor: '',
   firstCommunionDate: '',
   firstCommunionMinister: '',
   firstCommunionPlace: '',
   confirmationDate: '',
   confirmationMinister: '',
   confirmationPlace: '',
+  confirmationSponsor: '',
   deathDate: '',
   note: '',
   parishName: '',
@@ -91,9 +95,11 @@ function toFormValue(initialValue: any) {
     const dateKey = `${key}Date`
     const ministerKey = `${key}Minister`
     const placeKey = `${key}Place`
+    const sponsorKey = `${key}Sponsor`
     if (Object.hasOwn(value, dateKey)) (value as any)[dateKey] = sacrament.date ?? ''
     if (Object.hasOwn(value, ministerKey)) (value as any)[ministerKey] = sacrament.minister ?? ''
     if (Object.hasOwn(value, placeKey)) (value as any)[placeKey] = sacrament.place ?? ''
+    if (Object.hasOwn(value, sponsorKey)) (value as any)[sponsorKey] = sacrament.sponsor ?? ''
   }
   value.fatherId = initialValue?.parents?.fatherId ?? ''
   value.motherId = initialValue?.parents?.motherId ?? ''
@@ -111,7 +117,7 @@ function toPayload(value: any, allowFamilyAssignment: boolean, quickAdded: Recor
     payload[key] = key === 'fullName' ? value[key] : value[key] || null
   }
   payload.sacraments = [
-    ['baptism', value.baptismDate, value.baptismMinister, value.baptismPlace],
+    ['baptism', value.baptismDate, value.baptismMinister, value.baptismPlace, value.baptismSponsor],
     ...(value.personType === 'parish'
       ? [
           [
@@ -119,17 +125,25 @@ function toPayload(value: any, allowFamilyAssignment: boolean, quickAdded: Recor
             value.firstCommunionDate,
             value.firstCommunionMinister,
             value.firstCommunionPlace,
+            '',
           ],
         ]
       : []),
-    ['confirmation', value.confirmationDate, value.confirmationMinister, value.confirmationPlace],
+    [
+      'confirmation',
+      value.confirmationDate,
+      value.confirmationMinister,
+      value.confirmationPlace,
+      value.confirmationSponsor,
+    ],
   ]
     .filter(([, date]) => Boolean(date))
-    .map(([type, date, minister, place]) => ({
+    .map(([type, date, minister, place, sponsor]) => ({
       type,
       date,
       minister: minister || null,
       place: place || null,
+      sponsor: sponsor || null,
     }))
   payload.parents = {
     fatherId: value.fatherId || quickAdded.father?.id || null,
@@ -152,7 +166,7 @@ const parentRoles = [
   { key: 'mother', title: 'Mẹ', idField: 'motherId', modeField: 'motherMode' },
 ]
 
-function QuickExternalPersonModal({ onClose, onCreated }: any) {
+function QuickExternalParentForm({ onCancel, onCreated }: any) {
   const create = useCreatePerson()
   const [value, setValue] = useState({
     holyName: '',
@@ -166,10 +180,7 @@ function QuickExternalPersonModal({ onClose, onCreated }: any) {
   const [error, setError] = useState<any>(null)
   const set = (field: string, next: string) =>
     setValue((current) => ({ ...current, [field]: next }))
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    // Modal được render qua portal, nhưng submit vẫn bubble theo cây React đến form giáo dân.
-    event.stopPropagation()
+  const save = async () => {
     setError(null)
     try {
       const result: any = await create.mutateAsync({
@@ -179,75 +190,34 @@ function QuickExternalPersonModal({ onClose, onCreated }: any) {
         parents: {},
       })
       onCreated(result.data)
-      onClose()
     } catch (nextError) {
       setError(nextError)
     }
   }
   return (
-    <Modal title="Thêm người ngoài xứ" onClose={onClose} size="large">
-      <form className={styles.quickForm} onSubmit={submit}>
-        <Input
-          label="Tên thánh"
-          value={value.holyName}
-          onChange={(event: any) => set('holyName', event.target.value)}
-          maxLength={75}
-        />
-        <Input
-          label="Họ và tên"
-          value={value.fullName}
-          error={error?.details?.fieldErrors?.fullName}
-          onChange={(event: any) => set('fullName', event.target.value)}
-          maxLength={120}
-          required
-        />
-        <DateInput
-          label="Ngày sinh"
-          value={value.birthDate}
-          onChange={(next: string) => set('birthDate', next)}
-        />
-        <Input
-          label="Số điện thoại"
-          value={value.phone}
-          onChange={(event: any) => set('phone', event.target.value)}
-          maxLength={20}
-        />
-        <Input
-          label="Giáo xứ"
-          value={value.parishName}
-          onChange={(event: any) => set('parishName', event.target.value)}
-          maxLength={120}
-        />
-        <Input
-          label="Giáo phận"
-          value={value.dioceseName}
-          onChange={(event: any) => set('dioceseName', event.target.value)}
-          maxLength={120}
-        />
-        <label className={styles.textareaField}>
-          <span>Ghi chú</span>
-          <textarea
-            className={styles.textarea}
-            value={value.note}
-            onChange={(event) => set('note', event.target.value)}
-            maxLength={2000}
-          />
-        </label>
-        {error && !error?.details?.fieldErrors && (
-          <p role="alert" className={styles.error}>
-            {error.message}
-          </p>
-        )}
-        <div className={styles.quickActions}>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Huỷ
-          </Button>
-          <Button type="submit" isPending={create.isPending}>
-            Lưu người ngoài xứ
-          </Button>
-        </div>
-      </form>
-    </Modal>
+    <ExternalPersonForm
+      value={value}
+      onChange={set}
+      fieldErrors={error?.details?.fieldErrors}
+      showSacraments={false}
+      footer={
+        <>
+          {error && !error?.details?.fieldErrors && (
+            <p role="alert" className={styles.error}>
+              {error.message}
+            </p>
+          )}
+          <div className={styles.quickActions}>
+            <Button type="button" variant="secondary" onClick={onCancel}>
+              Huỷ
+            </Button>
+            <Button type="button" isPending={create.isPending} onClick={save}>
+              Lưu người ngoài xứ
+            </Button>
+          </div>
+        </>
+      }
+    />
   )
 }
 
@@ -262,7 +232,7 @@ export function PersonForm({
   allowFamilyAssignment = false,
 }: any) {
   const [value, setValue] = useState(() => ({ ...toFormValue(initialValue), personType }))
-  const [quickParent, setQuickParent] = useState<any>(null)
+  const [openExternalParentForms, setOpenExternalParentForms] = useState<Record<string, boolean>>({})
   const [quickAdded, setQuickAdded] = useState<Record<string, any>>({})
   const [error, setError] = useState<any>(null)
   const fieldErrors = error?.details?.fieldErrors ?? {}
@@ -281,7 +251,7 @@ export function PersonForm({
     <form className={styles.form} onSubmit={submit}>
       <fieldset className={styles.group}>
         <h2>Thông tin định danh &amp; Hành chính</h2>
-        <Input
+        <HolyNameInput
           label="Tên thánh"
           value={value.holyName}
           error={fieldErrors.holyName}
@@ -332,12 +302,11 @@ export function PersonForm({
         />
         {isExternal && (
           <>
-            <Input
+            <ParishNameInput
               label="Giáo xứ"
               value={value.parishName}
               error={fieldErrors.parishName}
               onChange={(event: any) => set('parishName', event.target.value)}
-              maxLength={120}
             />
             <Input
               label="Giáo phận"
@@ -392,6 +361,7 @@ export function PersonForm({
                     [role.idField]: '',
                   }))
                   setQuickAdded((current) => ({ ...current, [role.key]: null }))
+                  setOpenExternalParentForms((current) => ({ ...current, [role.key]: false }))
                 }}
               >
                 <option value="internal">Thuộc giáo xứ</option>
@@ -424,7 +394,9 @@ export function PersonForm({
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setQuickParent(role.key)}
+                      onClick={() =>
+                        setOpenExternalParentForms((current) => ({ ...current, [role.key]: true }))
+                      }
                     >
                       Thêm người ngoài xứ
                     </Button>
@@ -448,23 +420,22 @@ export function PersonForm({
                   )}
                 </div>
               )}
+              {openExternalParentForms[role.key] && (
+                <QuickExternalParentForm
+                  onCancel={() =>
+                    setOpenExternalParentForms((current) => ({ ...current, [role.key]: false }))
+                  }
+                  onCreated={(person: any) => {
+                    setQuickAdded((current) => ({ ...current, [role.key]: person }))
+                    setValue((current: any) => ({ ...current, [role.idField]: person.id }))
+                    setOpenExternalParentForms((current) => ({ ...current, [role.key]: false }))
+                  }}
+                />
+              )}
             </section>
           )
         })}
       </fieldset>
-      {quickParent && (
-        <QuickExternalPersonModal
-          onClose={() => setQuickParent(null)}
-          onCreated={(person: any) => {
-            const role = parentRoles.find((item) => item.key === quickParent)!
-            setQuickAdded((current) => ({ ...current, [quickParent]: person }))
-            setValue((current: any) => ({
-              ...current,
-              [role.idField]: current[role.idField] || person.id,
-            }))
-          }}
-        />
-      )}
       <fieldset className={styles.group}>
         <h2>Đời sống Bí tích</h2>
         <div className={styles.sacramentGrid}>
@@ -482,11 +453,16 @@ export function PersonForm({
               onChange={(event: any) => set('baptismMinister', event.target.value)}
               maxLength={120}
             />
-            <Input
+            <ParishNameInput
               label="Nơi cử hành"
               value={value.baptismPlace}
               onChange={(event: any) => set('baptismPlace', event.target.value)}
-              maxLength={255}
+            />
+            <Input
+              label="Người đỡ đầu"
+              value={value.baptismSponsor}
+              onChange={(event: any) => set('baptismSponsor', event.target.value)}
+              maxLength={120}
             />
           </div>
           {!isExternal && (
@@ -504,11 +480,10 @@ export function PersonForm({
                 onChange={(event: any) => set('firstCommunionMinister', event.target.value)}
                 maxLength={120}
               />
-              <Input
+              <ParishNameInput
                 label="Nơi cử hành"
                 value={value.firstCommunionPlace}
                 onChange={(event: any) => set('firstCommunionPlace', event.target.value)}
-                maxLength={255}
               />
             </div>
           )}
@@ -526,11 +501,16 @@ export function PersonForm({
               onChange={(event: any) => set('confirmationMinister', event.target.value)}
               maxLength={120}
             />
-            <Input
+            <ParishNameInput
               label="Nơi cử hành"
               value={value.confirmationPlace}
               onChange={(event: any) => set('confirmationPlace', event.target.value)}
-              maxLength={255}
+            />
+            <Input
+              label="Người đỡ đầu"
+              value={value.confirmationSponsor}
+              onChange={(event: any) => set('confirmationSponsor', event.target.value)}
+              maxLength={120}
             />
           </div>
         </div>

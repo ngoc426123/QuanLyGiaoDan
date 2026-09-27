@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
@@ -6,6 +7,7 @@ import { DateInput } from '@/components/ui/DateInput.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Select } from '@/components/ui/Select.tsx'
@@ -14,10 +16,13 @@ import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 import { personName } from '@/features/person/personName.ts'
+import { ExternalPersonForm } from '@/features/person/components/ExternalPersonFields.tsx'
+import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
 import { invoke, invokeWithMeta } from '@/shared/invoke.ts'
+import { formatDate } from '@/shared/date.ts'
 import styles from './Marriage.module.css'
 
-const marriageApi = {
+export const marriageApi = {
   list: (search: string) =>
     invokeWithMeta(window.api.marriage.list({ page: 1, pageSize: 50, search })),
   create: (input: any) => invoke(window.api.marriage.create(input)),
@@ -25,11 +30,21 @@ const marriageApi = {
   remove: (id: string) => invoke(window.api.marriage.remove(id)),
 }
 
-function toMarriagePayload(input: any) {
+export function toMarriagePayload(input: any) {
   const payload = { ...input }
   delete payload.spouseMode
+  delete payload.spouseFatherHolyName
+  delete payload.spouseFatherFullName
+  delete payload.spouseMotherHolyName
+  delete payload.spouseMotherFullName
   payload.spouseId = input.spouseMode === 'internal' ? input.spouseId : null
   payload.spouseBirthDate = payload.spouseBirthDate || null
+  payload.spouseFatherName = [input.spouseFatherHolyName, input.spouseFatherFullName]
+    .filter(Boolean)
+    .join(' ') || null
+  payload.spouseMotherName = [input.spouseMotherHolyName, input.spouseMotherFullName]
+    .filter(Boolean)
+    .join(' ') || null
   return payload
 }
 
@@ -46,10 +61,16 @@ function toFormValue(initialValue: any) {
     spouseDioceseName: initialValue?.spouseDioceseName ?? '',
     spouseBaptismDate: initialValue?.spouseBaptismDate ?? '',
     spouseBaptismPlace: initialValue?.spouseBaptismPlace ?? '',
+    spouseBaptismSponsor: initialValue?.spouseBaptismSponsor ?? '',
     spouseConfirmationDate: initialValue?.spouseConfirmationDate ?? '',
     spouseConfirmationPlace: initialValue?.spouseConfirmationPlace ?? '',
-    spouseFatherName: initialValue?.spouseFatherName ?? '',
-    spouseMotherName: initialValue?.spouseMotherName ?? '',
+    spouseConfirmationSponsor: initialValue?.spouseConfirmationSponsor ?? '',
+    spousePhone: initialValue?.spousePhone ?? '',
+    spouseNote: initialValue?.spouseNote ?? '',
+    spouseFatherHolyName: '',
+    spouseFatherFullName: initialValue?.spouseFatherName ?? '',
+    spouseMotherHolyName: '',
+    spouseMotherFullName: initialValue?.spouseMotherName ?? '',
     date: initialValue?.date ?? '',
     minister: initialValue?.minister ?? '',
     place: initialValue?.place ?? '',
@@ -60,7 +81,7 @@ function toFormValue(initialValue: any) {
   }
 }
 
-function MarriageForm({
+export function MarriageForm({
   initialValue,
   persons,
   onPersonSearchChange,
@@ -210,106 +231,36 @@ function MarriageForm({
             required
           />
         ) : (
-          <div className={styles.externalPanel}>
-            <div className={styles.panelHeader}>
-              <strong>Thông tin người ngoài giáo xứ</strong>
-              <span>Không tạo hồ sơ giáo dân mới</span>
-            </div>
+          <ExternalPersonForm
+              value={value}
+              onChange={(field: string, next: string) => setValue((current: any) => ({ ...current, [field]: next }))}
+              fieldErrors={fieldErrors}
+              fields={{ holyName: 'spouseHolyName', fullName: 'spouseName', birthDate: 'spouseBirthDate', parishName: 'spouseParishName', dioceseName: 'spouseDioceseName', baptismDate: 'spouseBaptismDate', baptismPlace: 'spouseBaptismPlace', baptismSponsor: 'spouseBaptismSponsor', confirmationDate: 'spouseConfirmationDate', confirmationPlace: 'spouseConfirmationPlace', confirmationSponsor: 'spouseConfirmationSponsor', phone: 'spousePhone', note: 'spouseNote' }}
+            >
             <div className={styles.externalGroup}>
-              <h4>Thông tin cá nhân</h4>
+              <h4>Thông tin gia đình</h4>
               <div className={styles.externalGroupGrid}>
-                <Input
-                  label="Tên thánh"
-                  value={value.spouseHolyName}
+                <HolyNameInput
+                  label="Tên thánh của cha"
+                  value={value.spouseFatherHolyName}
                   onChange={(event: any) =>
-                    setValue({ ...value, spouseHolyName: event.target.value })
+                    setValue({ ...value, spouseFatherHolyName: event.target.value })
                   }
                   maxLength={75}
                 />
                 <Input
-                  label="Họ tên"
-                  value={value.spouseName}
-                  error={fieldErrors.spouseName}
-                  onChange={(event: any) => setValue({ ...value, spouseName: event.target.value })}
-                  maxLength={120}
-                  required
-                />
-                <DateInput
-                  label="Ngày sinh"
-                  value={value.spouseBirthDate}
-                  onChange={(date: string) => setValue({ ...value, spouseBirthDate: date })}
-                />
-                <Input
-                  label="Giáo xứ"
-                  value={value.spouseParishName}
+                  label="Họ và tên cha"
+                  value={value.spouseFatherFullName}
                   onChange={(event: any) =>
-                    setValue({ ...value, spouseParishName: event.target.value })
+                    setValue({ ...value, spouseFatherFullName: event.target.value })
                   }
                   maxLength={120}
                 />
-                <Input
-                  label="Giáo phận"
-                  value={value.spouseDioceseName}
-                  onChange={(event: any) =>
-                    setValue({ ...value, spouseDioceseName: event.target.value })
-                  }
-                  maxLength={120}
-                />
+                <HolyNameInput label="Tên thánh của mẹ" value={value.spouseMotherHolyName} onChange={(event: any) => setValue({ ...value, spouseMotherHolyName: event.target.value })} maxLength={75} />
+                <Input label="Họ và tên mẹ" value={value.spouseMotherFullName} onChange={(event: any) => setValue({ ...value, spouseMotherFullName: event.target.value })} maxLength={120} />
               </div>
             </div>
-            <div className={styles.externalGroup}>
-              <h4>Các bí tích</h4>
-              <div className={styles.sacramentGrid}>
-                <DateInput
-                  label="Ngày Rửa tội"
-                  value={value.spouseBaptismDate}
-                  onChange={(date: string) => setValue({ ...value, spouseBaptismDate: date })}
-                />
-                <Input
-                  label="Nơi cử hành Rửa tội"
-                  value={value.spouseBaptismPlace}
-                  onChange={(event: any) =>
-                    setValue({ ...value, spouseBaptismPlace: event.target.value })
-                  }
-                  maxLength={255}
-                />
-                <DateInput
-                  label="Ngày Thêm sức"
-                  value={value.spouseConfirmationDate}
-                  onChange={(date: string) => setValue({ ...value, spouseConfirmationDate: date })}
-                />
-                <Input
-                  label="Nơi cử hành Thêm sức"
-                  value={value.spouseConfirmationPlace}
-                  onChange={(event: any) =>
-                    setValue({ ...value, spouseConfirmationPlace: event.target.value })
-                  }
-                  maxLength={255}
-                />
-              </div>
-            </div>
-            <div className={styles.externalGroup}>
-              <h4>Thông tin gia đình</h4>
-              <div className={styles.externalGroupGrid}>
-                <Input
-                  label="Tên cha"
-                  value={value.spouseFatherName}
-                  onChange={(event: any) =>
-                    setValue({ ...value, spouseFatherName: event.target.value })
-                  }
-                  maxLength={120}
-                />
-                <Input
-                  label="Tên mẹ"
-                  value={value.spouseMotherName}
-                  onChange={(event: any) =>
-                    setValue({ ...value, spouseMotherName: event.target.value })
-                  }
-                  maxLength={120}
-                />
-              </div>
-            </div>
-          </div>
+          </ExternalPersonForm>
         )}
         {existingMarriageWarnings.length > 0 && (
           <div className={styles.warning} role="alert">
@@ -371,12 +322,11 @@ function MarriageForm({
             onChange={(event: any) => setValue({ ...value, witnessTwo: event.target.value })}
             maxLength={120}
           />
-          <Input
+          <ParishNameInput
             label="Nơi cử hành"
             value={value.place}
             error={fieldErrors.place}
             onChange={(event: any) => setValue({ ...value, place: event.target.value })}
-            maxLength={255}
           />
           <Input
             label="Ghi chú"
@@ -403,11 +353,11 @@ function MarriageForm({
 }
 
 export function MarriageList() {
-  const [isCreateOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [removing, setRemoving] = useState<any>(null)
   const [search, setSearch] = useState('')
   const [personSearch, setPersonSearch] = useState('')
+  const navigate = useNavigate()
   const client = useQueryClient()
   const marriageFilter = useMemo(() => ({ search }), [search])
   const marriages = useQuery({
@@ -426,13 +376,6 @@ export function MarriageList() {
           sortDir: 'asc',
         }),
       ),
-  })
-  const create = useMutation({
-    mutationFn: marriageApi.create,
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: ['marriage'] })
-      client.invalidateQueries({ queryKey: ['person'] })
-    },
   })
   const update = useMutation({
     mutationFn: marriageApi.update,
@@ -453,17 +396,13 @@ export function MarriageList() {
   const marriageSearch = useComposedSearch(search, updateSearch)
   // Person searches belong to the modal; do not replace the marriage list with a
   // page-level skeleton while a new dropdown query is loading.
-  const showInitialLoading = marriages.isLoading || (persons.isLoading && !isCreateOpen && !editing)
-  const showPersonsError = persons.isError && !isCreateOpen && !editing
+  const showInitialLoading = marriages.isLoading
+  const showPersonsError = persons.isError && Boolean(editing)
   return (
     <section>
       <PageHeader title="Hôn phối" description="Quản lý thông tin hôn phối chung của hai giáo dân.">
         <Button
-          onClick={() => {
-            setPersonSearch('')
-            setCreateOpen(true)
-          }}
-          disabled={persons.isLoading || (persons.data?.data ?? []).length < 1}
+          onClick={() => navigate('/marriages/new')}
         >
           Thêm hôn phối
         </Button>
@@ -478,7 +417,7 @@ export function MarriageList() {
         <EmptyState
           title="Chưa có hôn phối"
           actionLabel="Thêm hôn phối"
-          onAction={() => setCreateOpen(true)}
+          onAction={() => navigate('/marriages/new')}
         >
           Tạo một bản ghi để liên kết hai giáo dân.
         </EmptyState>
@@ -508,7 +447,10 @@ export function MarriageList() {
                 return (
                   <div className={styles.participantList}>
                     {names.map((name: string, index: number) => (
-                      <span key={`${name}-${index}`}>
+                      <span
+                        key={`${name}-${index}`}
+                        className={index === 1 ? styles.secondParticipant : undefined}
+                      >
                         {holyNames[index] ? `${holyNames[index]} ` : ''}
                         {name}
                       </span>
@@ -517,7 +459,7 @@ export function MarriageList() {
                 )
               },
             },
-            { key: 'date', label: 'Ngày hôn phối' },
+            { key: 'date', label: 'Ngày hôn phối', render: (row: any) => formatDate(row.date) },
             {
               key: 'status',
               label: 'Trạng thái',
@@ -552,29 +494,6 @@ export function MarriageList() {
             },
           ]}
         />
-      )}
-      {isCreateOpen && (
-        <Modal
-          title="Thêm hôn phối"
-          size="wide"
-          onClose={() => {
-            setCreateOpen(false)
-            setPersonSearch('')
-          }}
-        >
-          <MarriageForm
-            persons={persons.data?.data ?? []}
-            onPersonSearchChange={setPersonSearch}
-            personsLoading={persons.isFetching}
-            isPending={create.isPending}
-            submitLabel="Lưu hôn phối"
-            onSubmit={async (input: any) => {
-              await create.mutateAsync(toMarriagePayload(input))
-              setCreateOpen(false)
-              setPersonSearch('')
-            }}
-          />
-        </Modal>
       )}
       {editing && (
         <Modal

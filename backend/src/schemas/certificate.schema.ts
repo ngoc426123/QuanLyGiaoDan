@@ -24,7 +24,6 @@ const certificateDraftSchema = z
     minister: draftField,
     witnessOne: draftField.default(''),
     witnessTwo: draftField.default(''),
-    sponsor: draftField,
     spouseName: draftField,
     note: draftField,
   })

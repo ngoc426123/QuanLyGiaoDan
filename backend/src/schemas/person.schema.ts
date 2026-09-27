@@ -25,6 +25,7 @@ const sacramentSchema = z
     date: calendarDateSchema,
     minister: optionalText(120, 'Tên linh mục cử hành'),
     place: optionalText(255, 'Nơi cử hành'),
+    sponsor: optionalText(120, 'Người đỡ đầu'),
   })
   .strict()
 

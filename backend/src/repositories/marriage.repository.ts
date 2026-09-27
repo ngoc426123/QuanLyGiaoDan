@@ -22,6 +22,8 @@ function toDomain(row: any) {
     spouseBaptismPlace: row.spouse_baptism_place ?? null,
     spouseConfirmationDate: row.spouse_confirmation_date ?? null,
     spouseConfirmationPlace: row.spouse_confirmation_place ?? null,
+    spousePhone: row.spouse_phone ?? null,
+    spouseNote: row.spouse_note ?? null,
     spouseFatherName: row.spouse_father_name ?? null,
     spouseMotherName: row.spouse_mother_name ?? null,
     createdAt: row.created_at,
@@ -35,6 +37,7 @@ const SPOUSE_COLUMNS =
   ' spouse_person.person_type AS spouse_person_type, spouse_person.full_name AS spouse_full_name,' +
   ' spouse_person.holy_name AS spouse_holy_name, spouse_person.birth_date AS spouse_birth_date,' +
   ' spouse_person.parish_name AS spouse_parish_name, spouse_person.diocese_name AS spouse_diocese_name,' +
+  ' spouse_person.phone AS spouse_phone, spouse_person.note AS spouse_note,' +
   " (SELECT date FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS spouse_baptism_date," +
   " (SELECT place FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS spouse_baptism_place," +
   " (SELECT date FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS spouse_confirmation_date," +

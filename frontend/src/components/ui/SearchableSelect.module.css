@@ -85,6 +85,7 @@
 }
 
 .option:hover,
+.option[data-active='true'],
 .option[data-selected='true'] {
   background: var(--color-bg-selected);
 }

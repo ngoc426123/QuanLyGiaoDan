@@ -12,6 +12,7 @@ export function clearAll() {
   prepare('DELETE FROM sacraments').run()
   prepare('DELETE FROM marriage_participants').run()
   prepare('DELETE FROM marriages').run()
+  prepare('DELETE FROM certificate_issuances').run()
   const persons = prepare('DELETE FROM persons').run().changes
   const families = prepare('DELETE FROM families').run().changes
   const zones = prepare('DELETE FROM zones').run().changes

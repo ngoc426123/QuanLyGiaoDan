@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs'
 import PDFDocument from 'pdfkit'
 import * as reportRepository from '#/repositories/report.repository.ts'
 import * as personService from '#/services/person.service.ts'
+import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { normalizeText, toAscii } from './service-helpers.ts'
 
 const relationshipLabels = Object.freeze({
@@ -448,6 +449,8 @@ function profileSection(document: any, title: string) {
 
 export async function exportPersonProfilePdf({ personId, filePath }: any) {
   const person = personService.getById(personId)
+  if (person.personType === 'external')
+    throw new AppError(ERROR_CODES.VALIDATION_ERROR, 'Không xuất hồ sơ PDF cho người ngoài xứ')
   await new Promise<void>((resolve, reject) => {
     const document = new PDFDocument({ size: 'A4', margin: 48, info: { Title: person.fullName } })
     const stream = createWriteStream(filePath)

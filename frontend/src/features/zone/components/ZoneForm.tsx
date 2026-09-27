@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
 import styles from './Zone.module.css'
 
 type ZoneInput = { name: string; holyName: string; note: string }
@@ -36,7 +37,7 @@ export function ZoneForm({ initialValue, onSubmit, isPending, submitLabel }: any
         required
         maxLength={100}
       />
-      <Input
+      <HolyNameInput
         label="Bổn mạng"
         value={value.holyName}
         error={fieldErrors.holyName}

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
+import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
@@ -9,7 +11,9 @@ import { invoke } from '@/shared/invoke.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { usePerson } from '@/features/person/hooks/usePersons.ts'
 import { personName } from '@/features/person/personName.ts'
+import { formatDate } from '@/shared/date.ts'
 import { useSettings } from '@/features/setting/hooks/useSettings.ts'
+import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
 import styles from './CertificateIssuePageView.module.css'
 
 const options = [
@@ -85,7 +89,6 @@ export function CertificateIssuePageView() {
       minister: text(source.minister),
       witnessOne: text(source.witnessOne),
       witnessTwo: text(source.witnessTwo),
-      sponsor: '',
       spouseName: text(selectedMarriage?.spouseFullName),
       note: '',
     })
@@ -120,8 +123,16 @@ export function CertificateIssuePageView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, selectedMarriage])
 
-  if (person.isPending || settings.isPending || !draft) return <Skeleton />
+  if (person.isPending || settings.isPending) return <Skeleton />
   if (person.isError || !record) return null
+  if (record.personType === 'external') {
+    return (
+      <section>
+        <PageHeader title="Không thể cấp chứng thư" description="Người ngoài xứ không có chức năng cấp chứng thư." />
+      </section>
+    )
+  }
+  if (!draft) return <Skeleton />
   const set = (key: string, value: string) =>
     setDraft((current: any) => ({ ...current, [key]: value }))
   const selectedLabel = options.find((option) => option.type === type)?.label ?? 'chứng thư'
@@ -217,7 +228,7 @@ export function CertificateIssuePageView() {
                 >
                   {marriages.map((marriage: any, index: number) => (
                     <option key={marriage.id} value={marriage.id}>
-                      {marriages.length - index} - {marriage.date} - {marriage.spouseFullName}
+                      {marriages.length - index} - {formatDate(marriage.date)} - {marriage.spouseFullName}
                     </option>
                   ))}
                 </Select>
@@ -236,7 +247,7 @@ export function CertificateIssuePageView() {
                   value={draft.deaneryName}
                   onChange={(event: any) => set('deaneryName', event.target.value)}
                 />
-                <Input
+                <ParishNameInput
                   label="Giáo xứ"
                   value={draft.parishName}
                   onChange={(event: any) => set('parishName', event.target.value)}
@@ -271,15 +282,15 @@ export function CertificateIssuePageView() {
                   value={draft.personName}
                   onChange={(event: any) => set('personName', event.target.value)}
                 />
-                <Input
+                <HolyNameInput
                   label="Tên thánh"
                   value={draft.holyName}
                   onChange={(event: any) => set('holyName', event.target.value)}
                 />
-                <Input
+                <DateInput
                   label="Ngày sinh"
                   value={draft.birthDate}
-                  onChange={(event: any) => set('birthDate', event.target.value)}
+                  onChange={(value: string) => set('birthDate', value)}
                 />
                 <Input
                   label="Nơi sinh"
@@ -306,12 +317,12 @@ export function CertificateIssuePageView() {
             <section className={styles.previewSection}>
               <h3>Thông tin bí tích</h3>
               <div className={styles.previewFields}>
-                <Input
+                <DateInput
                   label="Ngày cử hành"
                   value={draft.ceremonyDate}
-                  onChange={(event: any) => set('ceremonyDate', event.target.value)}
+                  onChange={(value: string) => set('ceremonyDate', value)}
                 />
-                <Input
+                <ParishNameInput
                   label="Nơi cử hành"
                   value={draft.ceremonyPlace}
                   onChange={(event: any) => set('ceremonyPlace', event.target.value)}
@@ -321,6 +332,13 @@ export function CertificateIssuePageView() {
                   value={draft.minister}
                   onChange={(event: any) => set('minister', event.target.value)}
                 />
+                {type !== 'marriage' && (
+                  <Input
+                    label="Người đỡ đầu"
+                    value={text(sacramentByType[type]?.sponsor)}
+                    readOnly
+                  />
+                )}
                 {type === 'marriage' && (
                   <>
                     <Input
@@ -338,13 +356,8 @@ export function CertificateIssuePageView() {
               </div>
             </section>
             <section className={styles.previewSection}>
-              <h3>Người đỡ đầu và ghi chú</h3>
+              <h3>Ghi chú</h3>
               <div className={styles.previewFields}>
-                <Input
-                  label="Người đỡ đầu"
-                  value={draft.sponsor}
-                  onChange={(event: any) => set('sponsor', event.target.value)}
-                />
                 <Input
                   label="Ghi chú sổ Rửa tội"
                   value={draft.note}

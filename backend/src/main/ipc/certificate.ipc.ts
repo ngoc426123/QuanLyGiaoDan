@@ -20,7 +20,7 @@ export const certificateHandlers = Object.freeze([
     handle: async (input) => {
       const options = {
         title: 'Cấp chứng thư PDF',
-        defaultPath: certificateService.suggestedFilename(input.type),
+        defaultPath: certificateService.suggestedFilename(input.personId, input.type),
         filters: [{ name: 'Tệp PDF', extensions: ['pdf'] }],
       }
       const parent = focusedWindow()

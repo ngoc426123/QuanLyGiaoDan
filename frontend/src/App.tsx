@@ -20,7 +20,7 @@ import { ZoneDetailPage } from '@/pages/ZoneDetailPage.tsx'
 import { SearchPage } from '@/pages/SearchPage.tsx'
 import { TrashPage } from '@/pages/TrashPage.tsx'
 import { SettingsPage } from '@/pages/SettingsPage.tsx'
-import { MarriageListPage } from '@/pages/MarriageListPage.tsx'
+import { MarriageListPage, NewMarriagePage } from '@/pages/MarriageListPage.tsx'
 import { ExportPage } from '@/pages/ExportPage.tsx'
 import { CertificateHistoryPage } from '@/pages/CertificateHistoryPage.tsx'
 import { CertificateIssuePage } from '@/pages/CertificateIssuePage.tsx'
@@ -36,6 +36,7 @@ function AppRoutes() {
         <Route path="persons/:id/edit" element={<EditPersonPage />} />
         <Route path="persons/:id" element={<PersonDetailPage />} />
         <Route path="marriages" element={<MarriageListPage />} />
+        <Route path="marriages/new" element={<NewMarriagePage />} />
         <Route path="families" element={<FamilyListPage />} />
         <Route path="families/:id" element={<FamilyDetailPage />} />
         <Route path="zones" element={<ZoneListPage />} />

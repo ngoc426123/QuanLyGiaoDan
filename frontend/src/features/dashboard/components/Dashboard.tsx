@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { personName } from '@/features/person/personName.ts'
+import { formatDate } from '@/shared/date.ts'
 import { useDashboard } from '../hooks/useDashboard.ts'
 import styles from './Dashboard.module.css'
 
@@ -128,7 +129,7 @@ export function Dashboard() {
                   <Link to={`/persons/${person.id}`}>{personName(person)}</Link>
                 ),
               },
-              { key: 'birthDate', label: 'Ngày sinh' },
+              { key: 'birthDate', label: 'Ngày sinh', render: (person: any) => formatDate(person.birthDate) },
               {
                 key: 'familyName',
                 label: 'Hộ',

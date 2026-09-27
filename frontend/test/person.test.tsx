@@ -124,9 +124,9 @@ describe('Giáo dân', () => {
     await user.click(parentType)
     await user.click(await screen.findByRole('option', { name: 'Ngoài giáo xứ' }))
     await user.click(await screen.findByRole('button', { name: 'Thêm người ngoài xứ' }))
-    const modal = screen.getByRole('dialog')
-    await user.type(within(modal).getByRole('textbox', { name: 'Họ và tên' }), 'Trần Thị Bình')
-    await user.click(within(modal).getByRole('button', { name: 'Lưu người ngoài xứ' }))
+    const form = screen.getByRole('heading', { name: 'Cha' }).parentElement!
+    await user.type(within(form).getByRole('textbox', { name: 'Họ và tên' }), 'Trần Thị Bình')
+    await user.click(within(form).getByRole('button', { name: 'Lưu người ngoài xứ' }))
 
     await screen.findByText('Đã thêm: Maria Trần Thị Bình')
     expect(screen.getByText('Giáo xứ: Giáo xứ Bình An | Giáo phận: Giáo phận Xuân Lộc')).toBeTruthy()
@@ -135,5 +135,37 @@ describe('Giáo dân', () => {
     expect(window.api.person.create).toHaveBeenCalledWith(
       expect.objectContaining({ fullName: 'Trần Thị Bình', personType: 'external' }),
     )
+  })
+
+  it('giữ form cha ngoài xứ khi mở form mẹ ngoài xứ', async () => {
+    const user = userEvent.setup()
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <MemoryRouter initialEntries={[`/persons/${person.id}/edit`]}>
+          <Routes>
+            <Route path="/persons/:id/edit" element={<EditPersonPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const fatherType = (await screen.findAllByRole('combobox', { name: 'Loại hồ sơ' }))[0]
+    await user.click(fatherType)
+    await user.click(await screen.findByRole('option', { name: 'Ngoài giáo xứ' }))
+    const motherType = (await screen.findAllByRole('combobox', { name: 'Loại hồ sơ' }))[1]
+    await user.click(motherType)
+    await user.click(await screen.findByRole('option', { name: 'Ngoài giáo xứ' }))
+
+    const addButtons = screen.getAllByRole('button', { name: 'Thêm người ngoài xứ' })
+    await user.click(addButtons[0])
+    const fatherForm = screen.getByRole('heading', { name: 'Cha' }).parentElement!
+    await user.type(within(fatherForm).getByRole('textbox', { name: 'Họ và tên' }), 'Giuse Nguyễn Văn A')
+
+    await user.click(addButtons[1])
+    expect(screen.getAllByText('Thông tin người ngoài giáo xứ')).toHaveLength(2)
+    expect(
+      (within(fatherForm).getByRole('textbox', { name: 'Họ và tên' }) as HTMLInputElement)
+        .value,
+    ).toBe('Giuse Nguyễn Văn A')
   })
 })

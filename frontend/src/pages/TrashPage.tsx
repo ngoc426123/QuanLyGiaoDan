@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { useTrash, useTrashMutation } from '@/features/trash/hooks/useTrash.ts'
+import { formatDate } from '@/shared/date.ts'
 
 export function TrashPage() {
   const trash = useTrash()
@@ -29,7 +30,7 @@ export function TrashPage() {
           <h2>{row.title}</h2>
           <p>
             {row.type === 'person' ? 'Giáo dân' : row.type === 'family' ? 'Gia đình' : 'Giáo họ'} ·
-            Đã xoá {new Date(row.deletedAt).toLocaleDateString('vi-VN')}
+            Đã xoá {formatDate(row.deletedAt)}
           </p>
           <Button
             disabled={mutation.isPending}

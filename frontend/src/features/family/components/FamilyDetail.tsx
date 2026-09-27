@@ -7,6 +7,7 @@ import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { ActivityLog } from '@/features/activity-log/components/ActivityLog.tsx'
+import { formatDate } from '@/shared/date.ts'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { useFamilies } from '@/features/family/hooks/useFamilies.ts'
@@ -191,9 +192,9 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
               {
                 key: 'personBirthDate',
                 label: 'Ngày sinh',
-                render: (member: FamilyMember) => member.personBirthDate || 'Chưa cập nhật',
+                render: (member: FamilyMember) => formatDate(member.personBirthDate) || 'Chưa cập nhật',
               },
-              { key: 'fromDate', label: 'Ngày vào hộ' },
+              { key: 'fromDate', label: 'Ngày vào hộ', render: (member: FamilyMember) => formatDate(member.fromDate) },
               {
                 key: 'actions',
                 label: 'Thao tác',
@@ -225,8 +226,8 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
                 label: 'Quan hệ',
                 render: (member: FamilyMember) => relationshipLabel(member.relationship),
               },
-              { key: 'fromDate', label: 'Từ ngày' },
-              { key: 'toDate', label: 'Đến ngày' },
+              { key: 'fromDate', label: 'Từ ngày', render: (member: FamilyMember) => formatDate(member.fromDate) },
+              { key: 'toDate', label: 'Đến ngày', render: (member: FamilyMember) => formatDate(member.toDate) || 'Hiện hành' },
             ]}
           />
         )}

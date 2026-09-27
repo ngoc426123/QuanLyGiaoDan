@@ -6,6 +6,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { Button } from '../src/components/ui/Button.tsx'
 import { DateInput } from '../src/components/ui/DateInput.tsx'
 import { Input } from '../src/components/ui/Input.tsx'
+import { SearchableSelect } from '../src/components/ui/SearchableSelect.tsx'
+import { HolyNameInput } from '../src/components/ui/HolyNameInput.tsx'
 import { Modal } from '../src/components/ui/Modal.tsx'
 import { Drawer } from '../src/components/ui/Drawer.tsx'
 import { ConfirmDialog } from '../src/components/ui/ConfirmDialog.tsx'
@@ -32,6 +34,11 @@ function DialogExample({ Component = Modal }) {
 function Crash({ shouldThrow }) {
   if (shouldThrow) throw new Error('Lỗi render thử nghiệm')
   return <p>Nội dung đã trở lại</p>
+}
+
+function HolyNameExample() {
+  const [value, setValue] = useState('')
+  return <HolyNameInput label="Tên thánh" value={value} onChange={(event: any) => setValue(event.target.value)} />
 }
 
 describe('Component dùng chung', () => {
@@ -81,6 +88,42 @@ describe('Component dùng chung', () => {
     expect((screen.getByRole('textbox', { name: 'Ngày sinh' }) as HTMLInputElement).value).toBe(
       '21/09/2026',
     )
+  })
+
+  it('SearchableSelect chọn option bằng mũi tên và Enter, đồng thời cuộn option focus vào khung nhìn', () => {
+    const change = vi.fn()
+    const options = Array.from({ length: 75 }, (_, index) => ({
+      value: String(index),
+      label: `Mục ${index}`,
+    }))
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    render(<SearchableSelect label="Chọn mục" options={options} onChange={change} />)
+
+    const input = screen.getByRole('combobox', { name: 'Chọn mục' })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(change).toHaveBeenLastCalledWith('0')
+
+    fireEvent.focus(input)
+    for (let index = 0; index < 60; index += 1) {
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+    }
+    expect(scrollIntoView).toHaveBeenCalled()
+    expect(screen.getByRole('option', { name: 'Mục 60' }).dataset.active).toBe('true')
+  })
+
+  it('HolyNameInput vẫn cho nhập tự do và điền gợi ý đang focus bằng Enter', () => {
+    render(<HolyNameExample />)
+    const input = screen.getByRole('combobox', { name: 'Tên thánh' }) as HTMLInputElement
+
+    fireEvent.change(input, { target: { value: 'Tên riêng' } })
+    expect(input.value).toBe('Tên riêng')
+
+    fireEvent.change(input, { target: { value: '' } })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(input.value).toBe('Maria')
   })
 
   it.each([Modal, Drawer])('hộp thoại mở, đóng qua cancel, trả focus về nút', async (Component) => {

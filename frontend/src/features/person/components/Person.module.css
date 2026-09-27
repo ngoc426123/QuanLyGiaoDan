@@ -90,15 +90,8 @@
   font-size: var(--font-size-sm);
 }
 
-.quickForm {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
 .quickActions {
   display: flex;
-  grid-column: 1 / -1;
   justify-content: flex-end;
   gap: var(--space-2);
 }
@@ -167,6 +160,7 @@
 
 .sacramentDetail {
   display: grid;
+  align-content: start;
   gap: var(--space-2);
   margin: var(--space-0);
 }
@@ -352,9 +346,6 @@
   }
   .sacramentGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .quickForm {
-    grid-template-columns: 1fr;
   }
 }
 

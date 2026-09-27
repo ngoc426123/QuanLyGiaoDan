@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { Table } from '@/components/ui/Table.tsx'
 import { invokeWithMeta } from '@/shared/invoke.ts'
+import { formatDateTime } from '@/shared/date.ts'
 
 const labels = Object.freeze({
   baptism: 'Rửa tội',
@@ -39,7 +40,7 @@ export function CertificateHistory() {
           {
             key: 'issuedAt',
             label: 'Thời điểm cấp',
-            render: (row: any) => new Date(row.issuedAt).toLocaleString('vi-VN'),
+            render: (row: any) => formatDateTime(row.issuedAt),
           },
         ]}
       />

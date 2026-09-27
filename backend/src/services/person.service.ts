@@ -77,6 +77,7 @@ function normalizePatch(input: any) {
       date: row.date,
       minister: normalizeText(row.minister, 120),
       place: normalizeText(row.place, 255),
+      sponsor: normalizeText(row.sponsor, 120),
     }))
   }
   for (const field of ['personType', 'parishName', 'dioceseName', 'fatherName', 'motherName']) {

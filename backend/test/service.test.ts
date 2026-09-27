@@ -12,6 +12,7 @@ import * as reportService from '#/services/report.service.ts'
 import * as searchService from '#/services/search.service.ts'
 import * as trashService from '#/services/trash.service.ts'
 import * as csvImportService from '#/services/csv-import.service.ts'
+import * as certificateService from '#/services/certificate.service.ts'
 import * as dataService from '#/services/data.service.ts'
 import * as activityLogService from '#/services/activity-log.service.ts'
 import * as dashboardService from '#/services/dashboard.service.ts'
@@ -190,6 +191,7 @@ describe('person.service', () => {
           date: '2000-01-01',
           minister: 'Cha Giuse',
           place: 'Giáo xứ An Bình',
+          sponsor: 'Anna Lê Thị Mai',
         },
       ],
     })
@@ -198,8 +200,8 @@ describe('person.service', () => {
     assert.equal(person.occupation, 'Giáo viên')
     assert.equal(person.pastoralStatus, 'catechism')
     assert.deepEqual(
-      person.sacraments.map((row) => [row.type, row.date, row.minister, row.place]),
-      [['baptism', '2000-01-01', 'Cha Giuse', 'Giáo xứ An Bình']],
+      person.sacraments.map((row) => [row.type, row.date, row.minister, row.place, row.sponsor]),
+      [['baptism', '2000-01-01', 'Cha Giuse', 'Giáo xứ An Bình', 'Anna Lê Thị Mai']],
     )
     const marriage = marriageService.create({
       personId: person.id,
@@ -225,6 +227,12 @@ describe('person.service', () => {
       spouseName: 'Trần Thị Bình',
       spouseHolyName: 'Maria',
       spouseParishName: 'Giáo xứ Bình An',
+      spouseBaptismDate: '1985-02-02',
+      spouseBaptismSponsor: 'Giuse Nguyễn Văn Đỡ đầu',
+      spousePhone: '0901234567',
+      spouseNote: 'Ghi chú người phối ngẫu',
+      spouseFatherName: 'Giuse Trần Văn Cha',
+      spouseMotherName: 'Maria Lê Thị Mẹ',
       date: '2020-05-05',
       minister: 'Cha Phêrô',
       place: 'Giáo xứ Tân Định',
@@ -233,6 +241,12 @@ describe('person.service', () => {
     const record = personService.getById(person.id)
     assert.ok(record.marriage.spouseId)
     assert.equal(record.marriage.spouseFullName, 'Trần Thị Bình')
+    const externalSpouse = personService.getById(record.marriage.spouseId)
+    assert.equal(externalSpouse.fatherName, 'Giuse Trần Văn Cha')
+    assert.equal(externalSpouse.motherName, 'Maria Lê Thị Mẹ')
+    assert.equal(externalSpouse.phone, '0901234567')
+    assert.equal(externalSpouse.note, 'Ghi chú người phối ngẫu')
+    assert.equal(externalSpouse.sacraments[0].sponsor, 'Giuse Nguyễn Văn Đỡ đầu')
     assert.equal(marriageService.list({ search: 'tran thi binh' }).data.length, 1)
   })
 
@@ -544,6 +558,18 @@ describe('zone.service / family.service', () => {
 })
 
 describe('report.service', () => {
+  it('không xuất hồ sơ PDF cho người ngoài xứ', async () => {
+    const { data: person } = personService.create({
+      fullName: 'Người ngoài xứ',
+      personType: 'external',
+    })
+
+    await assert.rejects(
+      reportService.exportPersonProfilePdf({ personId: person.id, filePath: 'ignored.pdf' }),
+      codeIs('VALIDATION_ERROR'),
+    )
+  })
+
   it('xuất CSV có BOM, giữ tiếng Việt và chặn công thức bảng tính', () => {
     const { familyA } = seed()
     personService.create({
@@ -634,6 +660,29 @@ describe('report.service', () => {
     } finally {
       rmSync(directory, { recursive: true, force: true })
     }
+  })
+})
+
+describe('certificate.service', () => {
+  it('đề xuất tên PDF theo họ tên không dấu và loại chứng thư tiếng Anh', () => {
+    const { data: person } = personService.create({ fullName: 'Nguyễn Văn An' })
+
+    assert.equal(
+      certificateService.suggestedFilename(person.id, 'confirmation'),
+      'NGUYENVANAN-CONFIRMATION.pdf',
+    )
+  })
+
+  it('không cấp chứng thư cho người ngoài xứ', async () => {
+    const { data: person } = personService.create({
+      fullName: 'Người ngoài xứ',
+      personType: 'external',
+    })
+
+    await assert.rejects(
+      certificateService.issue({ personId: person.id, type: 'baptism', filePath: 'ignored.pdf' }),
+      codeIs('VALIDATION_ERROR'),
+    )
   })
 })
 
@@ -842,5 +891,27 @@ describe('thao tác hàng loạt và xoá dữ liệu', () => {
     assert.equal(result.families, 2)
     assert.equal(result.persons, 1)
     assert.equal(db.prepare('SELECT COUNT(*) AS total FROM settings').get().total > 0, true)
+  })
+
+  it('xoá lịch sử cấp chứng thư trước khi xoá giáo dân', () => {
+    const { data: person } = personService.create({ fullName: 'Giáo dân đã cấp chứng thư' })
+    db.prepare(
+      'INSERT INTO certificate_issuances (id, person_id, certificate_type, source_id, register_book, register_page, register_entry, person_full_name, issued_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      'certificate-issuance-test',
+      person.id,
+      'baptism',
+      'sacrament-test',
+      '1',
+      '1',
+      '1',
+      person.fullName,
+      '2026-09-27T00:00:00.000Z',
+      '2026-09-27T00:00:00.000Z',
+    )
+
+    assert.doesNotThrow(() => dataService.clearAll())
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM certificate_issuances').get().total, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM persons').get().total, 0)
   })
 })

@@ -18,6 +18,7 @@ import { RowContextMenu } from '@/components/ui/RowContextMenu.tsx'
 import styles from '@/components/layout/DirectoryWorkspace.module.css'
 import { useComposedSearch } from '@/hooks/useComposedSearch.ts'
 import { personName } from '../personName.ts'
+import { formatDate } from '@/shared/date.ts'
 
 export function PersonList() {
   const [contextMenu, setContextMenu] = useState<any>(null)
@@ -274,7 +275,7 @@ export function PersonList() {
               {
                 key: 'birthDate',
                 label: 'Ngày sinh',
-                render: (person: any) => person.birthDate || 'Chưa cập nhật',
+                render: (person: any) => formatDate(person.birthDate) || 'Chưa cập nhật',
               },
               ...(!isExternal
                 ? [
