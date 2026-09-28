@@ -53,13 +53,14 @@ export function SearchableSelect({
   }, [getOptionLabel, getOptionValue, options, query, selected])
   const selectableOptions = useMemo(
     () =>
-      emptyOptionLabel
-        ? [{ value: '', label: emptyOptionLabel }, ...filtered]
-        : filtered.map((option: any) => ({
-            value: String(getOptionValue(option)),
-            label: getOptionLabel(option),
-            option,
-          })),
+      [
+        ...(emptyOptionLabel ? [{ value: '', label: emptyOptionLabel }] : []),
+        ...filtered.map((option: any) => ({
+          value: String(getOptionValue(option)),
+          label: getOptionLabel(option),
+          option,
+        })),
+      ],
     [emptyOptionLabel, filtered, getOptionLabel, getOptionValue],
   )
   const visibleOptions = selectableOptions.slice(0, visibleCount)
