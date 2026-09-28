@@ -118,6 +118,12 @@ export const CHANNELS = Object.freeze({
     GET_ALL: 'setting:getAll',
     SET: 'setting:set',
   }),
+  SUGGESTION: Object.freeze({
+    LIST: 'suggestion:list',
+    CREATE: 'suggestion:create',
+    UPDATE: 'suggestion:update',
+    REMOVE: 'suggestion:remove',
+  }),
 
   ACTIVITY_LOG: Object.freeze({
     LIST: 'activity-log:list',
@@ -131,6 +137,7 @@ export const CHANNELS = Object.freeze({
   /** Broadcast Main → Renderer. Renderer chỉ dùng để invalidate, không ghi đè cache. */
   EVENTS: Object.freeze({
     SETTING_CHANGED: 'event:setting-changed',
+    SUGGESTION_CHANGED: 'event:suggestion-changed',
     ZONE_CHANGED: 'event:zone-changed',
     FAMILY_CHANGED: 'event:family-changed',
     PERSON_CHANGED: 'event:person-changed',

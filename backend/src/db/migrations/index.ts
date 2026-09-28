@@ -21,6 +21,7 @@ import personBirthPlaceSql from './020_add_person_birth_place.sql?raw'
 import externalParentHolyNamesSql from './021_split_external_parent_holy_names.sql?raw'
 import marriageActivityLogsSql from './022_add_marriage_activity_logs.sql?raw'
 import limitActiveMarriageParticipantsSql from './023_limit_active_marriage_participants.sql?raw'
+import suggestionItemsSql from './024_add_suggestion_items.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -113,6 +114,7 @@ export const MIGRATIONS = Object.freeze([
     name: '023_limit_active_marriage_participants.sql',
     sql: limitActiveMarriageParticipantsSql,
   }),
+  Object.freeze({ version: 24, name: '024_add_suggestion_items.sql', sql: suggestionItemsSql }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

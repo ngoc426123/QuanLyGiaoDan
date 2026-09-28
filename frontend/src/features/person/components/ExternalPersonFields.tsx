@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
 import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
+import { DioceseNameInput } from '@/features/setting/components/DioceseNameInput.tsx'
 import styles from './ExternalPersonFields.module.css'
 
 const defaultFields = Object.freeze({
@@ -60,7 +61,7 @@ export function ExternalPersonForm({
           <DateInput label="Ngày sinh" value={get('birthDate')} error={fieldErrors[fields.birthDate]} onChange={(date: string) => set('birthDate', date)} />
           <BirthPlaceInput label="Nơi sinh" value={get('birthPlace')} error={fieldErrors[fields.birthPlace]} onChange={(event: any) => set('birthPlace', event.target.value)} maxLength={255} />
           <ParishNameInput label="Giáo xứ" value={get('parishName')} onChange={(event: any) => set('parishName', event.target.value)} />
-          <Input label="Giáo phận" value={get('dioceseName')} onChange={(event: any) => set('dioceseName', event.target.value)} maxLength={120} />
+        <DioceseNameInput label="Giáo phận" value={get('dioceseName')} onChange={(event: any) => set('dioceseName', event.target.value)} maxLength={120} />
         </div>
       </section>
       {showSacraments && (

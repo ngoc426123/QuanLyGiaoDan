@@ -7,6 +7,7 @@ import { useZoneEvents } from '@/features/zone/hooks/useZoneEvents.ts'
 import { useFamilyEvents } from '@/features/family/hooks/useFamilyEvents.ts'
 import { usePersonEvents } from '@/features/person/hooks/usePersonEvents.ts'
 import { useMarriageEvents } from '@/features/marriage/hooks/useMarriageEvents.ts'
+import { useSuggestionEvents } from '@/features/suggestion/hooks/useSuggestions.ts'
 import { useShellShortcuts } from '@/hooks/useShellShortcuts.ts'
 import { useAppErrors } from '@/hooks/useAppErrors.ts'
 import { AppContent } from './AppContent.tsx'
@@ -29,6 +30,7 @@ export function AppShell() {
   useFamilyEvents()
   usePersonEvents()
   useMarriageEvents()
+  useSuggestionEvents()
   useAppErrors()
   useShellShortcuts({
     onCommandPalette: () => setCommandPaletteOpen(true),

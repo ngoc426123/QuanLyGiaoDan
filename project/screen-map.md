@@ -19,7 +19,8 @@
 | `/zones/:id`    | Chi tiết giáo họ | Danh sách hộ thuộc giáo họ                                                       | P1      |
 | `/search?q=`    | Tìm kiếm         | Tìm không dấu trên người và hộ                                                   | P1      |
 | `/trash`        | Thùng rác        | Bản ghi đã xoá mềm                                                               | P2      |
-| `/settings`     | Cài đặt          | Giao diện / Dữ liệu / Phím tắt / Giới thiệu                                      | P1      |
+| `/settings`     | Cài đặt          | Thông tin giáo xứ / Giao diện / Dữ liệu / Phím tắt / Giới thiệu                  | P1      |
+| `/suggestions`  | Danh mục gợi ý   | CRUD 5 danh mục dùng bởi các input gợi ý; đi tới từ nút trong Cài đặt            | P1      |
 
 > Mục **Dữ liệu** của `/settings` chứa hai nút "Xuất dữ liệu ra file" và "Nhập dữ liệu từ file"
 > (kênh `backup:*`, đã có từ Phase 2). Phase 3 đã chuyển hai nút vào Cài đặt, qua API wrapper
@@ -42,6 +43,7 @@
 | `/zones/:id`           | `zone:getById`, `family:list`                                                                          |
 | `/trash`               | `app:*` (thùng rác — đặc tả ở `ipc-communication.md` §5)                                               |
 | `/settings`            | `setting:*`                                                                                            |
+| `/suggestions`         | `suggestion:*`                                                                                         |
 
 ---
 

@@ -1,4 +1,17 @@
+import { randomUUID } from 'node:crypto'
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
+import { BIRTH_PLACE_SUGGESTIONS, HOLY_NAME_SUGGESTIONS } from '@shared/suggestionDefaults.ts'
+
+function ascii(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 /**
  * Seed bảng `settings` — `project/database-schema.md` §5.
@@ -54,6 +67,49 @@ export function seedDefaultSettings(db, timestamp) {
     return seed()
   } catch (cause) {
     throw new AppError(ERROR_CODES.DB_ERROR, 'Không ghi được cấu hình mặc định', {
+      reason: cause.message,
+    })
+  }
+}
+
+/** Seed các danh mục gợi ý mặc định; không ghi đè hay phục hồi giá trị người dùng đã xóa. */
+export function seedSuggestionItems(db, timestamp) {
+  const insert = db.prepare(
+    'INSERT OR IGNORE INTO suggestion_items ' +
+      '(id, category, value, value_ascii, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  )
+  const settings = db
+    .prepare('SELECT key, value FROM settings WHERE key IN (?, ?, ?)')
+    .all('general.parishName', 'general.parishPriestName', 'general.dioceseName')
+  const settingValues = Object.fromEntries(settings.map((row) => [row.key, JSON.parse(row.value)]))
+  const defaults = [
+    ...HOLY_NAME_SUGGESTIONS.map((value, index) => ({ category: 'holy_name', value, index })),
+    ...BIRTH_PLACE_SUGGESTIONS.map((value, index) => ({ category: 'birth_place', value, index })),
+    { category: 'parish', value: settingValues['general.parishName'], index: 0 },
+    { category: 'priest', value: settingValues['general.parishPriestName'], index: 0 },
+    { category: 'diocese', value: settingValues['general.dioceseName'], index: 0 },
+  ].filter((item) => typeof item.value === 'string' && item.value.trim())
+
+  const seed = db.transaction(() => {
+    let inserted = 0
+    for (const item of defaults) {
+      inserted += insert.run(
+        randomUUID(),
+        item.category,
+        item.value.trim(),
+        ascii(item.value),
+        item.index,
+        timestamp,
+        timestamp,
+      ).changes
+    }
+    return inserted
+  })
+
+  try {
+    return seed()
+  } catch (cause) {
+    throw new AppError(ERROR_CODES.DB_ERROR, 'Không ghi được danh mục gợi ý mặc định', {
       reason: cause.message,
     })
   }

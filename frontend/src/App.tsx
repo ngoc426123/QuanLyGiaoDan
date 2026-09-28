@@ -24,6 +24,7 @@ import { MarriageListPage, NewMarriagePage } from '@/pages/MarriageListPage.tsx'
 import { ExportPage } from '@/pages/ExportPage.tsx'
 import { CertificateHistoryPage } from '@/pages/CertificateHistoryPage.tsx'
 import { CertificateIssuePage } from '@/pages/CertificateIssuePage.tsx'
+import { SuggestionSettingsPage } from '@/pages/SuggestionSettingsPage.tsx'
 
 function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="search" element={<SearchPage />} />
         <Route path="trash" element={<TrashPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="suggestions" element={<SuggestionSettingsPage />} />
         <Route
           path="*"
           element={

@@ -11,6 +11,7 @@ import { useCreatePerson } from '../hooks/usePersonMutations.ts'
 import { personName } from '../personName.ts'
 import { ExternalPersonForm } from './ExternalPersonFields.tsx'
 import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
+import { DioceseNameInput } from '@/features/setting/components/DioceseNameInput.tsx'
 import { formatDate } from '@/shared/date.ts'
 import styles from './Person.module.css'
 
@@ -322,7 +323,7 @@ export function PersonForm({
               error={fieldErrors.parishName}
               onChange={(event: any) => set('parishName', event.target.value)}
             />
-            <Input
+          <DioceseNameInput
               label="Giáo phận"
               value={value.dioceseName}
               error={fieldErrors.dioceseName}

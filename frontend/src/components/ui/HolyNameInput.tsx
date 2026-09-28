@@ -1,34 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import styles from './SearchableSelect.module.css'
-
-const HOLY_NAMES = [
-  'Maria',
-  'Giuse',
-  'Gioan',
-  'Anna',
-  'Antôn',
-  'Phêrô',
-  'Phaolô',
-  'Têrêsa',
-  'Catarina',
-  'Phanxicô',
-  'Đa Minh',
-  'Inhaxiô',
-  'Micae',
-  'Tôma',
-  'Luca',
-  'Mátthêu',
-  'Mác-cô',
-  'Anrê',
-  'Giacôbê',
-  'Bênêđictô',
-  'Clara',
-  'Agnês',
-  'Monica',
-  'Elisabeth',
-  'Rita',
-  'Cecilia',
-]
+import { HOLY_NAME_SUGGESTIONS } from '@shared/suggestionDefaults.ts'
+import { useSuggestionValues } from '@/features/suggestion/hooks/useSuggestions.ts'
 
 function normalize(value: string) {
   return value
@@ -47,9 +20,14 @@ export function HolyNameInput({
   error = '',
   onChange,
   id,
-  suggestionValues = HOLY_NAMES,
+  suggestionValues,
   ...rest
 }: any) {
+  const availableSuggestions = useSuggestionValues(
+    'holy_name',
+    suggestionValues ?? HOLY_NAME_SUGGESTIONS,
+    !suggestionValues,
+  )
   const generatedId = useId()
   const fieldId = id || generatedId
   const rootRef = useRef<HTMLDivElement>(null)
@@ -59,9 +37,9 @@ export function HolyNameInput({
   const suggestions = useMemo(() => {
     const query = normalize(String(value))
     return query
-      ? suggestionValues.filter((name: string) => normalize(name).includes(query))
-      : suggestionValues
-  }, [suggestionValues, value])
+      ? availableSuggestions.filter((name: string) => normalize(name).includes(query))
+      : availableSuggestions
+  }, [availableSuggestions, value])
 
   useEffect(() => {
     const closeWhenOutside = (event: MouseEvent) => {
@@ -97,7 +75,9 @@ export function HolyNameInput({
         role="combobox"
         aria-expanded={open}
         aria-controls={`${fieldId}-options`}
-        aria-activedescendant={open && activeIndex >= 0 ? `${fieldId}-option-${activeIndex}` : undefined}
+        aria-activedescendant={
+          open && activeIndex >= 0 ? `${fieldId}-option-${activeIndex}` : undefined
+        }
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${fieldId}-error` : rest['aria-describedby']}
         onFocus={() => setOpen(true)}
@@ -113,7 +93,10 @@ export function HolyNameInput({
             if (!suggestions.length) return
             setActiveIndex((current) => {
               if (current < 0) return event.key === 'ArrowDown' ? 0 : suggestions.length - 1
-              return Math.min(suggestions.length - 1, Math.max(0, current + (event.key === 'ArrowDown' ? 1 : -1)))
+              return Math.min(
+                suggestions.length - 1,
+                Math.max(0, current + (event.key === 'ArrowDown' ? 1 : -1)),
+              )
             })
             return
           }

@@ -16,6 +16,7 @@ import { zoneHandlers } from './zone.ipc.ts'
 import { settingHandlers } from './setting.ipc.ts'
 import { activityLogHandlers } from './activity-log.ipc.ts'
 import { certificateHandlers } from './certificate.ipc.ts'
+import { suggestionHandlers } from './suggestion.ipc.ts'
 
 /**
  * Bộ đăng ký handler IPC — `docs/01-architecture/ipc-communication.md` §8.
@@ -70,6 +71,7 @@ function register({ channel, schema, handle, withMeta, event }: any) {
 export function registerIpcHandlers() {
   const groups = [
     settingHandlers,
+    suggestionHandlers,
     activityLogHandlers,
     appHandlers,
     backupHandlers,

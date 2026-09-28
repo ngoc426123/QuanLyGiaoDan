@@ -22,5 +22,6 @@ export function routeTitle(pathname) {
   if (pathname === '/trash') return 'Thùng rác'
   if (pathname === '/exports') return 'Xuất file'
   if (pathname === '/certificates') return 'Nhật ký chứng thư'
+  if (pathname === '/suggestions') return 'Danh mục gợi ý'
   return navigation.find((item) => item.path === pathname)?.label || 'Không tìm thấy trang'
 }

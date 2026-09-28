@@ -16,6 +16,7 @@ import { personName } from '@/features/person/personName.ts'
 import { formatDate } from '@/shared/date.ts'
 import { useSettings } from '@/features/setting/hooks/useSettings.ts'
 import { ParishNameInput } from '@/features/setting/components/ParishNameInput.tsx'
+import { DioceseNameInput } from '@/features/setting/components/DioceseNameInput.tsx'
 import styles from './CertificateIssuePageView.module.css'
 
 const options = [
@@ -239,7 +240,7 @@ export function CertificateIssuePageView() {
             <section className={styles.previewSection}>
               <h3>Thông tin giáo xứ</h3>
               <div className={styles.previewFields}>
-                <Input
+                <DioceseNameInput
                   label="Giáo phận"
                   value={draft.dioceseName}
                   onChange={(event: any) => set('dioceseName', event.target.value)}

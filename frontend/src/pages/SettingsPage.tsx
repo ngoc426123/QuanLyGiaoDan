@@ -4,6 +4,8 @@ import { DataSettings } from '@/features/setting/components/DataSettings.tsx'
 import { ParishSettings } from '@/features/setting/components/ParishSettings.tsx'
 import { DangerZoneSettings } from '@/features/setting/components/DangerZoneSettings.tsx'
 import { BackupSettings } from '@/features/backup/components/BackupSettings.tsx'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/Button.tsx'
 import { useAppVersion } from '@/features/app/hooks/useAppInfo.ts'
 import styles from './SettingsPage.module.css'
 
@@ -13,6 +15,19 @@ export function SettingsPage() {
     <div className={styles.page}>
       <PageHeader title="Cài đặt" description="Tuỳ chỉnh giao diện và quản lý dữ liệu của bạn." />
       <ParishSettings />
+      <section className={styles.info} aria-labelledby="suggestion-settings-link-title">
+        <div>
+          <h2 id="suggestion-settings-link-title">Danh mục gợi ý</h2>
+          <p>
+            Quản lý tên thánh, nơi sinh, giáo xứ, linh mục và giáo phận được đề xuất khi nhập liệu.
+          </p>
+        </div>
+        <div>
+          <Link to="/suggestions">
+            <Button variant="primary">Mở danh mục gợi ý</Button>
+          </Link>
+        </div>
+      </section>
       <AppearanceSettings />
       <DataSettings />
       <BackupSettings />

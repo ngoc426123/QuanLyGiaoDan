@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { applyPragmas, openDatabase, setDatabasePassword } from './connection.ts'
 import { assertNotDowngrade, migrate, readSchemaVersion } from './migrator.ts'
-import { seedDefaultSettings } from './seed.ts'
+import { seedDefaultSettings, seedSuggestionItems } from './seed.ts'
 import { encryptPlaintextDatabase, isPlaintextSqliteDatabase } from './encryption.ts'
 
 /**
@@ -41,6 +41,7 @@ export async function bootstrapDatabase({ dataDir, backupDir, timestamp, passwor
 
   applyPragmas(db)
   seedDefaultSettings(db, timestamp)
+  seedSuggestionItems(db, timestamp)
 
   return { dbFile, migration, db }
 }

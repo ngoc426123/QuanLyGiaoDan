@@ -366,3 +366,21 @@ Migration `010_add_dashboard_indexes.sql` thêm hai chỉ mục partial không �
 
 > Sắp xếp theo **tên gọi** chứ không theo họ là quyết định domain (P03 — hợp với tên tiếng Việt).
 > Tìm kiếm không dấu dùng `full_name_ascii`, không dùng `full_name`.
+
+## 10. Danh mục gợi ý
+
+Bảng `suggestion_items` lưu các giá trị được đề xuất trong ô nhập, không phải dữ liệu
+tham chiếu bắt buộc của hồ sơ. Hồ sơ vẫn lưu chuỗi độc lập nên xoá một gợi ý không làm
+thay đổi dữ liệu đã nhập.
+
+| Cột | Ý nghĩa |
+| --- | --- |
+| `category` | `holy_name`, `birth_place`, `parish`, `priest` hoặc `diocese` |
+| `value` | Giá trị hiển thị |
+| `value_ascii` | Giá trị bỏ dấu để tìm kiếm và sắp xếp |
+| `sort_order` | Thứ tự gợi ý |
+
+Migration `024_add_suggestion_items.sql` seed tên thánh và tỉnh/thành từ danh sách mặc
+định của ứng dụng; tên giáo xứ, giáo phận và linh mục được lấy từ `settings` nếu đã có.
+Seed dùng `INSERT OR IGNORE`, không ghi đè giá trị người dùng và không tự khôi phục mục
+đã xoá.

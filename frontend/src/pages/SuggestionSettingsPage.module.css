@@ -1,0 +1,6 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  max-width: var(--content-width);
+  margin-inline: auto;
+}

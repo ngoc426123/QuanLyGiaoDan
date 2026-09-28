@@ -86,6 +86,7 @@ describe('migrate', () => {
       '021_split_external_parent_holy_names.sql',
       '022_add_marriage_activity_logs.sql',
       '023_limit_active_marriage_participants.sql',
+      '024_add_suggestion_items.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -116,6 +117,7 @@ describe('migrate', () => {
       'persons_fts_idx',
       'sacraments',
       'settings',
+      'suggestion_items',
       'zones',
     ])
     assert.equal(

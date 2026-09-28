@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { PriestNameInput } from '@/components/ui/PriestNameInput.tsx'
+import { DioceseNameInput } from './DioceseNameInput.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { useSettingMutation, useSettings } from '../hooks/useSettings.ts'
 import styles from './ParishSettings.module.css'
@@ -44,7 +45,7 @@ export function ParishSettings() {
         </p>
       </div>
       <div className={styles.fields}>
-        <Input
+        <DioceseNameInput
           label="Giáo phận"
           value={diocese}
           disabled={mutation.isPending}

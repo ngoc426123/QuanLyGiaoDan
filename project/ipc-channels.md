@@ -185,6 +185,7 @@ Bản sao đó là đường lui duy nhất, nên đường dẫn của nó tr�
 | `event:family-changed`                 | `{ action, id, zoneId? }`                             | Sau mọi thao tác ghi lên `families`                              |
 | `event:person-changed`                 | `{ action, id, familyId? }`                           | Sau mọi thao tác ghi lên `persons` **hoặc** `family_members`     |
 | `event:marriage-changed`               | `{ action, id }`                                      | Sau tạo, sửa, xoá hôn phối; làm mới danh sách và hồ sơ liên quan |
+| `event:suggestion-changed`             | `{ action }`                                          | Sau thêm, sửa hoặc xoá một giá trị gợi ý |
 | `event:person-changed` (khi chuyển hộ) | `{ action: 'moved', id, familyId, previousFamilyId }` | `family-member:move` chạm hai hộ nên mang thêm hộ cũ (P15)       |
 
 Ba sự kiện hạ tầng giữ nguyên theo template: `event:import-progress`, `event:update-status`,
@@ -201,6 +202,18 @@ Ba sự kiện hạ tầng giữ nguyên theo template: `event:import-progress`,
 
 > Thêm ở **Phase 1** để kiểm chứng Definition of Done. **Xoá ở Phase 2** khi đã có kênh
 > ghi thật (`zone:create`) để kiểm chứng thay.
+
+## 2c. Nhóm `suggestion:*` — danh mục gợi ý
+
+| Kênh | Payload vào | Kết quả |
+| --- | --- | --- |
+| `suggestion:list` | `{ category, search?, page?, pageSize? }` | Danh sách giá trị gợi ý kèm `meta` |
+| `suggestion:create` | `{ category, value, sortOrder? }` | Giá trị vừa tạo |
+| `suggestion:update` | `{ id, expectedUpdatedAt, patch: { value?, sortOrder? } }` | Giá trị đã cập nhật |
+| `suggestion:remove` | `{ id }` | `{ id }`, xoá mềm |
+
+Năm danh mục hợp lệ là `holy_name`, `birth_place`, `parish`, `priest`, `diocese`.
+Các input chỉ dùng bản ghi chưa xoá làm gợi ý nhưng vẫn cho phép nhập giá trị tự do.
 
 Handler chỉ được đăng ký khi `!app.isPackaged` — bản đóng gói không có nhóm này.
 

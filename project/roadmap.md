@@ -60,6 +60,10 @@ liệu (hộ thiếu chủ hộ, người chưa thuộc hộ, thiếu ngày sinh
 **◐ Phase 8 (2026-09-25):** mở rộng mô hình người dùng chung cho người trong và ngoài giáo xứ,
 liên kết cha/mẹ và dùng dữ liệu này trong chứng thư Rửa tội, Thêm sức và Hôn phối.
 
+**◐ Phase 8 (2026-09-28):** thêm danh mục gợi ý có thể quản lý trong Cài đặt (tên thánh,
+nơi sinh, giáo xứ, linh mục, giáo phận). Dữ liệu mặc định được seed từ danh sách hiện có
+của ứng dụng và cấu hình giáo xứ; các input vẫn cho phép nhập tự do.
+
 Ghi lại chỗ dự án này làm khác `phase-framework.md`, kèm lý do.
 
 | Phase | Sai lệch                                                | Lý do                                                                                                |

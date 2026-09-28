@@ -58,6 +58,7 @@ const appApi = Object.freeze({
  */
 const eventsApi = Object.freeze({
   onSettingChanged: (listener) => subscribe(CHANNELS.EVENTS.SETTING_CHANGED, listener),
+  onSuggestionChanged: (listener) => subscribe(CHANNELS.EVENTS.SUGGESTION_CHANGED, listener),
   onZoneChanged: (listener) => subscribe(CHANNELS.EVENTS.ZONE_CHANGED, listener),
   onFamilyChanged: (listener) => subscribe(CHANNELS.EVENTS.FAMILY_CHANGED, listener),
   onPersonChanged: (listener) => subscribe(CHANNELS.EVENTS.PERSON_CHANGED, listener),
@@ -158,6 +159,12 @@ const trashApi = Object.freeze({
 const activityLogApi = Object.freeze({
   list: (input) => ipcRenderer.invoke(CHANNELS.ACTIVITY_LOG.LIST, input),
 })
+const suggestionApi = Object.freeze({
+  list: (query) => ipcRenderer.invoke(CHANNELS.SUGGESTION.LIST, query),
+  create: (input) => ipcRenderer.invoke(CHANNELS.SUGGESTION.CREATE, input),
+  update: (input) => ipcRenderer.invoke(CHANNELS.SUGGESTION.UPDATE, input),
+  remove: (id) => ipcRenderer.invoke(CHANNELS.SUGGESTION.REMOVE, { id }),
+})
 
 const api = Object.freeze({
   setting: Object.freeze({
@@ -178,6 +185,7 @@ const api = Object.freeze({
   search: searchApi,
   trash: trashApi,
   activityLog: activityLogApi,
+  suggestion: suggestionApi,
   events: eventsApi,
 })
 

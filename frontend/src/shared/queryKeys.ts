@@ -27,3 +27,7 @@ export const trashKeys = Object.freeze({
   all: ['trash'],
   list: () => ['trash', 'list'],
 })
+export const suggestionKeys = Object.freeze({
+  all: ['suggestion'],
+  list: (category: string, filters: Record<string, unknown> = {}) => ['suggestion', 'list', category, filters],
+})
