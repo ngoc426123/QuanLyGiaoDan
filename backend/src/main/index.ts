@@ -31,6 +31,7 @@ import { migrateLegacyUserDataDirectory, USER_DATA_DIRECTORY_NAME } from './user
  */
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
+const applicationIconPath = join(currentDir, '../resources/app-icon.ico')
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null
@@ -79,6 +80,7 @@ async function requestDatabasePassword({
     maximizable: false,
     minimizable: false,
     title: 'Bảo vệ dữ liệu',
+    icon: applicationIconPath,
     webPreferences: {
       preload: join(currentDir, 'preload.cjs'),
       contextIsolation: true,
@@ -182,7 +184,7 @@ function createMainWindow() {
     ...bounds,
     frame: false,
     title: 'Quan Ly Giao Dan',
-    icon: join(currentDir, '../resources/app-icon.ico'),
+    icon: applicationIconPath,
     minWidth: 940,
     minHeight: 600,
     show: false,
