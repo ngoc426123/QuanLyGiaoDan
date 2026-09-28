@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { PriestNameInput } from '@/components/ui/PriestNameInput.tsx'
 import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
 import { Select } from '@/components/ui/Select.tsx'
@@ -457,7 +458,7 @@ export function PersonForm({
               error={fieldErrors.baptismDate}
               onChange={(next: string) => set('baptismDate', next)}
             />
-            <Input
+            <PriestNameInput
               label="Linh mục cử hành"
               value={value.baptismMinister}
               onChange={(event: any) => set('baptismMinister', event.target.value)}
@@ -484,7 +485,7 @@ export function PersonForm({
                 error={fieldErrors.firstCommunionDate}
                 onChange={(next: string) => set('firstCommunionDate', next)}
               />
-              <Input
+              <PriestNameInput
                 label="Linh mục cử hành"
                 value={value.firstCommunionMinister}
                 onChange={(event: any) => set('firstCommunionMinister', event.target.value)}
@@ -505,7 +506,7 @@ export function PersonForm({
               error={fieldErrors.confirmationDate}
               onChange={(next: string) => set('confirmationDate', next)}
             />
-            <Input
+            <PriestNameInput
               label="Linh mục cử hành"
               value={value.confirmationMinister}
               onChange={(event: any) => set('confirmationMinister', event.target.value)}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { PriestNameInput } from '@/components/ui/PriestNameInput.tsx'
 import { BirthPlaceInput } from '@/components/ui/BirthPlaceInput.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
@@ -268,7 +269,7 @@ export function CertificateIssuePageView() {
                   value={draft.parishPhone}
                   onChange={(event: any) => set('parishPhone', event.target.value)}
                 />
-                <Input
+                <PriestNameInput
                   label="Linh mục chánh xứ"
                   value={draft.parishPriestName}
                   onChange={(event: any) => set('parishPriestName', event.target.value)}
@@ -328,7 +329,7 @@ export function CertificateIssuePageView() {
                   value={draft.ceremonyPlace}
                   onChange={(event: any) => set('ceremonyPlace', event.target.value)}
                 />
-                <Input
+                <PriestNameInput
                   label="Linh mục cử hành"
                   value={draft.minister}
                   onChange={(event: any) => set('minister', event.target.value)}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
+import { PriestNameInput } from '@/components/ui/PriestNameInput.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
 import { useSettingMutation, useSettings } from '../hooks/useSettings.ts'
 import styles from './ParishSettings.module.css'
@@ -61,7 +62,7 @@ export function ParishSettings() {
           disabled={mutation.isPending}
           onChange={(event: any) => setParishName(event.target.value)}
         />
-        <Input
+        <PriestNameInput
           label="Linh mục chánh xứ"
           value={parishPriest}
           disabled={mutation.isPending}

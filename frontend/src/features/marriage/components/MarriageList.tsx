@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { HolyNameInput } from '@/components/ui/HolyNameInput.tsx'
+import { PriestNameInput } from '@/components/ui/PriestNameInput.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { PageHeader } from '@/components/ui/PageHeader.tsx'
 import { Select } from '@/components/ui/Select.tsx'
@@ -334,7 +335,7 @@ export function MarriageForm({
             onChange={(date: string) => setValue({ ...value, date })}
             required
           />
-          <Input
+          <PriestNameInput
             label="Linh mục cử hành"
             value={value.minister}
             error={fieldErrors.minister}
