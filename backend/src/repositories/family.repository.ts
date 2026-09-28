@@ -199,6 +199,14 @@ export function softDeleteMany(ids, deletedAt) {
   ).run(deletedAt, deletedAt, JSON.stringify(ids)).changes
 }
 
+export function findActiveIdsByZoneIds(zoneIds) {
+  return prepare(
+    'SELECT id FROM families WHERE deleted_at IS NULL AND zone_id IN (SELECT value FROM json_each(?))',
+  )
+    .all(JSON.stringify(zoneIds))
+    .map((row: any) => row.id)
+}
+
 export function countCurrentMembersByIds(ids) {
   return prepare(
     'SELECT COUNT(*) AS total FROM family_members WHERE deleted_at IS NULL AND to_date IS NULL AND family_id IN (SELECT value FROM json_each(?))',

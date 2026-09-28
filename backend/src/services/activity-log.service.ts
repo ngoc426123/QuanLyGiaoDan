@@ -27,6 +27,7 @@ const AUDIT_FIELDS = Object.freeze({
     'note',
   ],
   family_member: ['familyId', 'personId', 'relationship', 'fromDate', 'toDate', 'note'],
+  marriage: ['date', 'minister', 'place', 'status', 'note', 'witnessOne', 'witnessTwo'],
 })
 
 export function record({ entityType, entityId, action, before, after, timestamp }: any) {

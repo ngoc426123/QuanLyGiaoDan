@@ -1,6 +1,8 @@
 import { AppError, ERROR_CODES } from '@shared/errors.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import * as zoneRepository from '#/repositories/zone.repository.ts'
+import * as familyRepository from '#/repositories/family.repository.ts'
+import * as familyMemberRepository from '#/repositories/family-member.repository.ts'
 import { record as recordActivity } from './activity-log.service.ts'
 import { now } from './clock.ts'
 import {
@@ -130,22 +132,15 @@ export function remove({ id }: any) {
     const zone = zoneRepository.findById(id)
     if (!zone) return { id }
 
-    const { familyCount } = zoneRepository.countFamiliesAndPersons(id)
-
-    if (familyCount > 0) {
-      throw new AppError(
-        ERROR_CODES.FOREIGN_KEY_VIOLATION,
-        'Không xoá được giáo họ vì vẫn còn ' +
-          familyCount +
-          ' hộ gia đình. Hãy chuyển các hộ này sang giáo họ khác trước.',
-        { familyCount },
-      )
-    }
+    const { familyCount, personCount } = zoneRepository.countFamiliesAndPersons(id)
+    const familyIds = familyRepository.findActiveIdsByZoneIds([id])
+    familyMemberRepository.softDeleteCurrentByFamilyIds(familyIds, timestamp)
+    familyRepository.softDeleteMany(familyIds, timestamp)
 
     zoneRepository.softDelete(id, timestamp)
     recordActivity({ entityType: 'zone', entityId: id, action: 'removed', timestamp })
 
-    return { id }
+    return { id, familyCount, personCount }
   })
 }
 
@@ -155,14 +150,9 @@ export function bulkRemove({ ids }: any) {
     if (zoneRepository.countActiveByIds(ids) !== ids.length) {
       throw new AppError(ERROR_CODES.NOT_FOUND, 'Có giáo họ đã không còn tồn tại')
     }
-    const familyCount = zoneRepository.countFamiliesByZoneIds(ids)
-    if (familyCount > 0) {
-      throw new AppError(
-        ERROR_CODES.FOREIGN_KEY_VIOLATION,
-        `Không xoá được vì ${familyCount} hộ vẫn thuộc các giáo họ đã chọn`,
-        { familyCount },
-      )
-    }
+    const familyIds = familyRepository.findActiveIdsByZoneIds(ids)
+    familyMemberRepository.softDeleteCurrentByFamilyIds(familyIds, timestamp)
+    familyRepository.softDeleteMany(familyIds, timestamp)
     const count = zoneRepository.softDeleteMany(ids, timestamp)
     for (const id of ids)
       recordActivity({ entityType: 'zone', entityId: id, action: 'removed', timestamp })

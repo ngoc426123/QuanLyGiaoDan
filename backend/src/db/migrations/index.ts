@@ -19,6 +19,8 @@ import directoryCreatedAtIndexesSql from './018_add_directory_created_at_indexes
 import sacramentSponsorSql from './019_add_sacrament_sponsor.sql?raw'
 import personBirthPlaceSql from './020_add_person_birth_place.sql?raw'
 import externalParentHolyNamesSql from './021_split_external_parent_holy_names.sql?raw'
+import marriageActivityLogsSql from './022_add_marriage_activity_logs.sql?raw'
+import limitActiveMarriageParticipantsSql from './023_limit_active_marriage_participants.sql?raw'
 
 /**
  * Danh mục migration — **nguồn chân lý duy nhất** về thứ tự và số hiệu.
@@ -96,7 +98,21 @@ export const MIGRATIONS = Object.freeze([
   }),
   Object.freeze({ version: 19, name: '019_add_sacrament_sponsor.sql', sql: sacramentSponsorSql }),
   Object.freeze({ version: 20, name: '020_add_person_birth_place.sql', sql: personBirthPlaceSql }),
-  Object.freeze({ version: 21, name: '021_split_external_parent_holy_names.sql', sql: externalParentHolyNamesSql }),
+  Object.freeze({
+    version: 21,
+    name: '021_split_external_parent_holy_names.sql',
+    sql: externalParentHolyNamesSql,
+  }),
+  Object.freeze({
+    version: 22,
+    name: '022_add_marriage_activity_logs.sql',
+    sql: marriageActivityLogsSql,
+  }),
+  Object.freeze({
+    version: 23,
+    name: '023_limit_active_marriage_participants.sql',
+    sql: limitActiveMarriageParticipantsSql,
+  }),
 ])
 
 /** Số hiệu migration cao nhất mà bản build này biết. */

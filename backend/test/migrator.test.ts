@@ -84,6 +84,8 @@ describe('migrate', () => {
       '019_add_sacrament_sponsor.sql',
       '020_add_person_birth_place.sql',
       '021_split_external_parent_holy_names.sql',
+      '022_add_marriage_activity_logs.sql',
+      '023_limit_active_marriage_participants.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 
@@ -132,6 +134,54 @@ describe('migrate', () => {
           "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_persons_phone'",
         )
         .get(),
+    )
+    db.close()
+  })
+
+  it('migration 023 chỉ giữ hai đương sự đang hoạt động cho mỗi hôn phối', async () => {
+    const db = new Database(':memory:')
+    for (const migration of MIGRATIONS.filter((item) => item.version <= 22)) {
+      db.exec(migration.sql)
+      db.pragma(`user_version = ${migration.version}`)
+    }
+    const timestamp = '2026-09-28T00:00:00.000Z'
+    for (const [id, name] of [
+      ['person-a', 'Nguyễn Văn An'],
+      ['person-b', 'Trần Thị Bình'],
+      ['person-c', 'Lê Thị Cúc'],
+    ])
+      db.prepare(
+        'INSERT INTO persons (id, full_name, full_name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ).run(id, name, name, timestamp, timestamp)
+    db.prepare('INSERT INTO marriages (id, date, created_at, updated_at) VALUES (?, ?, ?, ?)').run(
+      'marriage-a',
+      '2026-09-28',
+      timestamp,
+      timestamp,
+    )
+    for (const [id, personId, createdAt] of [
+      ['participant-a', 'person-a', '2026-09-28T00:00:00.000Z'],
+      ['participant-b', 'person-b', '2026-09-28T00:00:01.000Z'],
+      ['participant-c', 'person-c', '2026-09-28T00:00:02.000Z'],
+    ])
+      db.prepare(
+        'INSERT INTO marriage_participants (id, marriage_id, person_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ).run(id, 'marriage-a', personId, createdAt, createdAt)
+
+    await migrate(db)
+
+    assert.equal(
+      db
+        .prepare(
+          'SELECT count(*) AS total FROM marriage_participants WHERE marriage_id = ? AND deleted_at IS NULL',
+        )
+        .get('marriage-a').total,
+      2,
+    )
+    assert.equal(
+      db.prepare('SELECT deleted_at FROM marriage_participants WHERE id = ?').get('participant-c')
+        .deleted_at !== null,
+      true,
     )
     db.close()
   })

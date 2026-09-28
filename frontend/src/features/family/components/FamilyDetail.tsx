@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
@@ -24,7 +26,7 @@ import {
   type FamilyMember,
   type Relationship,
 } from '@/features/family-member/familyMember.types.ts'
-import { usePersons } from '@/features/person/hooks/usePersons.ts'
+import { personApi } from '@/features/person/api/person.api.ts'
 import { useZones } from '@/features/zone/hooks/useZones.ts'
 import { useToastStore } from '@/stores/toast.store.ts'
 import { AppClientError } from '@/shared/invoke.ts'
@@ -50,23 +52,36 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   const family = useFamily(id)
   const zones = useZones(listOptions)
   const families = useFamilies(listOptions)
-  const people = usePersons(
-    {
-      page: 1,
-      pageSize: 200,
-      search: personSearch.trim() || undefined,
-      withoutFamily: true,
-      sortBy: 'givenName',
-      sortDir: 'asc',
-    },
-    isAddOpen && Boolean(personSearch.trim()),
-  )
+  const people = useInfiniteQuery({
+    queryKey: ['person', 'family-member-options', personSearch.trim()],
+    queryFn: ({ pageParam }) =>
+      personApi.list({
+        page: pageParam,
+        pageSize: 50,
+        search: personSearch.trim() || undefined,
+        withoutFamily: true,
+        personType: 'all',
+        sortBy: 'givenName',
+        sortDir: 'asc',
+      }) as Promise<any>,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) =>
+      pages.length * 50 < (lastPage.meta?.total ?? 0) ? pages.length + 1 : undefined,
+    enabled: isAddOpen,
+  })
   const update = useUpdateFamily()
   const remove = useRemoveFamily()
   const addMember = useAddFamilyMember()
   const updateMember = useUpdateFamilyMember()
   const moveMember = useMoveFamilyMember()
   const removeMember = useRemoveFamilyMember()
+  const availablePeople = useMemo(
+    () =>
+      (people.data?.pages.flatMap((page: any) => page.data) ?? []).filter(
+        (person: { familyId?: string | null }) => !person.familyId,
+      ),
+    [people.data],
+  )
 
   useEffect(() => {
     if (family.error instanceof AppClientError && family.error.code === 'NOT_FOUND') {
@@ -86,9 +101,6 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
   )
   const history = (record.membershipHistory as FamilyMember[] | undefined) ?? []
   const hasHead = members.some((member) => member.relationship === 'head')
-  const availablePeople = (people.data?.data ?? []).filter(
-    (person: { familyId?: string | null }) => !person.familyId,
-  )
   const destinations = (families.data?.data ?? []).filter(
     (item: { id: string }) => item.id !== record.id,
   )
@@ -269,7 +281,9 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
             people={availablePeople}
             personSearch={personSearch}
             onPersonSearchChange={setPersonSearch}
-            peopleLoading={people.isLoading}
+            peopleLoading={people.isLoading || people.isFetchingNextPage}
+            peopleHasMore={people.hasNextPage}
+            onLoadMorePeople={() => people.fetchNextPage()}
             isPending={addMember.isPending}
             onSubmit={async (input) => {
               await addMember.mutateAsync({
@@ -313,7 +327,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
             }
           }}
         >
-          Bạn có chắc muốn gỡ thành viên này khỏi hộ?
+          <DeleteImpactNotice entity="familyMember" />
         </ConfirmDialog>
       )}
       {isRemoveOpen && (
@@ -331,9 +345,7 @@ export function FamilyDetail({ id }: { id: string | undefined }) {
             }
           }}
         >
-          {removeError?.code === 'CONFLICT'
-            ? `Gia đình còn ${(removeError.details as { memberCount?: number } | undefined)?.memberCount ?? ''} thành viên, hãy chuyển những người này sang hộ khác trước.`
-            : 'Bạn có chắc muốn xoá mềm gia đình này?'}
+          <DeleteImpactNotice entity="family" name={`Hộ ${record.name}`} affectedCount={members.length} />
         </ConfirmDialog>
       )}
     </section>

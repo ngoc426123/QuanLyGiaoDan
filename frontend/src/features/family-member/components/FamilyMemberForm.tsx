@@ -23,6 +23,8 @@ type Props = {
   personSearch?: string
   onPersonSearchChange?: (value: string) => void
   peopleLoading?: boolean
+  peopleHasMore?: boolean
+  onLoadMorePeople?: () => void
   families?: FamilyChoice[]
   initialValue?: Partial<FormValue>
   onSubmit: (value: AddValue | MoveValue) => Promise<unknown>
@@ -45,6 +47,8 @@ export function FamilyMemberForm({
   personSearch = '',
   onPersonSearchChange,
   peopleLoading = false,
+  peopleHasMore = false,
+  onLoadMorePeople,
   families = [],
   initialValue = {},
   onSubmit,
@@ -97,9 +101,11 @@ export function FamilyMemberForm({
             error={fieldErrors?.personId}
             placeholder="Tìm giáo dân theo tên..."
             emptyLabel={
-              personSearch.trim() ? 'Không tìm thấy giáo dân phù hợp' : 'Nhập tên để tìm giáo dân'
+              'Không tìm thấy giáo dân phù hợp'
             }
             loading={peopleLoading}
+            hasMoreResults={peopleHasMore}
+            onLoadMore={onLoadMorePeople}
             getOptionLabel={(person: PersonChoice) =>
               `${personName(person)}${person.familyName ? ` (${person.familyName})` : ''}`
             }

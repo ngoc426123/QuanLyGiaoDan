@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
@@ -30,6 +31,25 @@ export const marriageApi = {
   update: (input: any) => invoke(window.api.marriage.update(input)),
   remove: (id: string) => invoke(window.api.marriage.remove(id)),
 }
+
+const externalSpouseFields = [
+  'spouseName',
+  'spouseHolyName',
+  'spouseBirthDate',
+  'spouseBirthPlace',
+  'spouseParishName',
+  'spouseDioceseName',
+  'spouseBaptismDate',
+  'spouseBaptismPlace',
+  'spouseConfirmationDate',
+  'spouseConfirmationPlace',
+  'spousePhone',
+  'spouseNote',
+  'spouseFatherHolyName',
+  'spouseFatherFullName',
+  'spouseMotherHolyName',
+  'spouseMotherFullName',
+]
 
 export function toMarriagePayload(input: any) {
   const payload = { ...input }
@@ -151,10 +171,14 @@ export function MarriageForm({
   const personOptions = useMemo(() => {
     const fallbackOptions = [
       initialValue?.personId && initialValue?.personName
-        ? { id: initialValue.personId, fullName: initialValue.personName }
+        ? { id: initialValue.personId, fullName: initialValue.personName, personType: 'parish' }
         : null,
       initialValue?.spouseId && initialValue?.spouseName
-        ? { id: initialValue.spouseId, fullName: initialValue.spouseName }
+        ? {
+            id: initialValue.spouseId,
+            fullName: initialValue.spouseName,
+            personType: initialValue.spouseIsExternal ? 'external' : 'parish',
+          }
         : null,
     ].filter(Boolean)
     const merged = [...fallbackOptions, ...selectedPeople, ...persons]
@@ -163,9 +187,13 @@ export function MarriageForm({
         merged.findIndex((item: any) => item.id === person.id) === index,
     )
   }, [initialValue, persons, selectedPeople])
+  const parishPersonOptions = useMemo(
+    () => personOptions.filter((person: any) => person.personType !== 'external'),
+    [personOptions],
+  )
   const spouseOptions = useMemo(
-    () => personOptions.filter((person: any) => person.id !== value.personId),
-    [personOptions, value.personId],
+    () => parishPersonOptions.filter((person: any) => person.id !== value.personId),
+    [parishPersonOptions, value.personId],
   )
   const existingMarriageWarnings = [
     { person: firstPersonQuery.data, marriage: firstPersonQuery.data?.marriage },
@@ -221,7 +249,7 @@ export function MarriageForm({
             <SearchableSelect
               label="Đương sự thứ nhất"
               value={value.personId}
-              options={personOptions}
+              options={parishPersonOptions}
               error={fieldErrors.personId}
               placeholder="Tìm tên giáo dân..."
               getOptionLabel={personName}
@@ -236,10 +264,10 @@ export function MarriageForm({
             label="Loại người phối ngẫu"
             value={value.spouseMode}
             onChange={(event: any) =>
-              setValue({
-                ...value,
-                spouseMode: event.target.value,
-                spouseId: event.target.value === 'internal' ? value.spouseId : '',
+              setValue((current: any) => {
+                const nextValue = { ...current, spouseMode: event.target.value, spouseId: '' }
+                for (const field of externalSpouseFields) nextValue[field] = ''
+                return nextValue
               })
             }
           >
@@ -404,6 +432,7 @@ export function MarriageList() {
           page: 1,
           pageSize: 200,
           search: personSearch || undefined,
+          personType: 'parish',
           sortBy: 'fullName',
           sortDir: 'asc',
         }),
@@ -566,7 +595,7 @@ export function MarriageList() {
             setRemoving(null)
           }}
         >
-          Bạn có chắc muốn xoá mềm thông tin hôn phối của {removing.participants}?
+          <DeleteImpactNotice entity="marriage" name={`Hôn phối của ${removing.participants}`} />
         </ConfirmDialog>
       )}
     </section>

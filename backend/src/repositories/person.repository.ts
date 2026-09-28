@@ -207,7 +207,7 @@ export function insert(record) {
       ' holy_name, gender,' +
       ' birth_date, birth_place, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
       ' pastoral_note, source, note, person_type, parish_name, diocese_name, father_name, father_holy_name, mother_name, mother_holy_name, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,

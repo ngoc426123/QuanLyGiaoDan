@@ -11,12 +11,16 @@ let settings
 let listener
 let windowStateListener
 let appErrorListener
+let personChangedListener
 let unsubscribe
+let trashRows
 beforeEach(() => {
   settings = { 'ui.theme': 'system', 'ui.density': 'comfortable', 'general.language': 'vi' }
   useUIStore.setState({ theme: null, density: null, isSidebarCollapsed: false })
   useToastStore.setState({ toasts: [] })
   useFilterStore.setState({ filters: {} })
+  personChangedListener = undefined
+  trashRows = []
   unsubscribe = vi.fn()
   window.api = {
     setting: {
@@ -45,7 +49,7 @@ beforeEach(() => {
         return vi.fn()
       }),
       onPersonChanged: vi.fn((callback) => {
-        void callback
+        personChangedListener = callback
         return vi.fn()
       }),
       onMarriageChanged: vi.fn((callback) => {
@@ -94,7 +98,7 @@ beforeEach(() => {
       })),
     },
     trash: {
-      list: vi.fn(async () => ({ ok: true, data: [] })),
+      list: vi.fn(async () => ({ ok: true, data: trashRows })),
       restore: vi.fn(async () => ({ ok: true, data: {} })),
       hardRemove: vi.fn(async () => ({ ok: true, data: {} })),
       empty: vi.fn(async () => ({ ok: true, data: {} })),
@@ -293,10 +297,24 @@ describe('Khung ứng dụng qua API preload', () => {
     )
     expect(await screen.findByRole('heading', { name: 'Tìm kiếm' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Nguyễn Văn An' })).toBeTruthy()
-    await user.click(screen.getByRole('link', { name: 'Thùng rác' }))
+    await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Cài đặt' }))
+    await user.click(await screen.findByRole('button', { name: 'Mở Thùng rác' }))
     expect(screen.getByRole('heading', { name: 'Thùng rác đang trống' })).toBeTruthy()
-    await user.click(screen.getByRole('link', { name: 'Cài đặt' }))
+    await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: 'Cài đặt' }))
     expect(await screen.findByRole('combobox', { name: 'Chế độ giao diện' })).toBeTruthy()
+  })
+
+  it('làm mới Thùng rác khi có bản ghi bị xoá', async () => {
+    window.location.hash = '/trash'
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Thùng rác đang trống' })).toBeTruthy()
+
+    trashRows = [
+      { id: 'person-removed', type: 'person', title: 'Nguyễn Văn An', deletedAt: '2026-09-28' },
+    ]
+    await act(async () => personChangedListener({ action: 'removed', id: 'person-removed' }))
+
+    expect(await screen.findByRole('heading', { name: 'Nguyễn Văn An' })).toBeTruthy()
   })
 
   it('đổi tháng trên Tổng quan sẽ tải lại báo cáo mục vụ cho đúng kỳ', async () => {

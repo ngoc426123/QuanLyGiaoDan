@@ -1,6 +1,13 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { dashboardKeys, familyKeys, personKeys, zoneKeys } from '@/shared/queryKeys.ts'
+import {
+  dashboardKeys,
+  familyKeys,
+  marriageKeys,
+  personKeys,
+  trashKeys,
+  zoneKeys,
+} from '@/shared/queryKeys.ts'
 import { personApi } from '../api/person.api.ts'
 
 export function usePersonEvents() {
@@ -10,7 +17,9 @@ export function usePersonEvents() {
       client.invalidateQueries({ queryKey: personKeys.all })
       client.invalidateQueries({ queryKey: familyKeys.all })
       client.invalidateQueries({ queryKey: zoneKeys.lists })
+      client.invalidateQueries({ queryKey: marriageKeys.all })
       client.invalidateQueries({ queryKey: dashboardKeys.all })
+      client.invalidateQueries({ queryKey: trashKeys.all })
       await client.refetchQueries({ queryKey: personKeys.lists, type: 'active' })
     })
   }, [client])

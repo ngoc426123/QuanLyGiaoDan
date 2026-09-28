@@ -114,10 +114,6 @@ export function update({ id, expectedUpdatedAt, patch }: any) {
   })
 }
 
-/**
- * Hộ còn thành viên hiện hành thì **chặn** — `CONFLICT` kèm số thành viên để UI nói rõ
- * phải chuyển bao nhiêu người đi trước (`project/database-schema.md` §3).
- */
 export function remove({ id }: any) {
   const timestamp = now()
 
@@ -126,21 +122,11 @@ export function remove({ id }: any) {
     if (!family) return { id }
 
     const memberCount = familyRepository.countMembers(id)
-
-    if (memberCount > 0) {
-      throw new AppError(
-        ERROR_CODES.CONFLICT,
-        'Không xoá được hộ vì vẫn còn ' +
-          memberCount +
-          ' thành viên. Hãy chuyển những người này sang hộ khác trước.',
-        { memberCount },
-      )
-    }
-
+    familyMemberRepository.softDeleteCurrentByFamilyIds([id], timestamp)
     familyRepository.softDelete(id, timestamp)
     recordActivity({ entityType: 'family', entityId: id, action: 'removed', timestamp })
 
-    return { id, zoneId: family.zoneId }
+    return { id, zoneId: family.zoneId, memberCount }
   })
 }
 
@@ -165,13 +151,7 @@ export function bulkRemove({ ids }: any) {
       throw new AppError(ERROR_CODES.NOT_FOUND, 'Có hộ gia đình đã không còn tồn tại')
     }
     const memberCount = familyRepository.countCurrentMembersByIds(ids)
-    if (memberCount > 0) {
-      throw new AppError(
-        ERROR_CODES.CONFLICT,
-        `Không xoá được vì ${memberCount} thành viên vẫn thuộc các hộ đã chọn`,
-        { memberCount },
-      )
-    }
+    familyMemberRepository.softDeleteCurrentByFamilyIds(ids, timestamp)
     const count = familyRepository.softDeleteMany(ids, timestamp)
     for (const id of ids)
       recordActivity({ entityType: 'family', entityId: id, action: 'removed', timestamp })

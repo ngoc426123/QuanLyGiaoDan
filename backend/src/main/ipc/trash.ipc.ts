@@ -8,13 +8,25 @@ export const trashHandlers = Object.freeze([
     channel: CHANNELS.TRASH.RESTORE,
     schema: trashRecordSchema,
     handle: trashService.restore,
-    event: () => ({ channel: CHANNELS.EVENTS.PERSON_CHANGED, payload: { action: 'restored' } }),
+    event: (data) => ({
+      channel:
+        data.type === 'marriage'
+          ? CHANNELS.EVENTS.MARRIAGE_CHANGED
+          : CHANNELS.EVENTS.PERSON_CHANGED,
+      payload: { action: 'restored', id: data.id },
+    }),
   },
   {
     channel: CHANNELS.TRASH.HARD_REMOVE,
     schema: trashRecordSchema,
     handle: trashService.hardRemove,
-    event: () => ({ channel: CHANNELS.EVENTS.PERSON_CHANGED, payload: { action: 'hardRemoved' } }),
+    event: (data) => ({
+      channel:
+        data.type === 'marriage'
+          ? CHANNELS.EVENTS.MARRIAGE_CHANGED
+          : CHANNELS.EVENTS.PERSON_CHANGED,
+      payload: { action: 'hardRemoved', id: data.id },
+    }),
   },
   {
     channel: CHANNELS.TRASH.EMPTY,

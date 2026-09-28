@@ -23,10 +23,45 @@ export function restore(input: any) {
         throw new AppError(ERROR_CODES.CONFLICT, 'Hãy khôi phục giáo họ của hộ này trước')
       }
     }
+    if (input.type === 'family_member') {
+      const member = trashRepository.findDeletedFamilyMember(input.id)
+      if (
+        member &&
+        (!trashRepository.isLiveFamily(member.family_id) ||
+          !trashRepository.isLivePerson(member.person_id))
+      ) {
+        throw new AppError(ERROR_CODES.CONFLICT, 'Hãy khôi phục giáo dân và hộ gia đình trước')
+      }
+      if (member?.to_date === null && trashRepository.hasCurrentMembership(member.person_id)) {
+        throw new AppError(ERROR_CODES.CONFLICT, 'Giáo dân này đã thuộc một hộ khác')
+      }
+      if (
+        member?.to_date === null &&
+        member.relationship === 'head' &&
+        trashRepository.hasCurrentHead(member.family_id)
+      ) {
+        throw new AppError(ERROR_CODES.CONFLICT, 'Hộ này đã có chủ hộ')
+      }
+    }
+    if (input.type === 'marriage') {
+      const participants = trashRepository.findDeletedMarriageParticipantIds(input.id)
+      if (
+        participants.some(
+          (participant: any) => !trashRepository.isLivePerson(participant.person_id),
+        )
+      ) {
+        throw new AppError(ERROR_CODES.CONFLICT, 'Hãy khôi phục các đương sự trước')
+      }
+    }
     const timestamp = now()
     const deletedPerson =
       input.type === 'person' ? personRepository.findDeletedAtById(input.id) : null
-    const restored = trashRepository.restore(input.type, input.id, timestamp)
+    const restored = trashRepository.restore(
+      input.type,
+      input.id,
+      timestamp,
+      deletedPerson?.deleted_at,
+    )
     if (restored && deletedPerson?.deleted_at) {
       familyMemberRepository.restoreCurrentByPersonId(input.id, deletedPerson.deleted_at, timestamp)
     }

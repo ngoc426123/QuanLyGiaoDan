@@ -25,6 +25,8 @@ export function SearchableSelect({
   required = false,
   loading = false,
   onSearchChange,
+  onLoadMore,
+  hasMoreResults = false,
   emptyOptionLabel = '',
 }: any) {
   const fieldId = useId()
@@ -203,6 +205,7 @@ export function SearchableSelect({
               event.currentTarget.scrollHeight - 24
             ) {
               setVisibleCount((current) => current + 50)
+              if (hasMoreResults && !loading) onLoadMore?.()
             }
           }}
         >
@@ -234,7 +237,9 @@ export function SearchableSelect({
           {!visibleOptions.length && (
             <p className={styles.empty}>{loading ? 'Đang tải...' : emptyLabel}</p>
           )}
-          {hasMore && <p className={styles.loadingHint}>Cuộn để xem thêm</p>}
+          {(hasMore || hasMoreResults) && (
+            <p className={styles.loadingHint}>{loading ? 'Đang tải thêm...' : 'Cuộn để xem thêm'}</p>
+          )}
         </div>
       )}
       {error && <p className={styles.error}>{error}</p>}

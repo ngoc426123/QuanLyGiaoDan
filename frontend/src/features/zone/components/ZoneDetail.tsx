@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
@@ -34,6 +35,11 @@ export function ZoneDetail({ id }: { id: string | undefined }) {
   if (query.isLoading) return <Skeleton />
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const zone = query.data
+  const affectedFamilies = families.data?.data ?? []
+  const affectedPersonCount = affectedFamilies.reduce(
+    (total: number, family: any) => total + (family.memberCount ?? 0),
+    0,
+  )
   if (!zone)
     return <EmptyState title="Không tìm thấy giáo họ">Bản ghi này không còn tồn tại.</EmptyState>
 
@@ -136,9 +142,12 @@ export function ZoneDetail({ id }: { id: string | undefined }) {
             }
           }}
         >
-          {removeError?.code === 'FOREIGN_KEY_VIOLATION'
-            ? `Giáo họ còn ${removeError.details?.familyCount ?? ''} gia đình, hãy chuyển sang giáo họ khác trước.`
-            : 'Bạn có chắc muốn xoá mềm giáo họ này?'}
+          <DeleteImpactNotice
+            entity="zone"
+            name={`Giáo họ ${zone.name}`}
+            affectedFamilyCount={affectedFamilies.length}
+            affectedCount={affectedPersonCount}
+          />
         </ConfirmDialog>
       )}
     </section>

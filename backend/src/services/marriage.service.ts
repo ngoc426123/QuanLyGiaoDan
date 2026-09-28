@@ -1,6 +1,7 @@
 import * as marriageRepository from '#/repositories/marriage.repository.ts'
 import * as personRepository from '#/repositories/person.repository.ts'
 import * as sacramentRepository from '#/repositories/sacrament.repository.ts'
+import { record as recordActivity } from './activity-log.service.ts'
 import { runInTransaction } from '#/repositories/query-helpers.ts'
 import { now } from './clock.ts'
 import {
@@ -212,7 +213,11 @@ function updateExternalSpouse(personId: string, value: any, timestamp: string) {
   sacramentRepository.softDeleteInitiationByPersonId(personId, timestamp)
   for (const row of [
     { type: 'baptism', date: value.spouseBaptismDate, place: value.spouseBaptismPlace },
-    { type: 'confirmation', date: value.spouseConfirmationDate, place: value.spouseConfirmationPlace },
+    {
+      type: 'confirmation',
+      date: value.spouseConfirmationDate,
+      place: value.spouseConfirmationPlace,
+    },
   ]) {
     if (row.date)
       sacramentRepository.insert({
@@ -310,7 +315,9 @@ export function update({ id, expectedUpdatedAt, patch }) {
 export function remove({ id }) {
   return runInTransaction(() => {
     assertFound(marriageRepository.findById(id), NOT_FOUND_MESSAGE)
-    marriageRepository.softDeleteById(id, now())
+    const timestamp = now()
+    marriageRepository.softDeleteById(id, timestamp)
+    recordActivity({ entityType: 'marriage', entityId: id, action: 'removed', timestamp })
     return { id }
   })
 }

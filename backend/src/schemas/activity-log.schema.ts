@@ -3,7 +3,7 @@ import { idSchema } from './common.schema.ts'
 
 export const activityLogListSchema = z
   .object({
-    entityType: z.enum(['zone', 'family', 'person', 'family_member']),
+    entityType: z.enum(['zone', 'family', 'person', 'family_member', 'marriage']),
     entityId: idSchema,
   })
   .strict()

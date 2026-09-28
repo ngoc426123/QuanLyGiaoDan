@@ -42,13 +42,13 @@ function assertFamilyExists(familyId) {
 
 function assertPersonExists(personId) {
   const person = personRepository.findRawById(personId)
-  if (person?.personType === 'parish') return
+  if (person) return
 
   throw new AppError(
     ERROR_CODES.FOREIGN_KEY_VIOLATION,
-    'Chỉ giáo dân trong giáo xứ mới được gán vào hộ',
+    'Hồ sơ người được chọn không còn tồn tại',
     {
-      fieldErrors: { personId: 'Chỉ giáo dân trong giáo xứ mới được gán vào hộ' },
+      fieldErrors: { personId: 'Hồ sơ người được chọn không còn tồn tại' },
     },
   )
 }

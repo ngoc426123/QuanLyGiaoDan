@@ -200,6 +200,12 @@ export function softDeleteCurrentByPersonId(personId, deletedAt) {
   ).run(deletedAt, deletedAt, personId).changes
 }
 
+export function softDeleteCurrentByFamilyIds(familyIds, deletedAt) {
+  return prepare(
+    'UPDATE family_members SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND to_date IS NULL AND family_id IN (SELECT value FROM json_each(?))',
+  ).run(deletedAt, deletedAt, JSON.stringify(familyIds)).changes
+}
+
 /** Khôi phục dòng hộ bị xoá cùng lúc với hồ sơ giáo dân, nếu hộ nguồn còn hoạt động. */
 export function restoreCurrentByPersonId(personId, deletedAt, updatedAt) {
   return prepare(

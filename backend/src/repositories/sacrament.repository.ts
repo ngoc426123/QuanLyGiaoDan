@@ -50,11 +50,11 @@ export function softDeleteByPersonIds(personIds: string[], deletedAt: string) {
   ).run(deletedAt, deletedAt, JSON.stringify(personIds))
 }
 
-export function restoreByPersonId(personId: string, updatedAt: string) {
+export function restoreByPersonId(personId: string, deletedAt: string, updatedAt: string) {
   prepare(
     'UPDATE sacraments SET deleted_at = NULL, updated_at = ?' +
-      ' WHERE person_id = ? AND deleted_at IS NOT NULL',
-  ).run(updatedAt, personId)
+      ' WHERE person_id = ? AND deleted_at = ?',
+  ).run(updatedAt, personId, deletedAt)
 }
 
 export function hardDeleteByPersonId(personId: string) {

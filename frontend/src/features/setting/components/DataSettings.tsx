@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { Input } from '@/components/ui/Input.tsx'
 import { Skeleton } from '@/components/ui/Skeleton.tsx'
@@ -7,6 +8,7 @@ import { useOpenDataFolder, useOpenLogFolder } from '@/features/app/hooks/useApp
 import styles from './DataSettings.module.css'
 
 export function DataSettings() {
+  const navigate = useNavigate()
   const settings = useSettings()
   const mutation = useSettingMutation()
   const openDataFolder = useOpenDataFolder()
@@ -55,6 +57,9 @@ export function DataSettings() {
           onClick={() => openLogFolder.mutate()}
         >
           Mở thư mục log
+        </Button>
+        <Button variant="secondary" onClick={() => navigate('/trash')}>
+          Mở Thùng rác
         </Button>
       </div>
     </section>

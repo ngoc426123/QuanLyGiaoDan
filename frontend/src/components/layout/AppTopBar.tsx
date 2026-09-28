@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Input } from '@/components/ui/Input.tsx'
 import { Button } from '@/components/ui/Button.tsx'
 import { Icon } from '@/components/ui/Icon.tsx'
@@ -149,9 +149,6 @@ export function AppTopBar() {
           <Icon name="search" />
         </Button>
       </form>
-      <Link className={styles.trash} to="/trash" aria-label="Thùng rác" title="Thùng rác">
-        <Icon name="trash" />
-      </Link>
       {isAboutOpen && (
         <Modal title="Quan Ly Giao Dan" onClose={() => setAboutOpen(false)}>
           <p>Ứng dụng quản lý giáo dân, gia đình và giáo họ, hoạt động với dữ liệu lưu trên máy.</p>

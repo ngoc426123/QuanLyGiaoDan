@@ -63,23 +63,12 @@ describe('Giáo họ', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('hiển thị các hộ thuộc giáo họ và báo rõ khi không thể xoá', async () => {
+  it('hiển thị tác động trước khi xoá giáo họ', async () => {
     const user = userEvent.setup()
-    window.api.zone.remove.mockResolvedValue({
-      ok: false,
-      error: {
-        code: 'FOREIGN_KEY_VIOLATION',
-        message: 'Không thể xoá',
-        details: { familyCount: 1 },
-      },
-    })
     renderFeature(<ZoneDetail id={zone.id} />, `/zones/${zone.id}`)
     expect(await screen.findByRole('link', { name: 'Hộ Nguyễn' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Xoá' }))
-    await user.click(screen.getByRole('button', { name: 'Xác nhận xoá' }))
-    expect(
-      await screen.findByText('Giáo họ còn 1 gia đình, hãy chuyển sang giáo họ khác trước.'),
-    ).toBeTruthy()
+    expect(await screen.findByText('Cảnh báo: 1 hộ và 2 giáo dân thuộc giáo họ sẽ bị ảnh hưởng.')).toBeTruthy()
   })
 
   it('sửa giáo họ chỉ gửi các trường cho phép trong patch', async () => {

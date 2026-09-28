@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { useBulkRemoveZones } from '../hooks/useZoneMutations.ts'
 
 export function ZoneBulkActions({ ids, onDone }: any) {
@@ -30,7 +31,7 @@ export function ZoneBulkActions({ ids, onDone }: any) {
             })
           }
         >
-          Giáo họ còn hộ gia đình sẽ không thể xóa. Bạn có chắc muốn tiếp tục?
+          <DeleteImpactNotice entity="zone" count={ids.length} />
         </ConfirmDialog>
       )}
     </section>

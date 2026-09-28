@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { dashboardKeys, familyKeys, personKeys, zoneKeys } from '@/shared/queryKeys.ts'
+import { dashboardKeys, familyKeys, personKeys, trashKeys, zoneKeys } from '@/shared/queryKeys.ts'
 import { familyApi } from '../api/family.api.ts'
 
 export function useFamilyEvents() {
@@ -11,6 +11,7 @@ export function useFamilyEvents() {
       client.invalidateQueries({ queryKey: personKeys.lists })
       client.invalidateQueries({ queryKey: zoneKeys.lists })
       client.invalidateQueries({ queryKey: dashboardKeys.all })
+      client.invalidateQueries({ queryKey: trashKeys.all })
     })
   }, [client])
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { EmptyState } from '@/components/ui/EmptyState.tsx'
 import { ErrorState } from '@/components/ui/ErrorState.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
@@ -367,7 +368,7 @@ export function PersonDetail({ id }: { id: string | undefined }) {
             navigate('/persons')
           }}
         >
-          Bạn có chắc muốn xoá mềm hồ sơ giáo dân này?
+          <DeleteImpactNotice entity="person" name={`Hồ sơ của ${personName(record)}`} />
         </ConfirmDialog>
       )}
       {isMoveOpen && record.currentMembership && (

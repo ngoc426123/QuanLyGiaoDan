@@ -1,6 +1,6 @@
 .bar {
   display: grid;
-  grid-template-columns: auto minmax(120px, 1fr) minmax(220px, 320px) auto auto;
+  grid-template-columns: auto minmax(120px, 1fr) minmax(220px, 320px) auto;
   align-items: center;
   gap: var(--space-3);
   padding: 0 var(--space-1) 0 var(--space-5);
@@ -72,7 +72,7 @@
   height: var(--topbar-height);
   margin-left: auto;
   -webkit-app-region: no-drag;
-  grid-column: 5;
+  grid-column: 4;
 }
 .windowControls button {
   display: grid;
@@ -121,19 +121,6 @@
 .search > div {
   flex: 1;
 }
-.trash {
-  display: grid;
-  place-items: center;
-  width: var(--control-height);
-  height: var(--control-height);
-  color: var(--color-text-muted);
-  border-radius: var(--radius-md);
-  grid-column: 4;
-  -webkit-app-region: no-drag;
-}
-.trash:hover {
-  background: var(--color-bg-hover);
-}
 @media (max-width: 1190px) {
   .bar {
     gap: var(--space-3);
@@ -145,10 +132,7 @@
   .search {
     grid-column: 2 / 4;
   }
-  .trash {
-    grid-column: 4;
-  }
   .windowControls {
-    grid-column: 5;
+    grid-column: 4;
   }
 }

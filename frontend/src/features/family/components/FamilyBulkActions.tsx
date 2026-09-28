@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { Select } from '@/components/ui/Select.tsx'
 import { useBulkMoveFamilies, useBulkRemoveFamilies } from '../hooks/useFamilyMutations.ts'
@@ -71,7 +72,7 @@ export function FamilyBulkActions({ ids, zones, onDone }: any) {
             })
           }
         >
-          Hộ còn thành viên sẽ không thể xóa. Bạn có chắc muốn tiếp tục?
+          <DeleteImpactNotice entity="family" count={ids.length} />
         </ConfirmDialog>
       )}
     </section>

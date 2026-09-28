@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button.tsx'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog.tsx'
+import { DeleteImpactNotice } from '@/components/ui/DeleteImpactNotice.tsx'
 import { DateInput } from '@/components/ui/DateInput.tsx'
 import { Modal } from '@/components/ui/Modal.tsx'
 import { SearchableSelect } from '@/components/ui/SearchableSelect.tsx'
@@ -94,7 +95,7 @@ export function PersonBulkActions({ ids, families, onDone }: any) {
             })
           }
         >
-          Bạn có chắc muốn chuyển {ids.length} giáo dân vào thùng rác?
+          <DeleteImpactNotice entity="person" count={ids.length} />
         </ConfirmDialog>
       )}
     </section>

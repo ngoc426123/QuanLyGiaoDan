@@ -250,6 +250,17 @@ describe('person.service', () => {
     assert.equal(marriageService.list({ search: 'tran thi binh' }).data.length, 1)
   })
 
+  it('cho phép một giáo dân có nhiều lần hôn phối', () => {
+    const { data: person } = personService.create({ fullName: 'Nguyễn Văn An' })
+    const { data: firstSpouse } = personService.create({ fullName: 'Trần Thị Bình' })
+    const { data: secondSpouse } = personService.create({ fullName: 'Lê Thị Cúc' })
+
+    marriageService.create({ personId: person.id, spouseId: firstSpouse.id, date: '2010-05-05' })
+    marriageService.create({ personId: person.id, spouseId: secondSpouse.id, date: '2020-05-05' })
+
+    assert.equal(marriageService.list({ search: 'nguyen van an' }).data.length, 2)
+  })
+
   it('sắp xếp theo tên gọi đúng bảng chữ cái tiếng Việt', () => {
     for (const givenName of ['Bé', 'Ánh', 'Cường', 'Đức']) {
       personService.create({ fullName: 'Nguyễn Văn ' + givenName, givenName })
@@ -313,6 +324,23 @@ describe('person.service', () => {
 })
 
 describe('family-member.service', () => {
+  it('cho phép thêm người ngoài xứ vào hộ', () => {
+    const { familyA } = seed()
+    const { data: person } = personService.create({
+      fullName: 'Người ngoài xứ',
+      personType: 'external',
+    })
+
+    const member = familyMemberService.add({
+      familyId: familyA.id,
+      personId: person.id,
+      relationship: 'other',
+      fromDate: '2026-09-28',
+    })
+
+    assert.equal(member.personId, person.id)
+  })
+
   it('gán người đã có hộ hiện hành vào hộ thứ hai bị chặn', () => {
     const { familyA, familyB } = seed()
     const { data: person } = personService.create({
@@ -440,23 +468,31 @@ describe('family-member.service', () => {
 })
 
 describe('zone.service / family.service', () => {
-  it('xoá giáo họ còn hộ bị chặn', () => {
-    const { zone } = seed()
+  it('xoá giáo họ sẽ xoá mềm các hộ và liên kết thành viên hiện hành', () => {
+    const { zone, familyA } = seed()
+    personService.create({
+      fullName: 'Nguyễn Văn An',
+      family: { familyId: familyA.id, relationship: 'head', fromDate: '2010-01-01' },
+    })
 
-    assert.throws(() => zoneService.remove({ id: zone.id }), codeIs('FOREIGN_KEY_VIOLATION'))
+    assert.deepEqual(zoneService.remove({ id: zone.id }), {
+      id: zone.id,
+      familyCount: 2,
+      personCount: 1,
+    })
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM families WHERE deleted_at IS NOT NULL').get().total, 2)
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM family_members WHERE deleted_at IS NOT NULL').get().total, 1)
   })
 
-  it('xoá hộ còn thành viên bị chặn, kèm số thành viên', () => {
+  it('xoá hộ sẽ xoá mềm liên kết thành viên hiện hành', () => {
     const { familyA } = seed()
     personService.create({
       fullName: 'Nguyễn Văn An',
       family: { familyId: familyA.id, relationship: 'head', fromDate: '2010-01-01' },
     })
 
-    assert.throws(
-      () => familyService.remove({ id: familyA.id }),
-      (error) => error.code === 'CONFLICT' && error.details.memberCount === 1,
-    )
+    assert.equal(familyService.remove({ id: familyA.id }).memberCount, 1)
+    assert.equal(db.prepare('SELECT COUNT(*) AS total FROM family_members WHERE deleted_at IS NOT NULL').get().total, 1)
   })
 
   it('trùng tên giáo họ bị chặn bằng thông điệp tiếng Việt trước khi DB ném ràng buộc', () => {
@@ -736,6 +772,35 @@ describe('trash.service', () => {
     assert.equal(personService.getById(person.id).currentMembership?.familyId, familyA.id)
   })
 
+  it('khôi phục người chỉ đưa lại bí tích bị xoá cùng lần, không đưa lại lịch sử đã thay thế', () => {
+    const removedAt = '2026-09-28T00:00:00.000Z'
+    db.prepare(
+      'INSERT INTO persons (id, full_name, full_name_ascii, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('person-a', 'Nguyễn Văn An', 'nguyen van an', removedAt, removedAt, removedAt)
+    db.prepare(
+      'INSERT INTO sacraments (id, person_id, type, date, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      'sacrament-old',
+      'person-a',
+      'baptism',
+      '1990-01-01',
+      removedAt,
+      removedAt,
+      '2025-01-01T00:00:00.000Z',
+    )
+    db.prepare(
+      'INSERT INTO sacraments (id, person_id, type, date, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run('sacrament-current', 'person-a', 'baptism', '1991-01-01', removedAt, removedAt, removedAt)
+
+    assert.doesNotThrow(() => trashService.restore({ type: 'person', id: 'person-a' }))
+    assert.equal(
+      db
+        .prepare('SELECT id FROM sacraments WHERE person_id = ? AND deleted_at IS NULL')
+        .get('person-a').id,
+      'sacrament-current',
+    )
+  })
+
   it('chặn khôi phục hộ khi giáo họ nguồn chưa được khôi phục', () => {
     const zone = zoneService.create({ name: 'Giáo họ đã xoá' })
     const family = familyService.create({ zoneId: zone.id, name: 'Hộ đã xoá' })
@@ -743,6 +808,79 @@ describe('trash.service', () => {
     zoneService.remove({ id: zone.id })
 
     assert.throws(() => trashService.restore({ type: 'family', id: family.id }), codeIs('CONFLICT'))
+  })
+
+  it('liệt kê và khôi phục hôn phối đã xoá mềm', () => {
+    const timestamp = '2026-09-28T00:00:00.000Z'
+    for (const [id, name] of [
+      ['person-a', 'Nguyễn Văn An'],
+      ['person-b', 'Trần Thị Bình'],
+    ])
+      db.prepare(
+        'INSERT INTO persons (id, full_name, full_name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ).run(id, name, name, timestamp, timestamp)
+    db.prepare('INSERT INTO marriages (id, date, created_at, updated_at) VALUES (?, ?, ?, ?)').run(
+      'marriage-a',
+      '2020-05-05',
+      timestamp,
+      timestamp,
+    )
+    for (const [id, personId] of [
+      ['participant-a', 'person-a'],
+      ['participant-b', 'person-b'],
+    ])
+      db.prepare(
+        'INSERT INTO marriage_participants (id, marriage_id, person_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      ).run(id, 'marriage-a', personId, timestamp, timestamp)
+    marriageService.remove({ id: 'marriage-a' })
+
+    assert.equal(
+      trashService.list().some((row) => row.type === 'marriage' && row.id === 'marriage-a'),
+      true,
+    )
+    trashService.restore({ type: 'marriage', id: 'marriage-a' })
+
+    assert.equal(
+      marriageService.list({}).data.some((row) => row.id === 'marriage-a'),
+      true,
+    )
+    assert.equal(trashService.hardRemove({ type: 'marriage', id: 'marriage-a' }).removed, false)
+    assert.equal(
+      db
+        .prepare('SELECT COUNT(*) AS total FROM marriage_participants WHERE marriage_id = ?')
+        .get('marriage-a').total,
+      2,
+    )
+  })
+
+  it('liệt kê và khôi phục dòng thành viên hộ đã xoá mềm', () => {
+    const timestamp = '2026-09-28T00:00:00.000Z'
+    db.prepare(
+      'INSERT INTO zones (id, name, name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).run('zone-a', 'Giáo họ A', 'giao ho a', timestamp, timestamp)
+    db.prepare(
+      'INSERT INTO families (id, zone_id, name, name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('family-a', 'zone-a', 'Hộ A', 'ho a', timestamp, timestamp)
+    db.prepare(
+      'INSERT INTO persons (id, full_name, full_name_ascii, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    ).run('person-a', 'Nguyễn Văn An', 'nguyen van an', timestamp, timestamp)
+    db.prepare(
+      'INSERT INTO family_members (id, family_id, person_id, relationship, from_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run('member-a', 'family-a', 'person-a', 'head', '2020-01-01', timestamp, timestamp)
+    familyMemberService.remove({ id: 'member-a' })
+
+    assert.equal(
+      trashService.list().some((row) => row.type === 'family_member' && row.id === 'member-a'),
+      true,
+    )
+    trashService.restore({ type: 'family_member', id: 'member-a' })
+
+    assert.equal(
+      db
+        .prepare('SELECT family_id FROM family_members WHERE id = ? AND deleted_at IS NULL')
+        .get('member-a').family_id,
+      'family-a',
+    )
   })
 })
 
