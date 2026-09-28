@@ -30,7 +30,7 @@ export function restore(type: string, id: string, updatedAt: string) {
   if (restored && type === 'person') {
     sacramentRepository.restoreByPersonId(id, updatedAt)
     marriageRepository.restoreByPersonId(id, updatedAt, updatedAt)
-    personParentRepository.restoreByChildId(id, updatedAt, updatedAt)
+    personParentRepository.restoreByPersonId(id, updatedAt, updatedAt)
   }
   return restored
 }
@@ -54,6 +54,9 @@ export function hardRemove(type: string, id: string) {
 
 export function empty() {
   prepare('DELETE FROM family_members WHERE deleted_at IS NOT NULL').run()
+  prepare(
+    'DELETE FROM person_parents WHERE deleted_at IS NOT NULL OR child_person_id IN (SELECT id FROM persons WHERE deleted_at IS NOT NULL) OR parent_person_id IN (SELECT id FROM persons WHERE deleted_at IS NOT NULL)',
+  ).run()
   prepare('DELETE FROM sacraments WHERE deleted_at IS NOT NULL').run()
   prepare('DELETE FROM marriage_participants WHERE deleted_at IS NOT NULL').run()
   prepare('DELETE FROM marriages WHERE deleted_at IS NOT NULL').run()
@@ -65,6 +68,9 @@ export function empty() {
 export function purgeBefore(cutoff: string) {
   prepare(
     'DELETE FROM family_members WHERE deleted_at IS NOT NULL AND (deleted_at < ? OR person_id IN (SELECT id FROM persons WHERE deleted_at < ?) OR family_id IN (SELECT id FROM families WHERE deleted_at < ?))',
+  ).run(cutoff, cutoff, cutoff)
+  prepare(
+    'DELETE FROM person_parents WHERE deleted_at < ? OR child_person_id IN (SELECT id FROM persons WHERE deleted_at < ?) OR parent_person_id IN (SELECT id FROM persons WHERE deleted_at < ?)',
   ).run(cutoff, cutoff, cutoff)
   prepare(
     'DELETE FROM sacraments WHERE deleted_at IS NOT NULL AND (deleted_at < ? OR person_id IN (SELECT id FROM persons WHERE deleted_at < ?))',

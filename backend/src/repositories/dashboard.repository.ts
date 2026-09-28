@@ -72,7 +72,9 @@ export function getSummary(month: string) {
     "SELECT SUM(type = 'baptism') AS baptism_count," +
       " SUM(type = 'first_communion') AS first_communion_count," +
       " SUM(type = 'confirmation') AS confirmation_count" +
-      ' FROM sacraments WHERE deleted_at IS NULL AND date >= ? AND date < ?',
+      " FROM sacraments s JOIN persons p ON p.id = s.person_id" +
+      " WHERE s.deleted_at IS NULL AND p.deleted_at IS NULL AND p.person_type = 'parish'" +
+      ' AND s.date >= ? AND s.date < ?',
   ).get(month + '-01', next + '-01')
   const monthlyCounts = prepare(
     'SELECT' +

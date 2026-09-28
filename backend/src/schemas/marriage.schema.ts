@@ -27,6 +27,8 @@ const marriageFields = {
   spouseNote: optionalText(2000, 'Ghi chú người phối ngẫu'),
   spouseFatherName: optionalText(120, 'Tên cha người phối ngẫu'),
   spouseMotherName: optionalText(120, 'Tên mẹ người phối ngẫu'),
+  spouseFatherHolyName: optionalText(75, 'Tên thánh của cha người phối ngẫu'),
+  spouseMotherHolyName: optionalText(75, 'Tên thánh của mẹ người phối ngẫu'),
   date: calendarDateSchema,
   minister: optionalText(120, 'Tên linh mục cử hành'),
   place: optionalText(255, 'Nơi cử hành'),

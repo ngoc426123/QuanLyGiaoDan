@@ -15,7 +15,7 @@ const SELECT_COLUMNS =
   ' p.holy_name, p.gender,' +
   ' p.birth_date, p.birth_place, p.death_date, p.phone, p.email, p.occupation, p.secondary_phone, p.residence_status,' +
   ' p.pastoral_status, p.pastoral_note, p.source, p.note, p.person_type, p.parish_name, p.diocese_name,' +
-  ' p.father_name, p.mother_name, p.created_at, p.updated_at'
+  ' p.father_name, p.father_holy_name, p.mother_name, p.mother_holy_name, p.created_at, p.updated_at'
 
 const UPDATABLE = Object.freeze({
   fullName: 'full_name',
@@ -40,7 +40,9 @@ const UPDATABLE = Object.freeze({
   parishName: 'parish_name',
   dioceseName: 'diocese_name',
   fatherName: 'father_name',
+  fatherHolyName: 'father_holy_name',
   motherName: 'mother_name',
+  motherHolyName: 'mother_holy_name',
 })
 
 /**
@@ -84,7 +86,9 @@ export function toDomain(row) {
     parishName: row.parish_name ?? null,
     dioceseName: row.diocese_name ?? null,
     fatherName: row.father_name ?? null,
+    fatherHolyName: row.father_holy_name ?? null,
     motherName: row.mother_name ?? null,
+    motherHolyName: row.mother_holy_name ?? null,
     isAlive: row.death_date === null || row.death_date === undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -202,8 +206,8 @@ export function insert(record) {
     'INSERT INTO persons (id, full_name, given_name, full_name_ascii, given_name_ascii,' +
       ' holy_name, gender,' +
       ' birth_date, birth_place, death_date, phone, email, occupation, secondary_phone, residence_status, pastoral_status,' +
-      ' pastoral_note, source, note, person_type, parish_name, diocese_name, father_name, mother_name, created_at, updated_at)' +
-      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      ' pastoral_note, source, note, person_type, parish_name, diocese_name, father_name, father_holy_name, mother_name, mother_holy_name, created_at, updated_at)' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     record.id,
     record.fullName,
@@ -228,7 +232,9 @@ export function insert(record) {
     record.parishName ?? null,
     record.dioceseName ?? null,
     record.fatherName ?? null,
+    record.fatherHolyName ?? null,
     record.motherName ?? null,
+    record.motherHolyName ?? null,
     record.createdAt,
     record.updatedAt,
   )

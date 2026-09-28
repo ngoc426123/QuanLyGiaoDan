@@ -416,7 +416,7 @@ export function remove({ id }: any) {
     const membership = familyMemberRepository.findCurrentByPersonId(id)
 
     familyMemberRepository.softDeleteCurrentByPersonId(id, timestamp)
-    personParentRepository.softDeleteByChildId(id, timestamp)
+    personParentRepository.softDeleteByPersonId(id, timestamp)
     sacramentRepository.softDeleteByPersonId(id, timestamp)
     marriageRepository.softDeleteByPersonIds([id], timestamp)
     personRepository.softDelete(id, timestamp)
@@ -491,7 +491,7 @@ export function bulkRemove({ ids }: any) {
     }
     const memberships = familyMemberRepository.findCurrentByPersonIds(ids)
     familyMemberRepository.softDeleteCurrentByPersonIds(ids, timestamp)
-    for (const personId of ids) personParentRepository.softDeleteByChildId(personId, timestamp)
+    for (const personId of ids) personParentRepository.softDeleteByPersonId(personId, timestamp)
     sacramentRepository.softDeleteByPersonIds(ids, timestamp)
     marriageRepository.softDeleteByPersonIds(ids, timestamp)
     const count = personRepository.softDeleteMany(ids, timestamp)

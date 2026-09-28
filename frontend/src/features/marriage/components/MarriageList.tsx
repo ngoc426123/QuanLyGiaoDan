@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/Button.tsx'
@@ -37,14 +37,13 @@ export function toMarriagePayload(input: any) {
   delete payload.spouseFatherFullName
   delete payload.spouseMotherHolyName
   delete payload.spouseMotherFullName
-  payload.spouseId = input.spouseMode === 'internal' ? input.spouseId : null
+  // Hồ sơ ngoài xứ đã tồn tại vẫn giữ id để cập nhật đúng hồ sơ, thay vì tạo bản ghi mới.
+  payload.spouseId = input.spouseId || null
   payload.spouseBirthDate = payload.spouseBirthDate || null
-  payload.spouseFatherName = [input.spouseFatherHolyName, input.spouseFatherFullName]
-    .filter(Boolean)
-    .join(' ') || null
-  payload.spouseMotherName = [input.spouseMotherHolyName, input.spouseMotherFullName]
-    .filter(Boolean)
-    .join(' ') || null
+  payload.spouseFatherName = input.spouseFatherFullName || null
+  payload.spouseFatherHolyName = input.spouseFatherHolyName || null
+  payload.spouseMotherName = input.spouseMotherFullName || null
+  payload.spouseMotherHolyName = input.spouseMotherHolyName || null
   return payload
 }
 
@@ -52,7 +51,11 @@ function toFormValue(initialValue: any) {
   const participants = initialValue?.participants ?? []
   return {
     personId: initialValue?.personId ?? participants[0]?.personId ?? '',
-    spouseMode: initialValue ? (initialValue.spouseId ? 'internal' : 'external') : 'internal',
+    spouseMode: initialValue
+      ? initialValue.spouseIsExternal
+        ? 'external'
+        : 'internal'
+      : 'internal',
     spouseId: initialValue?.spouseId ?? participants[1]?.personId ?? '',
     spouseName: initialValue?.spouseName ?? participants[1]?.fullName ?? '',
     spouseHolyName: initialValue?.spouseHolyName ?? '',
@@ -62,15 +65,13 @@ function toFormValue(initialValue: any) {
     spouseDioceseName: initialValue?.spouseDioceseName ?? '',
     spouseBaptismDate: initialValue?.spouseBaptismDate ?? '',
     spouseBaptismPlace: initialValue?.spouseBaptismPlace ?? '',
-    spouseBaptismSponsor: initialValue?.spouseBaptismSponsor ?? '',
     spouseConfirmationDate: initialValue?.spouseConfirmationDate ?? '',
     spouseConfirmationPlace: initialValue?.spouseConfirmationPlace ?? '',
-    spouseConfirmationSponsor: initialValue?.spouseConfirmationSponsor ?? '',
     spousePhone: initialValue?.spousePhone ?? '',
     spouseNote: initialValue?.spouseNote ?? '',
-    spouseFatherHolyName: '',
+    spouseFatherHolyName: initialValue?.spouseFatherHolyName ?? '',
     spouseFatherFullName: initialValue?.spouseFatherName ?? '',
-    spouseMotherHolyName: '',
+    spouseMotherHolyName: initialValue?.spouseMotherHolyName ?? '',
     spouseMotherFullName: initialValue?.spouseMotherName ?? '',
     date: initialValue?.date ?? '',
     minister: initialValue?.minister ?? '',
@@ -102,8 +103,36 @@ export function MarriageForm({
   const spousePersonQuery = useQuery({
     queryKey: ['person', 'marriage-warning', value.spouseId],
     queryFn: () => invoke(window.api.person.getById(value.spouseId)),
-    enabled: value.spouseMode === 'internal' && Boolean(value.spouseId),
+    enabled: Boolean(value.spouseId),
   })
+  useEffect(() => {
+    const person = spousePersonQuery.data
+    if (!person || value.spouseMode !== 'external') return
+    const sacraments = Object.fromEntries(
+      (person.sacraments ?? []).map((item: any) => [item.type, item]),
+    )
+    setValue((current: any) => ({
+      ...current,
+      spouseName: current.spouseName || person.fullName || '',
+      spouseHolyName: current.spouseHolyName || person.holyName || '',
+      spouseBirthDate: current.spouseBirthDate || person.birthDate || '',
+      spouseBirthPlace: current.spouseBirthPlace || person.birthPlace || '',
+      spouseParishName: current.spouseParishName || person.parishName || '',
+      spouseDioceseName: current.spouseDioceseName || person.dioceseName || '',
+      spouseBaptismDate: current.spouseBaptismDate || sacraments.baptism?.date || '',
+      spouseBaptismPlace: current.spouseBaptismPlace || sacraments.baptism?.place || '',
+      spouseConfirmationDate:
+        current.spouseConfirmationDate || sacraments.confirmation?.date || '',
+      spouseConfirmationPlace:
+        current.spouseConfirmationPlace || sacraments.confirmation?.place || '',
+      spousePhone: current.spousePhone || person.phone || '',
+      spouseNote: current.spouseNote || person.note || '',
+      spouseFatherHolyName: current.spouseFatherHolyName || person.fatherHolyName || '',
+      spouseFatherFullName: current.spouseFatherFullName || person.fatherName || '',
+      spouseMotherHolyName: current.spouseMotherHolyName || person.motherHolyName || '',
+      spouseMotherFullName: current.spouseMotherFullName || person.motherName || '',
+    }))
+  }, [spousePersonQuery.data, value.spouseMode])
   const fieldErrors = error?.details?.fieldErrors ?? {}
   const fieldErrorSummary = Object.entries(fieldErrors)
     .map(([field, message]) => {
@@ -236,7 +265,8 @@ export function MarriageForm({
               value={value}
               onChange={(field: string, next: string) => setValue((current: any) => ({ ...current, [field]: next }))}
               fieldErrors={fieldErrors}
-              fields={{ holyName: 'spouseHolyName', fullName: 'spouseName', birthDate: 'spouseBirthDate', birthPlace: 'spouseBirthPlace', parishName: 'spouseParishName', dioceseName: 'spouseDioceseName', baptismDate: 'spouseBaptismDate', baptismPlace: 'spouseBaptismPlace', baptismSponsor: 'spouseBaptismSponsor', confirmationDate: 'spouseConfirmationDate', confirmationPlace: 'spouseConfirmationPlace', confirmationSponsor: 'spouseConfirmationSponsor', phone: 'spousePhone', note: 'spouseNote' }}
+              showSacramentSponsors={false}
+              fields={{ holyName: 'spouseHolyName', fullName: 'spouseName', birthDate: 'spouseBirthDate', birthPlace: 'spouseBirthPlace', parishName: 'spouseParishName', dioceseName: 'spouseDioceseName', baptismDate: 'spouseBaptismDate', baptismPlace: 'spouseBaptismPlace', confirmationDate: 'spouseConfirmationDate', confirmationPlace: 'spouseConfirmationPlace', phone: 'spousePhone', note: 'spouseNote' }}
             >
             <div className={styles.externalGroup}>
               <h4>Thông tin gia đình</h4>

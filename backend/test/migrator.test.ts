@@ -82,6 +82,8 @@ describe('migrate', () => {
       '017_unify_people_and_add_parent_links.sql',
       '018_add_directory_created_at_indexes.sql',
       '019_add_sacrament_sponsor.sql',
+      '020_add_person_birth_place.sql',
+      '021_split_external_parent_holy_names.sql',
     ])
     assert.equal(db.pragma('user_version', { simple: true }), LATEST_VERSION)
 

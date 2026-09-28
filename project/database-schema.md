@@ -139,6 +139,8 @@ Mọi bảng nghiệp vụ đều có `id` / `created_at` / `updated_at` / `dele
 | `diocese_name`     | TEXT | NULL, CHECK(length ≤ 120)             | Giáo phận của người ngoài xứ                                                |
 | `father_name`      | TEXT | NULL, CHECK(length ≤ 120)             | Tên cha tự khai, dùng khi hồ sơ ngoài xứ chưa có liên kết                   |
 | `mother_name`      | TEXT | NULL, CHECK(length ≤ 120)             | Tên mẹ tự khai, dùng khi hồ sơ ngoài xứ chưa có liên kết                    |
+| `father_holy_name` | TEXT | NULL, CHECK(length ≤ 75)              | Tên thánh của cha tự khai                                                   |
+| `mother_holy_name` | TEXT | NULL, CHECK(length ≤ 75)              | Tên thánh của mẹ tự khai                                                    |
 
 **Index**
 

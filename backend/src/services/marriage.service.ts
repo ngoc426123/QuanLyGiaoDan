@@ -36,6 +36,8 @@ function normalize(input) {
     spouseNote: normalizeText(input.spouseNote, 2000),
     spouseFatherName: normalizeText(input.spouseFatherName, 120),
     spouseMotherName: normalizeText(input.spouseMotherName, 120),
+    spouseFatherHolyName: normalizeText(input.spouseFatherHolyName, 75),
+    spouseMotherHolyName: normalizeText(input.spouseMotherHolyName, 75),
     date: input.date,
     minister: normalizeText(input.minister, 120),
     place: normalizeText(input.place, 255),
@@ -55,6 +57,9 @@ function participants(input, timestamp) {
     personRepository.findRawById(input.personId),
     'Giáo dân được chọn không còn tồn tại',
   )
+  if (person.personType !== 'parish') {
+    throw fieldError('personId', 'Đương sự chính phải là giáo dân trong giáo xứ')
+  }
   const records = [person]
   if (input.spouseId) {
     records.push(
@@ -146,6 +151,8 @@ function createExternalSpouse(value, timestamp) {
     dioceseName: value.spouseDioceseName,
     fatherName: value.spouseFatherName,
     motherName: value.spouseMotherName,
+    fatherHolyName: value.spouseFatherHolyName,
+    motherHolyName: value.spouseMotherHolyName,
     createdAt: timestamp,
     updatedAt: timestamp,
   })
@@ -176,6 +183,51 @@ function createExternalSpouse(value, timestamp) {
   return external
 }
 
+function updateExternalSpouse(personId: string, value: any, timestamp: string) {
+  const current = assertFound(
+    personRepository.findRawById(personId),
+    'Người phối ngẫu không còn tồn tại',
+  )
+  if (current.personType !== 'external') return current
+
+  personRepository.update(
+    personId,
+    {
+      fullName: value.spouseName,
+      fullNameAscii: toAscii(value.spouseName),
+      holyName: value.spouseHolyName,
+      birthDate: value.spouseBirthDate,
+      birthPlace: value.spouseBirthPlace,
+      phone: value.spousePhone,
+      note: value.spouseNote,
+      parishName: value.spouseParishName,
+      dioceseName: value.spouseDioceseName,
+      fatherName: value.spouseFatherName,
+      motherName: value.spouseMotherName,
+      fatherHolyName: value.spouseFatherHolyName,
+      motherHolyName: value.spouseMotherHolyName,
+    },
+    timestamp,
+  )
+  sacramentRepository.softDeleteInitiationByPersonId(personId, timestamp)
+  for (const row of [
+    { type: 'baptism', date: value.spouseBaptismDate, place: value.spouseBaptismPlace },
+    { type: 'confirmation', date: value.spouseConfirmationDate, place: value.spouseConfirmationPlace },
+  ]) {
+    if (row.date)
+      sacramentRepository.insert({
+        id: newId(),
+        personId,
+        ...row,
+        minister: null,
+        sponsor: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+  }
+  return personRepository.findRawById(personId)
+}
+
 export function list(filter: any = {}) {
   const search = normalizeText(filter.search)
   const criteria = { ...filter, search: search ? toAscii(search) : undefined }
@@ -201,12 +253,49 @@ export function create(input) {
 }
 
 export function update({ id, expectedUpdatedAt, patch }) {
-  const value = normalize(patch)
   const timestamp = now()
   return runInTransaction(() => {
     const current = assertFound(marriageRepository.findById(id), NOT_FOUND_MESSAGE)
     assertVersion({ updatedAt: current.updated_at }, expectedUpdatedAt)
+
+    // Update là patch: giữ nguyên các trường và người phối ngẫu hiện tại nếu payload
+    // không đề cập tới chúng. Chỉ tạo người ngoài xứ mới khi caller thực sự gửi tên mới.
+    const participantsNow = marriageRepository.findParticipantsByMarriageId(id)
+    const currentPersonId = participantsNow[0]?.personId
+    const currentSpouse = participantsNow[1]
+    const currentSpouseId = currentSpouse?.personId ?? null
+    const merged = {
+      personId: currentPersonId,
+      date: current.date,
+      minister: current.minister,
+      place: current.place,
+      status: current.status,
+      note: current.note,
+      witnessOne: current.witness_one,
+      witnessTwo: current.witness_two,
+      spouseId: currentSpouseId,
+      spouseName: currentSpouse?.fullName,
+      spouseHolyName: currentSpouse?.holyName,
+      spouseBirthDate: currentSpouse?.birthDate,
+      spouseBirthPlace: currentSpouse?.birthPlace,
+      spouseParishName: currentSpouse?.parishName,
+      spouseDioceseName: currentSpouse?.dioceseName,
+      spouseBaptismDate: currentSpouse?.baptismDate,
+      spouseBaptismPlace: currentSpouse?.baptismPlace,
+      spouseConfirmationDate: currentSpouse?.confirmationDate,
+      spouseConfirmationPlace: currentSpouse?.confirmationPlace,
+      spouseFatherName: currentSpouse?.fatherName,
+      spouseFatherHolyName: currentSpouse?.fatherHolyName,
+      spouseMotherName: currentSpouse?.motherName,
+      spouseMotherHolyName: currentSpouse?.motherHolyName,
+      ...patch,
+    }
+    if (Object.hasOwn(patch, 'spouseName') && !Object.hasOwn(patch, 'spouseId')) {
+      merged.spouseId = null
+    }
+    const value = normalize(merged)
     if (!value.spouseId) value.spouseId = createExternalSpouse(value, timestamp).id
+    else updateExternalSpouse(value.spouseId, value, timestamp)
     const rows = participants(value, timestamp)
     marriageRepository.update(id, value, timestamp)
     marriageRepository.replaceParticipants(

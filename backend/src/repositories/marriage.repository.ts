@@ -26,7 +26,9 @@ function toDomain(row: any) {
     spousePhone: row.spouse_phone ?? null,
     spouseNote: row.spouse_note ?? null,
     spouseFatherName: row.spouse_father_name ?? null,
+    spouseFatherHolyName: row.spouse_father_holy_name ?? null,
     spouseMotherName: row.spouse_mother_name ?? null,
+    spouseMotherHolyName: row.spouse_mother_holy_name ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -43,7 +45,8 @@ const SPOUSE_COLUMNS =
   " (SELECT place FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS spouse_baptism_place," +
   " (SELECT date FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS spouse_confirmation_date," +
   " (SELECT place FROM sacraments s WHERE s.person_id = spouse.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS spouse_confirmation_place," +
-  ' spouse_person.father_name AS spouse_father_name, spouse_person.mother_name AS spouse_mother_name'
+  ' spouse_person.father_name AS spouse_father_name, spouse_person.father_holy_name AS spouse_father_holy_name,' +
+  ' spouse_person.mother_name AS spouse_mother_name, spouse_person.mother_holy_name AS spouse_mother_holy_name'
 
 const JOINS = ' LEFT JOIN persons spouse_person ON spouse_person.id = spouse.person_id'
 
@@ -79,7 +82,7 @@ export function findById(id: string) {
 
 export function findParticipantsByMarriageId(marriageId: string) {
   return prepare(
-    "SELECT mp.person_id AS personId, p.full_name AS fullName, p.full_name_ascii AS fullNameAscii, p.person_type AS personType, p.holy_name AS holyName, p.birth_date AS birthDate, p.birth_place AS birthPlace, p.parish_name AS parishName, p.diocese_name AS dioceseName, p.father_name AS fatherName, p.mother_name AS motherName, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismPlace, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationPlace FROM marriage_participants mp JOIN persons p ON p.id = mp.person_id WHERE mp.marriage_id = ? AND mp.deleted_at IS NULL ORDER BY mp.created_at",
+    "SELECT mp.person_id AS personId, p.full_name AS fullName, p.full_name_ascii AS fullNameAscii, p.person_type AS personType, p.holy_name AS holyName, p.birth_date AS birthDate, p.birth_place AS birthPlace, p.parish_name AS parishName, p.diocese_name AS dioceseName, p.father_name AS fatherName, p.father_holy_name AS fatherHolyName, p.mother_name AS motherName, p.mother_holy_name AS motherHolyName, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'baptism' AND s.deleted_at IS NULL) AS baptismPlace, (SELECT date FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationDate, (SELECT place FROM sacraments s WHERE s.person_id = mp.person_id AND s.type = 'confirmation' AND s.deleted_at IS NULL) AS confirmationPlace FROM marriage_participants mp JOIN persons p ON p.id = mp.person_id WHERE mp.marriage_id = ? AND mp.deleted_at IS NULL ORDER BY mp.created_at",
   ).all(marriageId)
 }
 
@@ -94,19 +97,21 @@ export function findMany(filter: any = {}) {
     params.push(likePattern(filter.search))
   }
   const rows = prepare(
-    "SELECT m.id, m.date, m.minister, m.place, m.status, m.note, m.witness_one, m.witness_two, m.updated_at AS updatedAt, group_concat(p.full_name, ' và ') AS participants, group_concat(p.id, '|') AS participantIds, group_concat(p.full_name, '|') AS participantNames, group_concat(COALESCE(p.holy_name, ''), '|') AS participantHolyNames FROM marriages m JOIN marriage_participants mp ON mp.marriage_id = m.id AND mp.deleted_at IS NULL JOIN persons p ON p.id = mp.person_id" +
-      ` WHERE ${clauses.join(' AND ')} GROUP BY m.id ORDER BY m.created_at DESC LIMIT ? OFFSET ?`,
+    "SELECT m.id, m.date, m.minister, m.place, m.status, m.note, m.witness_one, m.witness_two, m.updated_at AS updatedAt, group_concat(p.full_name, ' và ') AS participants, group_concat(p.id, '|') AS participantIds, group_concat(p.full_name, '|') AS participantNames, group_concat(COALESCE(p.holy_name, ''), '|') AS participantHolyNames, group_concat(p.person_type, '|') AS participantTypes FROM marriages m JOIN marriage_participants mp ON mp.marriage_id = m.id AND mp.deleted_at IS NULL JOIN persons p ON p.id = mp.person_id" +
+      ` WHERE ${clauses.join(' AND ')} GROUP BY m.id ORDER BY m.date DESC, m.created_at DESC LIMIT ? OFFSET ?`,
   ).all(...params, limit, offset)
   return rows.map((row: any) => {
     const ids = String(row.participantIds).split('|')
     const names = String(row.participantNames).split('|')
     const holyNames = String(row.participantHolyNames).split('|')
+    const participantTypes = String(row.participantTypes).split('|')
     return {
       ...row,
       personId: ids[0] ?? null,
       spouseId: ids[1] ?? null,
       personName: names[0],
       spouseName: names[1],
+      spouseIsExternal: participantTypes[1] === 'external',
       participantHolyNames: holyNames.map((v) => v || null),
       status: row.status ?? 'married',
       note: row.note ?? null,
@@ -188,22 +193,25 @@ export function softDeleteByPersonIds(ids: string[], timestamp: string) {
   ).run(timestamp, timestamp, json)
 }
 export function restoreByPersonId(personId: string, deletedAt: string, updatedAt: string) {
-  const row = prepare(
-    'SELECT marriage_id FROM marriage_participants WHERE person_id = ? AND deleted_at = ? LIMIT 1',
-  ).get(personId, deletedAt)
-  if (!row) return
   prepare(
-    'UPDATE marriages SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at = ?',
-  ).run(updatedAt, row.marriage_id, deletedAt)
+    'UPDATE marriages SET deleted_at = NULL, updated_at = ?' +
+      ' WHERE id IN (SELECT marriage_id FROM marriage_participants WHERE person_id = ? AND deleted_at = ?)' +
+      ' AND deleted_at = ?',
+  ).run(updatedAt, personId, deletedAt, deletedAt)
   prepare(
-    'UPDATE marriage_participants SET deleted_at = NULL, updated_at = ? WHERE marriage_id = ? AND deleted_at = ?',
-  ).run(updatedAt, row.marriage_id, deletedAt)
+    'UPDATE marriage_participants SET deleted_at = NULL, updated_at = ?' +
+      ' WHERE marriage_id IN (SELECT marriage_id FROM marriage_participants WHERE person_id = ? AND deleted_at = ?)' +
+      ' AND deleted_at = ?',
+  ).run(updatedAt, personId, deletedAt, deletedAt)
 }
 export function hardDeleteByPersonId(personId: string) {
-  const row = prepare(
-    'SELECT marriage_id FROM marriage_participants WHERE person_id = ? LIMIT 1',
-  ).get(personId)
-  if (!row) return
-  prepare('DELETE FROM marriage_participants WHERE marriage_id = ?').run(row.marriage_id)
-  prepare('DELETE FROM marriages WHERE id = ? AND deleted_at IS NOT NULL').run(row.marriage_id)
+  const rows = prepare(
+    'SELECT DISTINCT mp.marriage_id FROM marriage_participants mp' +
+      ' JOIN marriages m ON m.id = mp.marriage_id AND m.deleted_at IS NOT NULL' +
+      ' WHERE mp.person_id = ?',
+  ).all(personId)
+  for (const row of rows) {
+    prepare('DELETE FROM marriage_participants WHERE marriage_id = ?').run(row.marriage_id)
+    prepare('DELETE FROM marriages WHERE id = ? AND deleted_at IS NOT NULL').run(row.marriage_id)
+  }
 }

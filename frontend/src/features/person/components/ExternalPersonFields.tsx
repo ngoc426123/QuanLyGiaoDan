@@ -30,6 +30,7 @@ export function ExternalPersonForm({
   fieldErrors = {},
   fields = defaultFields,
   showSacraments = true,
+  showSacramentSponsors = true,
   children,
   footer,
 }: {
@@ -38,6 +39,7 @@ export function ExternalPersonForm({
   fieldErrors?: Record<string, string>
   fields?: Record<string, string>
   showSacraments?: boolean
+  showSacramentSponsors?: boolean
   children?: ReactNode
   footer?: ReactNode
 }) {
@@ -70,7 +72,7 @@ export function ExternalPersonForm({
               <div className={styles.sacramentFields}>
                 <DateInput label="Ngày cử hành" value={get('baptismDate')} onChange={(date: string) => set('baptismDate', date)} />
                 <ParishNameInput label="Nơi cử hành" value={get('baptismPlace')} onChange={(event: any) => set('baptismPlace', event.target.value)} />
-                <Input label="Người đỡ đầu" value={get('baptismSponsor')} onChange={(event: any) => set('baptismSponsor', event.target.value)} maxLength={120} />
+                {showSacramentSponsors && <Input label="Người đỡ đầu" value={get('baptismSponsor')} onChange={(event: any) => set('baptismSponsor', event.target.value)} maxLength={120} />}
               </div>
             </section>
             <section className={styles.sacramentCard} aria-labelledby={`${fieldId}-confirmation-title`}>
@@ -78,7 +80,7 @@ export function ExternalPersonForm({
               <div className={styles.sacramentFields}>
                 <DateInput label="Ngày cử hành" value={get('confirmationDate')} onChange={(date: string) => set('confirmationDate', date)} />
                 <ParishNameInput label="Nơi cử hành" value={get('confirmationPlace')} onChange={(event: any) => set('confirmationPlace', event.target.value)} />
-                <Input label="Người đỡ đầu" value={get('confirmationSponsor')} onChange={(event: any) => set('confirmationSponsor', event.target.value)} maxLength={120} />
+                {showSacramentSponsors && <Input label="Người đỡ đầu" value={get('confirmationSponsor')} onChange={(event: any) => set('confirmationSponsor', event.target.value)} maxLength={120} />}
               </div>
             </section>
           </div>
